@@ -39,7 +39,8 @@ function MobileGoalsBar({ goals, goalTasks, onAddGoal, onEditGoal, onDeleteGoal 
               <div style={{ flex: 1, height: '3px', background: '#f3f4f6', borderRadius: '2px', overflow: 'hidden' }}>
                 <div style={{ height: '100%', width: pct + '%', background: goal.color, borderRadius: '2px' }} />
               </div>
-              <span style={{ fontSize: '10px', color: '#9ca3af', flexShrink: 0 }}>{pct}%</span>
+              <span style={{ fontSize: "10px", color: "#9ca3af", flexShrink: 0 }}>{pct}%</span>
+              <span style={{ fontSize: "10px", color: "#9ca3af", flexShrink: 0 }}>{done.length}/{linked.length}</span>
             </div>
           </div>
         )
