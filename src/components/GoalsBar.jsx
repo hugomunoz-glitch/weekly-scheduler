@@ -8,6 +8,7 @@ export default function GoalsBar({ goals, goalTasks, onAddGoal, onEditGoal, onDe
   const [editingId, setEditingId] = useState(null)
   const [editingTitle, setEditingTitle] = useState('')
   const [confirmDeleteId, setConfirmDeleteId] = useState(null)
+  const [viewingGoalId, setViewingGoalId] = useState(null)
 
   function handleAdd(e) {
     e.preventDefault()
@@ -38,7 +39,7 @@ export default function GoalsBar({ goals, goalTasks, onAddGoal, onEditGoal, onDe
         const done = linked.filter(t => t.status === 'done')
         const pct = linked.length > 0 ? Math.round((done.length / linked.length) * 100) : 0
         return (
-          <div key={goal.id} className="flex items-start gap-2 border border-gray-200 rounded-lg px-3 py-1.5 shrink-0 min-w-[150px] group">
+          <div key={goal.id} className="flex items-start gap-2 border border-gray-200 rounded-lg px-3 py-1.5 shrink-0 min-w-[150px] group cursor-pointer relative" onClick={() => setViewingGoalId(goal.id)}>
             <div className="w-2 h-2 rounded-full shrink-0 mt-1.5" style={{ background: goal.color }} />
             <div className="flex-1 min-w-0">
               {editingId === goal.id ? (
@@ -55,7 +56,7 @@ export default function GoalsBar({ goals, goalTasks, onAddGoal, onEditGoal, onDe
                 <div className="flex items-center justify-between gap-1">
                   <p
                     className="text-xs font-medium text-gray-700 truncate cursor-pointer hover:text-indigo-600"
-                    onClick={() => startEdit(goal)}
+                    onClick={(e) => { e.stopPropagation(); startEdit(goal) }}
                     title="Click to edit"
                   >
                     {goal.title}
@@ -63,13 +64,13 @@ export default function GoalsBar({ goals, goalTasks, onAddGoal, onEditGoal, onDe
                   {confirmDeleteId === goal.id ? (
                     <div className="flex items-center gap-1 shrink-0">
                       <button
-                        onClick={() => { onDeleteGoal(goal.id); setConfirmDeleteId(null) }}
+                        onClick={(e) => { e.stopPropagation(); onDeleteGoal(goal.id); setConfirmDeleteId(null) }}
                         className="text-xs text-red-500 hover:text-red-700 font-medium"
                       >
                         Yes
                       </button>
                       <button
-                        onClick={() => setConfirmDeleteId(null)}
+                        onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(null) }}
                         className="text-xs text-gray-400 hover:text-gray-600"
                       >
                         No
@@ -77,7 +78,7 @@ export default function GoalsBar({ goals, goalTasks, onAddGoal, onEditGoal, onDe
                     </div>
                   ) : (
                     <button
-                      onClick={() => setConfirmDeleteId(goal.id)}
+                      onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(goal.id) }}
                       className="text-gray-200 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 shrink-0"
                       title="Delete goal"
                     >
@@ -93,6 +94,29 @@ export default function GoalsBar({ goals, goalTasks, onAddGoal, onEditGoal, onDe
                 <span className="text-xs text-gray-400 shrink-0">{pct}%</span>
               </div>
               <p className="text-xs text-gray-300 mt-0.5">{done.length}/{linked.length} tasks</p>
+              {viewingGoalId === goal.id && (
+                <div
+                  onClick={(e) => e.stopPropagation()}
+                  className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg p-3 w-64 z-50"
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-xs font-medium text-gray-700">{goal.title}</p>
+                    <button onClick={() => setViewingGoalId(null)} className="text-gray-300 hover:text-gray-500 text-xs">&#10005;</button>
+                  </div>
+                  {linked.length === 0 ? (
+                    <p className="text-xs text-gray-300">No tasks yet.</p>
+                  ) : (
+                    <ul className="space-y-1 max-h-48 overflow-y-auto">
+                      {linked.map(t => (
+                        <li key={t.id} className="text-xs text-gray-600 flex items-center gap-1.5">
+                          <span className={t.status === 'done' ? 'text-green-500' : 'text-gray-300'}>{t.status === 'done' ? '✓' : '○'}</span>
+                          <span className={t.status === 'done' ? 'line-through text-gray-400' : ''}>{t.title}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         )

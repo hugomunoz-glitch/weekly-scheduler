@@ -15,6 +15,7 @@ const COLORS = ['#6366f1', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#06b6d4'
 function MobileGoalsBar({ goals, goalTasks, onAddGoal, onEditGoal, onDeleteGoal }) {
   const [adding, setAdding] = useState(false)
   const [newTitle, setNewTitle] = useState('')
+  const [viewingGoalId, setViewingGoalId] = useState(null)
 
   function handleAdd(e) {
     e.preventDefault()
@@ -30,23 +31,43 @@ function MobileGoalsBar({ goals, goalTasks, onAddGoal, onEditGoal, onDeleteGoal 
         const linked = goalTasks.filter(t => t.goal_id === goal.id)
         const done = linked.filter(t => t.status === 'done')
         const pct = linked.length > 0 ? Math.round((done.length / linked.length) * 100) : 0
-        return (
-          <div key={goal.id} style={{ flexShrink: 0, border: '1px solid #e5e7eb', borderRadius: '10px', padding: '6px 10px', minWidth: '120px', background: 'white' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
-              <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: goal.color, flexShrink: 0 }} />
-              <span style={{ fontSize: "11px", fontWeight: 500, color: "#374151", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "80px", cursor: "pointer" }} onClick={() => { const t = prompt("Edit goal name:", goal.title); if (t && t.trim()) onEditGoal(goal.id, t.trim()) }}>{goal.title}</span>
-            <span style={{ fontSize: "14px", color: "#9ca3af", cursor: "pointer", flexShrink: 0 }} onClick={() => { if (window.confirm(`Delete goal "${goal.title}"?`)) onDeleteGoal(goal.id) }}>&times;</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <div style={{ flex: 1, height: '3px', background: '#f3f4f6', borderRadius: '2px', overflow: 'hidden' }}>
-                <div style={{ height: '100%', width: pct + '%', background: goal.color, borderRadius: '2px' }} />
-              </div>
-              <span style={{ fontSize: "10px", color: "#9ca3af", flexShrink: 0 }}>{pct}%</span>
-              <span style={{ fontSize: "10px", color: "#9ca3af", flexShrink: 0 }}>{done.length}/{linked.length}</span>
-            </div>
+      return (
+        <div key={goal.id} onClick={() => setViewingGoalId(goal.id)} style={{ flexShrink: 0, border: '1px solid #e5e7eb', borderRadius: '10px', padding: '6px 10px', minWidth: '120px', background: 'white', position: 'relative', cursor: 'pointer' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: goal.color, flexShrink: 0 }} />
+            <span style={{ fontSize: "11px", fontWeight: 500, color: "#374151", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "80px", cursor: "pointer" }} onClick={(e) => { e.stopPropagation(); const t = prompt("Edit goal name:", goal.title); if (t && t.trim()) onEditGoal(goal.id, t.trim()) }}>{goal.title}</span>
+            <span style={{ fontSize: "14px", color: "#9ca3af", cursor: "pointer", flexShrink: 0 }} onClick={(e) => { e.stopPropagation(); if (window.confirm(`Delete goal "${goal.title}"?`)) onDeleteGoal(goal.id) }}>&times;</span>
           </div>
-        )
-      })}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <div style={{ flex: 1, height: '3px', background: '#f3f4f6', borderRadius: '2px', overflow: 'hidden' }}>
+              <div style={{ height: '100%', width: pct + '%', background: goal.color, borderRadius: '2px' }} />
+            </div>
+            <span style={{ fontSize: "10px", color: "#9ca3af", flexShrink: 0 }}>{pct}%</span>
+            <span style={{ fontSize: "10px", color: "#9ca3af", flexShrink: 0 }}>{done.length}/{linked.length}</span>
+          </div>
+          {viewingGoalId === goal.id && (
+            <div onClick={(e) => e.stopPropagation()} style={{ position: 'absolute', top: '100%', left: 0, marginTop: '4px', background: 'white', border: '1px solid #e5e7eb', borderRadius: '10px', padding: '10px', width: '220px', zIndex: 50, boxShadow: '0 4px 12px rgba(0,0,0,0.12)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <span style={{ fontSize: '12px', fontWeight: 500, color: '#374151' }}>{goal.title}</span>
+                <span style={{ fontSize: '13px', color: '#9ca3af', cursor: 'pointer' }} onClick={() => setViewingGoalId(null)}>&times;</span>
+              </div>
+              {linked.length === 0 ? (
+                <p style={{ fontSize: '11px', color: '#9ca3af' }}>No tasks yet.</p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: '160px', overflowY: 'auto' }}>
+                  {linked.map(t => (
+                    <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: '#4b5563' }}>
+                      <span style={{ color: t.status === 'done' ? '#10b981' : '#d1d5db' }}>{t.status === 'done' ? '✓' : '○'}</span>
+                      <span style={{ textDecoration: t.status === 'done' ? 'line-through' : 'none', color: t.status === 'done' ? '#9ca3af' : '#4b5563' }}>{t.title}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )
+    })}
       {adding ? (
         <form onSubmit={handleAdd} style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
           <input autoFocus value={newTitle} onChange={e => setNewTitle(e.target.value)}
