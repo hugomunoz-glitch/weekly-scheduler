@@ -95,10 +95,8 @@ export default function GoalsBar({ goals, goalTasks, onAddGoal, onEditGoal, onDe
               </div>
               <p className="text-xs text-gray-300 mt-0.5">{done.length}/{linked.length} tasks</p>
               {viewingGoalId === goal.id && (
-                <div
-                  onClick={(e) => e.stopPropagation()}
-                  className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg p-3 w-64 z-50"
-                >
+            <div onClick={() => setViewingGoalId(null)} className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
+              <div onClick={(e) => e.stopPropagation()} className="bg-white border border-gray-200 rounded-lg shadow-xl p-4 w-80 max-h-[70vh] overflow-y-auto">
                   <div className="flex items-center justify-between mb-2">
                     <p className="text-xs font-medium text-gray-700">{goal.title}</p>
                     <button onClick={() => setViewingGoalId(null)} className="text-gray-300 hover:text-gray-500 text-xs">&#10005;</button>
@@ -116,7 +114,8 @@ export default function GoalsBar({ goals, goalTasks, onAddGoal, onEditGoal, onDe
                     </ul>
                   )}
                 </div>
-              )}
+            </div>
+          )}
             </div>
           </div>
         )

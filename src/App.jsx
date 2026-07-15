@@ -28,7 +28,7 @@ export default function App() {
       supabase.from('tasks').select('*').eq('status', 'inbox').order('created_at', { ascending: false }),
       supabase.from('tasks').select('*').gte('scheduled_date', s).lte('scheduled_date', e).order('position'),
       supabase.from('goals').select('*').order('created_at'),
-      supabase.from('tasks').select('id, goal_id, status').not('goal_id', 'is', null)
+      supabase.from('tasks').select('id, title, goal_id, status').not('goal_id', 'is', null)
     ])
     const weekTasks = weekRes.data || []
     const inboxTasks = inboxRes.data || []

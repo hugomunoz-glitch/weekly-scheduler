@@ -46,7 +46,8 @@ function MobileGoalsBar({ goals, goalTasks, onAddGoal, onEditGoal, onDeleteGoal 
             <span style={{ fontSize: "10px", color: "#9ca3af", flexShrink: 0 }}>{done.length}/{linked.length}</span>
           </div>
           {viewingGoalId === goal.id && (
-            <div onClick={(e) => e.stopPropagation()} style={{ position: 'absolute', top: '100%', left: 0, marginTop: '4px', background: 'white', border: '1px solid #e5e7eb', borderRadius: '10px', padding: '10px', width: '220px', zIndex: 50, boxShadow: '0 4px 12px rgba(0,0,0,0.12)' }}>
+            <div onClick={() => setViewingGoalId(null)} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div onClick={(e) => e.stopPropagation()} style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '16px', width: '85vw', maxWidth: '320px', maxHeight: '70vh', overflowY: 'auto', boxShadow: '0 8px 24px rgba(0,0,0,0.2)' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
                 <span style={{ fontSize: '12px', fontWeight: 500, color: '#374151' }}>{goal.title}</span>
                 <span style={{ fontSize: '13px', color: '#9ca3af', cursor: 'pointer' }} onClick={() => setViewingGoalId(null)}>&times;</span>
@@ -64,7 +65,8 @@ function MobileGoalsBar({ goals, goalTasks, onAddGoal, onEditGoal, onDeleteGoal 
                 </div>
               )}
             </div>
-          )}
+          </div>
+        )}
         </div>
       )
     })}
