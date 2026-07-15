@@ -7,11 +7,12 @@ export function useAssistantHistory() {
 
   useEffect(() => {
     async function load() {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('assistant_messages')
         .select('*')
         .order('created_at', { ascending: true })
         .limit(100)
+      if (error) console.error('Failed to load history:', error)
       if (data) setMessages(data.map(m => ({ role: m.role, content: m.content })))
       setLoading(false)
     }
@@ -21,13 +22,20 @@ export function useAssistantHistory() {
   async function addMessage(role, content) {
     const msg = { role, content }
     setMessages(prev => [...prev, msg])
-    await supabase.from('assistant_messages').insert({ role, content })
+    const { error } = await supabase
+      .from('assistant_messages')
+      .insert({ role, content })
+    if (error) console.error('Failed to save message:', error)
     return msg
   }
 
   async function clearHistory() {
-    await supabase.from('assistant_messages').delete().neq('id', '00000000-0000-0000-0000-000000000000')
-    setMessages([])
+    const { error } = await supabase
+      .from('assistant_messages')
+      .delete()
+      .neq('id', '00000000-0000-0000-0000-000000000000')
+    if (error) console.error('Failed to clear history:', error)
+    else setMessages([])
   }
 
   return { messages, loading, addMessage, clearHistory }
