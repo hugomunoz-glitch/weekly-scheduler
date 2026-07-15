@@ -33,7 +33,7 @@ function MobileGoalsBar({ goals, goalTasks, onAddGoal, onEditGoal, onDeleteGoal 
           <div key={goal.id} style={{ flexShrink: 0, border: '1px solid #e5e7eb', borderRadius: '10px', padding: '6px 10px', minWidth: '120px', background: 'white' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
               <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: goal.color, flexShrink: 0 }} />
-              <span style={{ fontSize: '11px', fontWeight: 500, color: '#374151', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '80px' }}>{goal.title}</span>
+              <span style={{ fontSize: "11px", fontWeight: 500, color: "#374151", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "80px", cursor: "pointer" }} onClick={() => { const t = prompt("Edit goal name:", goal.title); if (t && t.trim()) onEditGoal(goal.id, t.trim()) }}>{goal.title}</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <div style={{ flex: 1, height: '3px', background: '#f3f4f6', borderRadius: '2px', overflow: 'hidden' }}>
