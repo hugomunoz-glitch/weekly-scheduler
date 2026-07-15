@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Droppable, Draggable } from '@hello-pangea/dnd'
+import { useAssistantHistory } from '../hooks/useAssistantHistory'
 
 function Inbox({ tasks, goalMap, onEdit, onDelete }) {
   const [hoverId, setHoverId] = useState(null)
@@ -56,12 +57,8 @@ function parseProposals(text) {
   const taskRegex = /\[ADD_TASK:\s*([^\]]+)\]/g
   const goalRegex = /\[ADD_GOAL:\s*([^\]]+)\]/g
   let match
-  while ((match = taskRegex.exec(text)) !== null) {
-    proposals.push({ type: 'task', title: match[1].trim(), raw: match[0] })
-  }
-  while ((match = goalRegex.exec(text)) !== null) {
-    proposals.push({ type: 'goal', title: match[1].trim(), raw: match[0] })
-  }
+  while ((match = taskRegex.exec(text)) !== null) proposals.push({ type: 'task', title: match[1].trim(), raw: match[0] })
+  while ((match = goalRegex.exec(text)) !== null) proposals.push({ type: 'goal', title: match[1].trim(), raw: match[0] })
   return proposals
 }
 
@@ -70,34 +67,34 @@ function cleanText(text) {
 }
 
 function Assistant({ goals, tasks, onAddTask, onAddGoal }) {
-  const [messages, setMessages] = useState([])
+  const { messages, loading: historyLoading, addMessage, clearHistory } = useAssistantHistory()
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [confirmed, setConfirmed] = useState({})
 
-  const systemPrompt = 'You are a helpful planning assistant in a weekly planner app. You can propose tasks and goals for the user to add.\n\nWhen you want to propose a task, include [ADD_TASK: task title here] in your response.\nWhen you want to propose a goal, include [ADD_GOAL: goal title here] in your response.\nYou can propose multiple items. Always explain why you are suggesting them.\n\nUser goals:\n' + (goals.length > 0 ? goals.map(g => '- ' + g.title).join('\n') : 'None set.') + '\n\nCurrent tasks:\n' + (tasks.filter(t => t.status !== 'done').slice(0, 20).map(t => '- ' + t.title + (t.scheduled_date ? ' (scheduled)' : ' (inbox)')).join('\n') || 'None yet.') + '\n\nBe concise and practical.'
+  const systemPrompt = 'You are a helpful planning assistant in a weekly planner app. You can propose tasks and goals.\n\nWhen proposing a task include [ADD_TASK: task title] in your response.\nWhen proposing a goal include [ADD_GOAL: goal title] in your response.\nAlways explain why you suggest them. Be concise.\n\nUser goals:\n' + (goals.length > 0 ? goals.map(g => '- ' + g.title).join('\n') : 'None set.') + '\n\nCurrent tasks:\n' + (tasks.filter(t => t.status !== 'done').slice(0, 20).map(t => '- ' + t.title + (t.scheduled_date ? ' (scheduled)' : ' (inbox)')).join('\n') || 'None yet.')
 
   async function sendMessage() {
     if (!input.trim() || loading) return
-    const userMsg = { role: 'user', content: input.trim() }
-    const newMessages = [...messages, userMsg]
-    setMessages(newMessages)
+    const userContent = input.trim()
     setInput('')
     setLoading(true)
+    await addMessage('user', userContent)
+    const allMessages = [...messages, { role: 'user', content: userContent }]
     try {
       const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + import.meta.env.VITE_GEMINI_API_KEY, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           systemInstruction: { parts: [{ text: systemPrompt }] },
-          contents: newMessages.map(m => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] }))
+          contents: allMessages.map(m => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] }))
         })
       })
       const data = await res.json()
       const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Something went wrong.'
-      setMessages(prev => [...prev, { role: 'assistant', content: reply }])
+      await addMessage('assistant', reply)
     } catch {
-      setMessages(prev => [...prev, { role: 'assistant', content: 'Could not reach the assistant.' }])
+      await addMessage('assistant', 'Could not reach the assistant.')
     }
     setLoading(false)
   }
@@ -108,12 +105,9 @@ function Assistant({ goals, tasks, onAddTask, onAddGoal }) {
 
   async function handleConfirm(proposal, msgIndex, propIndex) {
     const key = msgIndex + '-' + propIndex
-    if (proposal.type === 'task') {
-      await onAddTask(proposal.title, '', null, null)
-    } else {
-      const colors = ['#6366f1', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#06b6d4']
-      await onAddGoal(proposal.title, colors[goals.length % colors.length])
-    }
+    const colors = ['#6366f1', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#06b6d4']
+    if (proposal.type === 'task') await onAddTask(proposal.title, '', null, null)
+    else await onAddGoal(proposal.title, colors[goals.length % colors.length])
     setConfirmed(prev => ({ ...prev, [key]: true }))
   }
 
@@ -122,7 +116,8 @@ function Assistant({ goals, tasks, onAddTask, onAddGoal }) {
   return (
     <div className="flex flex-col h-full">
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
-        {messages.length === 0 && (
+        {historyLoading && <p className="text-xs text-gray-400 text-center pt-4">Loading history...</p>}
+        {!historyLoading && messages.length === 0 && (
           <div className="text-center pt-4">
             <p className="text-xs text-gray-400 leading-relaxed mb-4">Ask me to suggest tasks, break down goals, or help you plan your week.</p>
             {starters.map(s => (
@@ -156,9 +151,7 @@ function Assistant({ goals, tasks, onAddTask, onAddGoal }) {
                           <span className="text-xs text-emerald-500 font-medium">Added ✓</span>
                         ) : (
                           <button onClick={() => handleConfirm(proposal, msgIndex, propIndex)}
-                            className="text-xs text-white bg-indigo-600 hover:bg-indigo-700 px-2.5 py-1 rounded-lg transition-colors shrink-0">
-                            Add
-                          </button>
+                            className="text-xs text-white bg-indigo-600 hover:bg-indigo-700 px-2.5 py-1 rounded-lg transition-colors shrink-0">Add</button>
                         )}
                       </div>
                     )
@@ -175,6 +168,9 @@ function Assistant({ goals, tasks, onAddTask, onAddGoal }) {
         )}
       </div>
       <div className="px-3 py-3 border-t border-gray-100 shrink-0">
+        <div className="flex justify-end mb-1.5">
+          <button onClick={clearHistory} className="text-xs text-gray-300 hover:text-red-400 transition-colors">Clear history</button>
+        </div>
         <div className="flex gap-2">
           <textarea value={input} onChange={e => setInput(e.target.value)} onKeyDown={handleKey}
             placeholder="Ask something..." rows={1}

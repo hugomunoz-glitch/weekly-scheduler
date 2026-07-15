@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useAssistantHistory } from '../hooks/useAssistantHistory'
 import { format, isToday } from 'date-fns'
 import { Droppable, Draggable } from '@hello-pangea/dnd'
 import TaskCard from './TaskCard'
@@ -170,7 +171,7 @@ function cleanText(text) {
 }
 
 function MobileAssistant({ goals, tasks, onAddTask, onAddGoal }) {
-  const [messages, setMessages] = useState([])
+  const { messages, loading: historyLoading, addMessage, clearHistory } = useAssistantHistory()
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [confirmed, setConfirmed] = useState({})
@@ -179,25 +180,25 @@ function MobileAssistant({ goals, tasks, onAddTask, onAddGoal }) {
 
   async function send() {
     if (!input.trim() || loading) return
-    const userMsg = { role: 'user', content: input.trim() }
-    const newMsgs = [...messages, userMsg]
-    setMessages(newMsgs)
+    const userContent = input.trim()
     setInput('')
     setLoading(true)
+    await addMessage('user', userContent)
+    const allMsgs = [...messages, { role: 'user', content: userContent }]
     try {
       const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + import.meta.env.VITE_GEMINI_API_KEY, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           systemInstruction: { parts: [{ text: systemPrompt }] },
-          contents: newMsgs.map(m => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] }))
+          contents: allMsgs.map(m => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] }))
         })
       })
       const data = await res.json()
       const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Something went wrong.'
-      setMessages(prev => [...prev, { role: 'assistant', content: reply }])
+      await addMessage('assistant', reply)
     } catch {
-      setMessages(prev => [...prev, { role: 'assistant', content: 'Could not reach the assistant.' }])
+      await addMessage('assistant', 'Could not reach the assistant.')
     }
     setLoading(false)
   }
