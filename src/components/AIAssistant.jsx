@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
+import { useAssistantHistory } from '../hooks/useAssistantHistory'
 
 export default function AIAssistant({ goals, tasks }) {
   const [open, setOpen] = useState(false)
-  const [messages, setMessages] = useState([])
+  const { messages, loading: historyLoading, addMessage } = useAssistantHistory()
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const bottomRef = useRef(null)
@@ -23,7 +24,7 @@ export default function AIAssistant({ goals, tasks }) {
     if (!input.trim() || loading) return
     const userMessage = { role: 'user', content: input.trim() }
     const newMessages = [...messages, userMessage]
-    setMessages(newMessages)
+    await addMessage('user', input.trim())
     setInput('')
     setLoading(true)
     try {
@@ -44,9 +45,9 @@ export default function AIAssistant({ goals, tasks }) {
       })
       const data = await response.json()
       const reply = data.content?.[0]?.text || 'Sorry, something went wrong.'
-      setMessages(prev => [...prev, { role: 'assistant', content: reply }])
+      await addMessage('assistant', reply)
     } catch (err) {
-      setMessages(prev => [...prev, { role: 'assistant', content: 'Could not reach the assistant. Check your API key.' }])
+      await addMessage('assistant', 'Could not reach the assistant. Check your API key.')
     }
     setLoading(false)
   }
