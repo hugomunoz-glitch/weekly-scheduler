@@ -196,7 +196,7 @@ export default function App() {
                 <WeekGrid days={weekDays} tasksForDay={tasksForDay} goalMap={goalMap} onMarkDone={markDone} onRescheduleToTomorrow={rescheduleToTomorrow} onMoveToInbox={moveToInbox} onDelete={deleteTask} onEdit={setEditingTask} />
               )}
             </main>
-            <Sidebar tasks={inboxTasks} goalMap={goalMap} goals={goals} allTasks={tasks} onAddTask={() => setShowAdd(true)} onEdit={setEditingTask} onDelete={deleteTask} />
+            <Sidebar tasks={inboxTasks} goalMap={goalMap} goals={goals} allTasks={tasks} onAddTask={() => setShowAdd(true)} onAddGoal={addGoal} onEdit={setEditingTask} onDelete={deleteTask} />
           </div>
         </div>
       )}
