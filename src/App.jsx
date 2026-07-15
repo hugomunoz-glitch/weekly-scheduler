@@ -2,12 +2,15 @@ import { useState, useEffect, useCallback } from 'react'
 import { startOfWeek, addWeeks, subWeeks, addDays, format, parseISO, isBefore, startOfDay } from 'date-fns'
 import { DragDropContext } from '@hello-pangea/dnd'
 import { supabase } from './lib/supabase'
+import { useIsMobile } from './hooks/useIsMobile'
 import WeekGrid from './components/WeekGrid'
 import Sidebar from './components/Sidebar'
 import AddTaskModal from './components/AddTaskModal'
 import GoalsBar from './components/GoalsBar'
+import MobileLayout from './components/MobileLayout'
 
 export default function App() {
+  const isMobile = useIsMobile()
   const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }))
   const [tasks, setTasks] = useState([])
   const [goals, setGoals] = useState([])
@@ -50,9 +53,7 @@ export default function App() {
       const parts = destination.droppableId.split('-')
       const bucket = parts[0]
       const dateStr = parts.slice(1).join('-')
-      const bucketTasks = tasks
-        .filter(t => t.scheduled_date === dateStr && (t.bucket || 'morning') === bucket && t.status !== 'done')
-        .sort((a, b) => (a.position || 0) - (b.position || 0))
+      const bucketTasks = tasks.filter(t => t.scheduled_date === dateStr && (t.bucket || 'morning') === bucket && t.status !== 'done').sort((a, b) => (a.position || 0) - (b.position || 0))
       const reordered = Array.from(bucketTasks)
       const [moved] = reordered.splice(source.index, 1)
       reordered.splice(destination.index, 0, moved)
@@ -67,17 +68,10 @@ export default function App() {
       const parts = destination.droppableId.split('-')
       const bucket = parts[0]
       const dateStr = parts.slice(1).join('-')
-      const bucketTasks = tasks
-        .filter(t => t.scheduled_date === dateStr && (t.bucket || 'morning') === bucket && t.status !== 'done' && t.id !== taskId)
-        .sort((a, b) => (a.position || 0) - (b.position || 0))
       const newPosition = destination.index
       setTasks(prev => prev.map(t => t.id === taskId ? { ...t, scheduled_date: dateStr, status: 'scheduled', bucket, position: newPosition } : t))
       const { error } = await supabase.from('tasks').update({ scheduled_date: dateStr, status: 'scheduled', bucket, position: newPosition }).eq('id', taskId)
       if (error) fetchTasks()
-      await Promise.all(bucketTasks.map((t, i) => {
-        const pos = i >= newPosition ? i + 1 : i
-        return supabase.from('tasks').update({ position: pos }).eq('id', t.id)
-      }))
     }
   }
 
@@ -90,8 +84,7 @@ export default function App() {
   }
 
   async function editTask(taskId, title, notes, goalId, startTime) {
-    const updates = { title, notes: notes || null, goal_id: goalId || null, start_time: startTime || null }
-    const { data, error } = await supabase.from('tasks').update(updates).eq('id', taskId).select().single()
+    const { data, error } = await supabase.from('tasks').update({ title, notes: notes || null, goal_id: goalId || null, start_time: startTime || null }).eq('id', taskId).select().single()
     if (!error) {
       setTasks(prev => prev.map(t => t.id === taskId ? data : t))
       setGoalTasks(prev => {
@@ -131,7 +124,7 @@ export default function App() {
   async function markDone(taskId) {
     const task = tasks.find(t => t.id === taskId)
     if (!task) return
-    const newStatus = task.status === 'done' ? 'scheduled' : 'done'
+    const newStatus = task.status === 'done' ? (task.scheduled_date ? 'scheduled' : 'inbox') : 'done'
     const { data, error } = await supabase.from('tasks').update({ status: newStatus }).eq('id', taskId).select().single()
     if (!error) {
       setTasks(prev => prev.map(t => t.id === taskId ? data : t))
@@ -164,44 +157,51 @@ export default function App() {
   const inboxTasks = tasks.filter(t => t.status === 'inbox')
   const tasksForDay = (date) => tasks.filter(t => t.scheduled_date === format(date, 'yyyy-MM-dd'))
 
+  const sharedProps = {
+    weekStart, weekDays, tasks, goals, goalMap, goalTasks, inboxTasks,
+    overdueTasks, onMarkDone: markDone, onRescheduleToTomorrow: rescheduleToTomorrow,
+    onMoveToInbox: moveToInbox, onDelete: deleteTask, onEdit: setEditingTask,
+    onAddTask: () => setShowAdd(true), onRollover: rolloverOverdue,
+    onAddGoal: addGoal, onEditGoal: editGoal, onDeleteGoal: deleteGoal,
+    onPrevWeek: () => setWeekStart(w => subWeeks(w, 1)),
+    onNextWeek: () => setWeekStart(w => addWeeks(w, 1)),
+    onThisWeek: () => setWeekStart(startOfWeek(new Date(), { weekStartsOn: 1 }))
+  }
+
   return (
     <DragDropContext onDragEnd={onDragEnd}>
-      <div className="h-screen flex flex-col bg-gray-50 overflow-hidden">
-        <header className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between shrink-0">
-          <h1 className="text-base font-semibold text-gray-900 tracking-tight">Weekly Planner</h1>
-          <div className="flex items-center gap-2">
-            <button onClick={() => setWeekStart(w => subWeeks(w, 1))} className="px-2 py-1 text-sm text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded">Prev</button>
-            <span className="text-sm font-medium text-gray-700 min-w-[200px] text-center">{format(weekStart, 'MMM d')} - {format(addDays(weekStart, 6), 'MMM d, yyyy')}</span>
-            <button onClick={() => setWeekStart(w => addWeeks(w, 1))} className="px-2 py-1 text-sm text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded">Next</button>
-            <button onClick={() => setWeekStart(startOfWeek(new Date(), { weekStartsOn: 1 }))} className="px-3 py-1 text-xs text-indigo-600 border border-indigo-200 hover:bg-indigo-50 rounded">This week</button>
+      {isMobile ? (
+        <MobileLayout {...sharedProps} />
+      ) : (
+        <div className="h-screen flex flex-col bg-gray-50 overflow-hidden">
+          <header className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between shrink-0">
+            <h1 className="text-base font-semibold text-gray-900 tracking-tight">Weekly Planner</h1>
+            <div className="flex items-center gap-2">
+              <button onClick={sharedProps.onPrevWeek} className="px-2 py-1 text-sm text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded">Prev</button>
+              <span className="text-sm font-medium text-gray-700 min-w-[200px] text-center">{format(weekStart, 'MMM d')} - {format(addDays(weekStart, 6), 'MMM d, yyyy')}</span>
+              <button onClick={sharedProps.onNextWeek} className="px-2 py-1 text-sm text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded">Next</button>
+              <button onClick={sharedProps.onThisWeek} className="px-3 py-1 text-xs text-indigo-600 border border-indigo-200 hover:bg-indigo-50 rounded">This week</button>
+            </div>
+            <div className="flex items-center gap-2">
+              {overdueTasks.length > 0 && (
+                <button onClick={rolloverOverdue} className="px-3 py-1.5 text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100">Roll over {overdueTasks.length} overdue</button>
+              )}
+              <button onClick={() => setShowAdd(true)} className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700">+ Add task</button>
+            </div>
+          </header>
+          <GoalsBar goals={goals} goalTasks={goalTasks} onAddGoal={addGoal} onEditGoal={editGoal} onDeleteGoal={deleteGoal} />
+          <div className="flex flex-1 overflow-hidden">
+            <main className="flex-1 overflow-x-auto overflow-y-auto p-4">
+              {loading ? <div className="flex items-center justify-center h-full text-sm text-gray-400">Loading</div> : (
+                <WeekGrid days={weekDays} tasksForDay={tasksForDay} goalMap={goalMap} onMarkDone={markDone} onRescheduleToTomorrow={rescheduleToTomorrow} onMoveToInbox={moveToInbox} onDelete={deleteTask} onEdit={setEditingTask} />
+              )}
+            </main>
+            <Sidebar tasks={inboxTasks} goalMap={goalMap} goals={goals} allTasks={tasks} onAddTask={() => setShowAdd(true)} onEdit={setEditingTask} onDelete={deleteTask} />
           </div>
-          <div className="flex items-center gap-2">
-            {overdueTasks.length > 0 && (
-              <button onClick={rolloverOverdue} className="px-3 py-1.5 text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100">Roll over {overdueTasks.length} overdue</button>
-            )}
-            <button onClick={() => setShowAdd(true)} className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700">+ Add task</button>
-          </div>
-        </header>
-        <GoalsBar goals={goals} goalTasks={goalTasks} onAddGoal={addGoal} onEditGoal={editGoal} onDeleteGoal={deleteGoal} />
-        <div className="flex flex-1 overflow-hidden">
-          <main className="flex-1 overflow-x-auto overflow-y-auto p-4">
-            {loading ? <div className="flex items-center justify-center h-full text-sm text-gray-400">Loading</div> : (
-              <WeekGrid days={weekDays} tasksForDay={tasksForDay} goalMap={goalMap} onMarkDone={markDone} onRescheduleToTomorrow={rescheduleToTomorrow} onMoveToInbox={moveToInbox} onDelete={deleteTask} onEdit={setEditingTask} />
-            )}
-          </main>
-          <Sidebar
-            tasks={inboxTasks}
-            goalMap={goalMap}
-            goals={goals}
-            allTasks={tasks}
-            onAddTask={() => setShowAdd(true)}
-            onEdit={setEditingTask}
-            onDelete={deleteTask}
-          />
         </div>
-        {showAdd && <AddTaskModal onAdd={addTask} onClose={() => setShowAdd(false)} goals={goals} />}
-        {editingTask && <AddTaskModal editingTask={editingTask} onEdit={editTask} onClose={() => setEditingTask(null)} goals={goals} />}
-      </div>
+      )}
+      {showAdd && <AddTaskModal onAdd={addTask} onClose={() => setShowAdd(false)} goals={goals} />}
+      {editingTask && <AddTaskModal editingTask={editingTask} onEdit={editTask} onClose={() => setEditingTask(null)} goals={goals} />}
     </DragDropContext>
   )
 }
