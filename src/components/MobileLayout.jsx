@@ -155,12 +155,27 @@ function MobileInbox({ tasks, goalMap, onAddTask, onEdit, onDelete }) {
   )
 }
 
-function MobileAssistant({ goals, tasks }) {
+function parseProposals(text) {
+  const proposals = []
+  const taskRegex = /\[ADD_TASK:\s*([^\]]+)\]/g
+  const goalRegex = /\[ADD_GOAL:\s*([^\]]+)\]/g
+  let match
+  while ((match = taskRegex.exec(text)) !== null) proposals.push({ type: 'task', title: match[1].trim(), raw: match[0] })
+  while ((match = goalRegex.exec(text)) !== null) proposals.push({ type: 'goal', title: match[1].trim(), raw: match[0] })
+  return proposals
+}
+
+function cleanText(text) {
+  return text.replace(/\[ADD_TASK:[^\]]+\]/g, '').replace(/\[ADD_GOAL:[^\]]+\]/g, '').trim()
+}
+
+function MobileAssistant({ goals, tasks, onAddTask, onAddGoal }) {
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
+  const [confirmed, setConfirmed] = useState({})
 
-  const systemPrompt = 'You are a helpful planning assistant. Help the user with tasks, goals, and priorities. Be concise.\n\nGoals:\n' + (goals.length > 0 ? goals.map(g => '- ' + g.title).join('\n') : 'None.') + '\n\nTasks:\n' + (tasks.filter(t => t.status !== 'done').slice(0, 15).map(t => '- ' + t.title).join('\n') || 'None.')
+  const systemPrompt = 'You are a helpful planning assistant in a weekly planner app. You can propose tasks and goals.\n\nWhen proposing a task include [ADD_TASK: task title] in your response.\nWhen proposing a goal include [ADD_GOAL: goal title] in your response.\nAlways explain why you suggest them. Be concise.\n\nGoals:\n' + (goals.length > 0 ? goals.map(g => '- ' + g.title).join('\n') : 'None.') + '\n\nTasks:\n' + (tasks.filter(t => t.status !== 'done').slice(0, 15).map(t => '- ' + t.title).join('\n') || 'None.')
 
   async function send() {
     if (!input.trim() || loading) return
@@ -187,6 +202,14 @@ function MobileAssistant({ goals, tasks }) {
     setLoading(false)
   }
 
+  async function handleConfirm(proposal, msgIndex, propIndex) {
+    const key = msgIndex + '-' + propIndex
+    const colors = ['#6366f1', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#06b6d4']
+    if (proposal.type === 'task') await onAddTask(proposal.title, '', null, null)
+    else await onAddGoal(proposal.title, colors[goals.length % colors.length])
+    setConfirmed(prev => ({ ...prev, [key]: true }))
+  }
+
   function handleKey(e) {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() }
   }
@@ -196,8 +219,8 @@ function MobileAssistant({ goals, tasks }) {
       <div style={{ flex: 1, overflowY: 'auto', padding: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
         {messages.length === 0 && (
           <div style={{ textAlign: 'center', paddingTop: '24px' }}>
-            <p style={{ fontSize: '13px', color: '#9ca3af', marginBottom: '16px' }}>Ask me to help plan your week, break down a goal, or figure out where to start.</p>
-            {['What should I focus on today?', 'Help me break down a goal', 'I do not know where to start'].map(s => (
+            <p style={{ fontSize: '13px', color: '#9ca3af', marginBottom: '16px' }}>Ask me to suggest tasks, break down a goal, or help plan your week.</p>
+            {['Suggest tasks for my goals', 'Help me break down a goal', 'What should I focus on today?'].map(s => (
               <button key={s} onClick={() => setInput(s)}
                 style={{ display: 'block', width: '100%', textAlign: 'left', fontSize: '13px', color: '#6366f1', border: '1px solid #e0e7ff', borderRadius: '10px', padding: '10px 12px', marginBottom: '8px', background: 'white', cursor: 'pointer' }}>
                 {s}
@@ -205,13 +228,43 @@ function MobileAssistant({ goals, tasks }) {
             ))}
           </div>
         )}
-        {messages.map((msg, i) => (
-          <div key={i} style={{ display: 'flex', justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start' }}>
-            <div style={{ maxWidth: '85%', borderRadius: msg.role === 'user' ? '16px 16px 4px 16px' : '16px 16px 16px 4px', padding: '10px 14px', fontSize: '13px', lineHeight: 1.5, whiteSpace: 'pre-wrap', background: msg.role === 'user' ? '#6366f1' : '#f3f4f6', color: msg.role === 'user' ? 'white' : '#1f2937' }}>
-              {msg.content}
+        {messages.map((msg, msgIndex) => {
+          const proposals = msg.role === 'assistant' ? parseProposals(msg.content) : []
+          const displayText = msg.role === 'assistant' ? cleanText(msg.content) : msg.content
+          return (
+            <div key={msgIndex}>
+              <div style={{ display: 'flex', justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start' }}>
+                <div style={{ maxWidth: '85%', borderRadius: msg.role === 'user' ? '16px 16px 4px 16px' : '16px 16px 16px 4px', padding: '10px 14px', fontSize: '13px', lineHeight: 1.5, whiteSpace: 'pre-wrap', background: msg.role === 'user' ? '#6366f1' : '#f3f4f6', color: msg.role === 'user' ? 'white' : '#1f2937' }}>
+                  {displayText}
+                </div>
+              </div>
+              {proposals.length > 0 && (
+                <div style={{ marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  {proposals.map((proposal, propIndex) => {
+                    const key = msgIndex + '-' + propIndex
+                    const done = confirmed[key]
+                    return (
+                      <div key={propIndex} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', border: '1px solid #e0e7ff', borderRadius: '10px', padding: '8px 12px', background: '#eef2ff' }}>
+                        <div>
+                          <span style={{ fontSize: '10px', fontWeight: 600, color: '#818cf8', textTransform: 'uppercase', marginRight: '6px' }}>{proposal.type}</span>
+                          <span style={{ fontSize: '13px', color: '#1f2937' }}>{proposal.title}</span>
+                        </div>
+                        {done ? (
+                          <span style={{ fontSize: '12px', color: '#10b981', fontWeight: 500 }}>Added ✓</span>
+                        ) : (
+                          <button onClick={() => handleConfirm(proposal, msgIndex, propIndex)}
+                            style={{ background: '#6366f1', color: 'white', border: 'none', borderRadius: '8px', padding: '6px 12px', fontSize: '12px', cursor: 'pointer', flexShrink: 0 }}>
+                            Add
+                          </button>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
             </div>
-          </div>
-        ))}
+          )
+        })}
         {loading && (
           <div style={{ display: 'flex' }}>
             <div style={{ background: '#f3f4f6', borderRadius: '16px 16px 16px 4px', padding: '10px 14px', fontSize: '13px', color: '#9ca3af' }}>Thinking...</div>
@@ -308,7 +361,7 @@ export default function MobileLayout({
           <div style={{ padding: '10px 16px 6px', flexShrink: 0 }}>
             <span style={{ fontSize: '15px', fontWeight: 500, color: '#111827' }}>&#129302; Assistant</span>
           </div>
-          <MobileAssistant goals={goals} tasks={tasks} />
+          <MobileAssistant goals={goals} tasks={tasks} onAddTask={onAddTask} onAddGoal={onAddGoal} />
         </>
       )}
 
