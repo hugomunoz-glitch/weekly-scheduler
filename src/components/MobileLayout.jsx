@@ -182,10 +182,10 @@ function MobileInbox({ tasks, goalMap, onAddTask, onEdit, onDelete }) {
 
 function parseProposals(text) {
   const proposals = []
-  const taskRegex = /\[ADD_TASK:\s*([^\]]+)\]/g
+  const taskRegex = /\[ADD_TASK:\s*([^|\]]+?)(?:\s*\|\s*goal:\s*([^\]]+))?\]/gi
   const goalRegex = /\[ADD_GOAL:\s*([^\]]+)\]/g
   let match
-  while ((match = taskRegex.exec(text)) !== null) proposals.push({ type: 'task', title: match[1].trim(), raw: match[0] })
+  while ((match = taskRegex.exec(text)) !== null) proposals.push({ type: 'task', title: match[1].trim(), goalTitle: match[2] ? match[2].trim() : null, raw: match[0] })
   while ((match = goalRegex.exec(text)) !== null) proposals.push({ type: 'goal', title: match[1].trim(), raw: match[0] })
   return proposals
 }
@@ -200,7 +200,7 @@ function MobileAssistant({ goals, tasks, onCreateTask, onAddGoal }) {
   const [loading, setLoading] = useState(false)
   const [confirmed, setConfirmed] = useState({})
 
-  const systemPrompt = 'You are a helpful planning assistant in a weekly planner app. You can propose tasks and goals.\n\nWhen proposing a task include [ADD_TASK: task title] in your response.\nWhen proposing a goal include [ADD_GOAL: goal title] in your response.\nAlways explain why you suggest them. Be concise.\n\nGoals:\n' + (goals.length > 0 ? goals.map(g => '- ' + g.title).join('\n') : 'None.') + '\n\nTasks:\n' + (tasks.filter(t => t.status !== 'done').slice(0, 15).map(t => '- ' + t.title).join('\n') || 'None.')
+  const systemPrompt = 'You are a helpful planning assistant in a weekly planner app. You can propose tasks and goals.\n\nWhen proposing a task include [ADD_TASK: task title] in your response. If the task clearly supports one of the user\'s existing goals listed below, tag it with that exact goal title like this instead: [ADD_TASK: task title | goal: Goal Title].\nWhen proposing a goal include [ADD_GOAL: goal title] in your response.\nAlways explain why you suggest them. Be concise.\n\nGoals:\n' + (goals.length > 0 ? goals.map(g => '- ' + g.title).join('\n') : 'None.') + '\n\nTasks:\n' + (tasks.filter(t => t.status !== 'done').slice(0, 15).map(t => '- ' + t.title).join('\n') || 'None.')
 
   async function send() {
     if (!input.trim() || loading) return
@@ -231,8 +231,12 @@ function MobileAssistant({ goals, tasks, onCreateTask, onAddGoal }) {
     const key = msgIndex + '-' + propIndex
     const colors = ['#6366f1', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#06b6d4']
     try {
-      if (proposal.type === 'task') await onCreateTask(proposal.title, '', null, null)
-      else await onAddGoal(proposal.title, colors[goals.length % colors.length])
+      if (proposal.type === 'task') {
+        const matchedGoal = proposal.goalTitle ? goals.find(g => g.title.toLowerCase() === proposal.goalTitle.toLowerCase()) : null
+        await onCreateTask(proposal.title, '', matchedGoal ? matchedGoal.id : null, null)
+      } else {
+        await onAddGoal(proposal.title, colors[goals.length % colors.length])
+      }
       setConfirmed(prev => ({ ...prev, [key]: true }))
     } catch {
       setConfirmed(prev => ({ ...prev, [key]: 'error' }))
@@ -277,6 +281,9 @@ function MobileAssistant({ goals, tasks, onCreateTask, onAddGoal }) {
                         <div>
                           <span style={{ fontSize: '10px', fontWeight: 600, color: '#818cf8', textTransform: 'uppercase', marginRight: '6px' }}>{proposal.type}</span>
                           <span style={{ fontSize: '13px', color: '#1f2937' }}>{proposal.title}</span>
+                          {proposal.goalTitle && (
+                            <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '2px' }}>Goal: {proposal.goalTitle}</div>
+                          )}
                         </div>
                         {done === true ? (
                           <span style={{ fontSize: '12px', color: '#10b981', fontWeight: 500 }}>Added ✓</span>
