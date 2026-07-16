@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { parseISO, isBefore, startOfDay, format } from 'date-fns'
 
 function formatTime(t) {
   if (!t) return null
@@ -7,6 +8,11 @@ function formatTime(t) {
   const ampm = hour >= 12 ? 'PM' : 'AM'
   const display = hour % 12 === 0 ? 12 : hour % 12
   return display + ':' + m + ' ' + ampm
+}
+
+function formatDueDate(d) {
+  if (!d) return null
+  return format(parseISO(d), 'MMM d')
 }
 
 export default function TaskCard({ task, isDone, isDragging, goalColor, onMarkDone, onRescheduleToTomorrow, onMoveToInbox, onDelete, onEdit }) {
@@ -34,6 +40,14 @@ export default function TaskCard({ task, isDone, isDragging, goalColor, onMarkDo
               {formatTime(task.start_time)}
             </p>
           )}
+          {task.due_date && (() => {
+            const overdue = !isDone && isBefore(parseISO(task.due_date), startOfDay(new Date()))
+            return (
+              <p className={'text-xs mt-0.5 font-medium ' + (isDone ? 'text-gray-300' : overdue ? 'text-red-500' : 'text-gray-400')}>
+                {overdue ? 'Overdue: ' : 'Due '}{formatDueDate(task.due_date)}
+              </p>
+            )
+          })()}
         </div>
         {goalColor && (
           <div className="w-2 h-2 rounded-full shrink-0 mt-1" style={{ background: goalColor }} />

@@ -75,16 +75,16 @@ export default function App() {
     }
   }
 
-  async function addTask(title, notes, goalId, startTime) {
-    const { data, error } = await supabase.from('tasks').insert({ title, notes: notes || null, status: 'inbox', goal_id: goalId || null, start_time: startTime || null }).select().single()
+  async function addTask(title, notes, goalId, startTime, dueDate) {
+    const { data, error } = await supabase.from('tasks').insert({ title, notes: notes || null, status: 'inbox', goal_id: goalId || null, start_time: startTime || null, due_date: dueDate || null }).select().single()
     if (!error) {
       setTasks(prev => [data, ...prev])
       if (data.goal_id) setGoalTasks(prev => [...prev, { id: data.id, goal_id: data.goal_id, status: data.status }])
     }
   }
 
-  async function editTask(taskId, title, notes, goalId, startTime) {
-    const { data, error } = await supabase.from('tasks').update({ title, notes: notes || null, goal_id: goalId || null, start_time: startTime || null }).eq('id', taskId).select().single()
+  async function editTask(taskId, title, notes, goalId, startTime, dueDate) {
+    const { data, error } = await supabase.from('tasks').update({ title, notes: notes || null, goal_id: goalId || null, start_time: startTime || null, due_date: dueDate || null }).eq('id', taskId).select().single()
     if (!error) {
       setTasks(prev => prev.map(t => t.id === taskId ? data : t))
       setGoalTasks(prev => {

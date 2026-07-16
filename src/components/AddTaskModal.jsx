@@ -5,6 +5,7 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
   const [notes, setNotes] = useState(editingTask ? (editingTask.notes || '') : '')
   const [goalId, setGoalId] = useState(editingTask ? (editingTask.goal_id || '') : '')
   const [startTime, setStartTime] = useState(editingTask ? (editingTask.start_time || '') : '')
+  const [dueDate, setDueDate] = useState(editingTask ? (editingTask.due_date || '') : '')
   const inputRef = useRef(null)
 
   useEffect(() => { inputRef.current?.focus() }, [])
@@ -18,9 +19,9 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
     e.preventDefault()
     if (!title.trim()) return
     if (editingTask) {
-      onEdit(editingTask.id, title.trim(), notes.trim(), goalId || null, startTime || null)
+      onEdit(editingTask.id, title.trim(), notes.trim(), goalId || null, startTime || null, dueDate || null)
     } else {
-      onAdd(title.trim(), notes.trim(), goalId || null, startTime || null)
+      onAdd(title.trim(), notes.trim(), goalId || null, startTime || null, dueDate || null)
     }
     onClose()
   }
@@ -61,6 +62,15 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
               value={startTime}
               onChange={e => setStartTime(e.target.value)}
               className="w-32 border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 text-gray-700"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1">Due date (optional)</label>
+            <input
+              type="date"
+              value={dueDate}
+              onChange={e => setDueDate(e.target.value)}
+              className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 text-gray-700"
             />
           </div>
           <div className="flex gap-2 pt-1">
