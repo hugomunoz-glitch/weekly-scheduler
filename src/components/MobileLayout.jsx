@@ -194,7 +194,7 @@ function cleanText(text) {
   return text.replace(/\[ADD_TASK:[^\]]+\]/g, '').replace(/\[ADD_GOAL:[^\]]+\]/g, '').trim()
 }
 
-function MobileAssistant({ goals, tasks, onAddTask, onAddGoal }) {
+function MobileAssistant({ goals, tasks, onCreateTask, onAddGoal }) {
   const { messages, loading: historyLoading, addMessage, clearHistory } = useAssistantHistory()
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
@@ -230,9 +230,13 @@ function MobileAssistant({ goals, tasks, onAddTask, onAddGoal }) {
   async function handleConfirm(proposal, msgIndex, propIndex) {
     const key = msgIndex + '-' + propIndex
     const colors = ['#6366f1', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#06b6d4']
-    if (proposal.type === 'task') await onAddTask(proposal.title, '', null, null)
-    else await onAddGoal(proposal.title, colors[goals.length % colors.length])
-    setConfirmed(prev => ({ ...prev, [key]: true }))
+    try {
+      if (proposal.type === 'task') await onCreateTask(proposal.title, '', null, null)
+      else await onAddGoal(proposal.title, colors[goals.length % colors.length])
+      setConfirmed(prev => ({ ...prev, [key]: true }))
+    } catch {
+      setConfirmed(prev => ({ ...prev, [key]: 'error' }))
+    }
   }
 
   function handleKey(e) {
@@ -274,8 +278,13 @@ function MobileAssistant({ goals, tasks, onAddTask, onAddGoal }) {
                           <span style={{ fontSize: '10px', fontWeight: 600, color: '#818cf8', textTransform: 'uppercase', marginRight: '6px' }}>{proposal.type}</span>
                           <span style={{ fontSize: '13px', color: '#1f2937' }}>{proposal.title}</span>
                         </div>
-                        {done ? (
+                        {done === true ? (
                           <span style={{ fontSize: '12px', color: '#10b981', fontWeight: 500 }}>Added ✓</span>
+                        ) : done === 'error' ? (
+                          <button onClick={() => handleConfirm(proposal, msgIndex, propIndex)}
+                            style={{ background: '#ef4444', color: 'white', border: 'none', borderRadius: '8px', padding: '6px 12px', fontSize: '12px', cursor: 'pointer', flexShrink: 0 }}>
+                            Failed, retry
+                          </button>
                         ) : (
                           <button onClick={() => handleConfirm(proposal, msgIndex, propIndex)}
                             style={{ background: '#6366f1', color: 'white', border: 'none', borderRadius: '8px', padding: '6px 12px', fontSize: '12px', cursor: 'pointer', flexShrink: 0 }}>
@@ -312,7 +321,7 @@ function MobileAssistant({ goals, tasks, onAddTask, onAddGoal }) {
 export default function MobileLayout({
   weekStart, weekDays, tasks, goals, goalMap, goalTasks, inboxTasks,
   overdueTasks, onPrevWeek, onNextWeek, onMarkDone,
-  onRescheduleToTomorrow, onMoveToInbox, onDelete, onEdit, onAddTask,
+  onRescheduleToTomorrow, onMoveToInbox, onDelete, onEdit, onAddTask, onCreateTask,
   onRollover, onAddGoal, onEditGoal, onDeleteGoal
 }) {
   const [selectedDay, setSelectedDay] = useState(() => {
@@ -386,7 +395,7 @@ export default function MobileLayout({
           <div style={{ padding: '10px 16px 6px', flexShrink: 0 }}>
             <span style={{ fontSize: '15px', fontWeight: 500, color: '#111827' }}>&#129302; Assistant</span>
           </div>
-          <MobileAssistant goals={goals} tasks={tasks} onAddTask={onAddTask} onAddGoal={onAddGoal} />
+          <MobileAssistant goals={goals} tasks={tasks} onCreateTask={onCreateTask} onAddGoal={onAddGoal} />
         </>
       )}
 

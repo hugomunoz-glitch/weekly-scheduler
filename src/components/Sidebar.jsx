@@ -66,7 +66,7 @@ function cleanText(text) {
   return text.replace(/\[ADD_TASK:[^\]]+\]/g, '').replace(/\[ADD_GOAL:[^\]]+\]/g, '').trim()
 }
 
-function Assistant({ goals, tasks, onAddTask, onAddGoal }) {
+function Assistant({ goals, tasks, onCreateTask, onAddGoal }) {
   const { messages, loading: historyLoading, addMessage, clearHistory } = useAssistantHistory()
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
@@ -106,9 +106,13 @@ function Assistant({ goals, tasks, onAddTask, onAddGoal }) {
   async function handleConfirm(proposal, msgIndex, propIndex) {
     const key = msgIndex + '-' + propIndex
     const colors = ['#6366f1', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#06b6d4']
-    if (proposal.type === 'task') await onAddTask(proposal.title, '', null, null)
-    else await onAddGoal(proposal.title, colors[goals.length % colors.length])
-    setConfirmed(prev => ({ ...prev, [key]: true }))
+    try {
+      if (proposal.type === 'task') await onCreateTask(proposal.title, '', null, null)
+      else await onAddGoal(proposal.title, colors[goals.length % colors.length])
+      setConfirmed(prev => ({ ...prev, [key]: true }))
+    } catch {
+      setConfirmed(prev => ({ ...prev, [key]: 'error' }))
+    }
   }
 
   const starters = ['What should I focus on today?', 'Suggest tasks for my goals', 'Help me break down a big goal']
@@ -147,8 +151,11 @@ function Assistant({ goals, tasks, onAddTask, onAddGoal }) {
                           <span className="text-xs font-medium text-indigo-400 uppercase mr-2">{proposal.type}</span>
                           <span className="text-xs text-gray-700">{proposal.title}</span>
                         </div>
-                        {done ? (
+                        {done === true ? (
                           <span className="text-xs text-emerald-500 font-medium">Added ✓</span>
+                        ) : done === 'error' ? (
+                          <button onClick={() => handleConfirm(proposal, msgIndex, propIndex)}
+                            className="text-xs text-white bg-red-500 hover:bg-red-600 px-2.5 py-1 rounded-lg transition-colors shrink-0">Failed, retry</button>
                         ) : (
                           <button onClick={() => handleConfirm(proposal, msgIndex, propIndex)}
                             className="text-xs text-white bg-indigo-600 hover:bg-indigo-700 px-2.5 py-1 rounded-lg transition-colors shrink-0">Add</button>
@@ -184,7 +191,7 @@ function Assistant({ goals, tasks, onAddTask, onAddGoal }) {
   )
 }
 
-export default function Sidebar({ tasks, goalMap, goals, allTasks, onAddTask, onAddGoal, onEdit, onDelete }) {
+export default function Sidebar({ tasks, goalMap, goals, allTasks, onAddTask, onCreateTask, onAddGoal, onEdit, onDelete }) {
   const [tab, setTab] = useState('inbox')
   return (
     <div className="w-64 border-l border-gray-200 bg-white flex flex-col shrink-0 overflow-hidden">
@@ -207,7 +214,7 @@ export default function Sidebar({ tasks, goalMap, goals, allTasks, onAddTask, on
             <Inbox tasks={tasks} goalMap={goalMap} onEdit={onEdit} onDelete={onDelete} />
           </>
         ) : (
-          <Assistant goals={goals} tasks={allTasks} onAddTask={onAddTask} onAddGoal={onAddGoal} />
+          <Assistant goals={goals} tasks={allTasks} onCreateTask={onCreateTask} onAddGoal={onAddGoal} />
         )}
       </div>
     </div>

@@ -82,10 +82,9 @@ export default function App() {
       scheduled_date: scheduledDate || null,
       bucket: scheduledDate ? 'morning' : null
     }).select().single()
-    if (!error) {
-      setTasks(prev => [data, ...prev])
-      if (data.goal_id) setGoalTasks(prev => [...prev, { id: data.id, goal_id: data.goal_id, status: data.status }])
-    }
+    if (error) { console.error('addTask failed:', error); throw error }
+    setTasks(prev => [data, ...prev])
+    if (data.goal_id) setGoalTasks(prev => [...prev, { id: data.id, goal_id: data.goal_id, status: data.status }])
   }
 
   async function editTask(taskId, title, notes, goalId, startTime, dueDate, scheduledDate) {
@@ -178,7 +177,7 @@ export default function App() {
     weekStart, weekDays, tasks, goals, goalMap, goalTasks, inboxTasks,
     overdueTasks, onMarkDone: markDone, onRescheduleToTomorrow: rescheduleToTomorrow,
     onMoveToInbox: moveToInbox, onDelete: deleteTask, onEdit: setEditingTask,
-    onAddTask: () => setShowAdd(true), onRollover: rolloverOverdue,
+    onAddTask: () => setShowAdd(true), onCreateTask: addTask, onRollover: rolloverOverdue,
     onAddGoal: addGoal, onEditGoal: editGoal, onDeleteGoal: deleteGoal,
     onPrevWeek: () => setWeekStart(w => subWeeks(w, 1)),
     onNextWeek: () => setWeekStart(w => addWeeks(w, 1)),
@@ -213,7 +212,7 @@ export default function App() {
                 <WeekGrid days={weekDays} tasksForDay={tasksForDay} goalMap={goalMap} onMarkDone={markDone} onRescheduleToTomorrow={rescheduleToTomorrow} onMoveToInbox={moveToInbox} onDelete={deleteTask} onEdit={setEditingTask} />
               )}
             </main>
-            <Sidebar tasks={inboxTasks} goalMap={goalMap} goals={goals} allTasks={tasks} onAddTask={() => setShowAdd(true)} onAddGoal={addGoal} onEdit={setEditingTask} onDelete={deleteTask} />
+            <Sidebar tasks={inboxTasks} goalMap={goalMap} goals={goals} allTasks={tasks} onAddTask={() => setShowAdd(true)} onCreateTask={addTask} onAddGoal={addGoal} onEdit={setEditingTask} onDelete={deleteTask} />
           </div>
         </div>
       )}
