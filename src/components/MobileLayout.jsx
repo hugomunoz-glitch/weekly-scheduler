@@ -55,12 +55,15 @@ function MobileGoalsBar({ goals, goalTasks, onAddGoal, onEditGoal, onDeleteGoal,
             <span style={{ fontSize: "10px", color: "#9ca3af", flexShrink: 0 }}>{done.length}/{linked.length}</span>
           </div>
           {viewingGoalId === goal.id && (
-            <div onClick={() => setViewingGoalId(null)} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <div onClick={(e) => e.stopPropagation()} style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '16px', width: '85vw', maxWidth: '320px', maxHeight: '70vh', overflowY: 'auto', boxShadow: '0 8px 24px rgba(0,0,0,0.2)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-                <span style={{ fontSize: '16px', fontWeight: 700, color: '#1f2937' }}>{goal.title}</span>
-                <span style={{ fontSize: '13px', color: '#9ca3af', cursor: 'pointer' }} onClick={() => setViewingGoalId(null)}>&times;</span>
-              </div>
+            <div onClick={(e) => { e.stopPropagation(); setViewingGoalId(null) }} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div onClick={(e) => e.stopPropagation()} style={{ position: 'relative', background: 'white', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '16px', width: '85vw', maxWidth: '320px', maxHeight: '70vh', overflowY: 'auto', boxShadow: '0 8px 24px rgba(0,0,0,0.2)' }}>
+              <button
+                onClick={() => setViewingGoalId(null)}
+                style={{ position: 'absolute', top: '-12px', right: '-12px', width: '28px', height: '28px', borderRadius: '50%', background: '#374151', color: 'white', border: 'none', fontSize: '12px', cursor: 'pointer', boxShadow: '0 2px 6px rgba(0,0,0,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              >
+                &#10005;
+              </button>
+              <p style={{ fontSize: '16px', fontWeight: 700, color: '#1f2937', marginBottom: '10px' }}>{goal.title}</p>
               {linked.length === 0 ? (
                 <p style={{ fontSize: '11px', color: '#9ca3af' }}>No tasks yet.</p>
               ) : (

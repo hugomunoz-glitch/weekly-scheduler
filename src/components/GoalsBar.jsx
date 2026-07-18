@@ -103,12 +103,16 @@ export default function GoalsBar({ goals, goalTasks, onAddGoal, onEditGoal, onDe
               </div>
               <p className="text-xs text-gray-300 mt-0.5">{done.length}/{linked.length} tasks</p>
               {viewingGoalId === goal.id && (
-            <div onClick={() => setViewingGoalId(null)} className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
-              <div onClick={(e) => e.stopPropagation()} className="bg-white border border-gray-200 rounded-lg shadow-xl p-4 w-80 max-h-[70vh] overflow-y-auto">
-                  <div className="flex items-center justify-between mb-3">
-                    <p className="text-base font-bold text-gray-800">{goal.title}</p>
-                    <button onClick={() => setViewingGoalId(null)} className="text-gray-300 hover:text-gray-500 text-xs">&#10005;</button>
-                  </div>
+            <div onClick={(e) => { e.stopPropagation(); setViewingGoalId(null) }} className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
+              <div onClick={(e) => e.stopPropagation()} className="relative bg-white border border-gray-200 rounded-lg shadow-xl p-4 w-80 max-h-[70vh] overflow-y-auto">
+                  <button
+                    onClick={() => setViewingGoalId(null)}
+                    className="absolute -top-3 -right-3 w-7 h-7 flex items-center justify-center rounded-full bg-gray-700 text-white text-xs hover:bg-gray-900 shadow-md"
+                    title="Close"
+                  >
+                    &#10005;
+                  </button>
+                  <p className="text-base font-bold text-gray-800 mb-3">{goal.title}</p>
                   {linked.length === 0 ? (
                     <p className="text-xs text-gray-300">No tasks yet.</p>
                   ) : (
