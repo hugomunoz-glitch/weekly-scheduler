@@ -2,7 +2,7 @@ import { useState } from 'react'
 
 const COLORS = ['#6366f1', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316']
 
-export default function GoalsBar({ goals, goalTasks, onAddGoal, onEditGoal, onDeleteGoal, onMarkDone }) {
+export default function GoalsBar({ goals, goalTasks, onAddGoal, onEditGoal, onDeleteGoal, onMarkDone, onDelete }) {
   const [adding, setAdding] = useState(false)
   const [newTitle, setNewTitle] = useState('')
   const [editingId, setEditingId] = useState(null)
@@ -97,8 +97,8 @@ export default function GoalsBar({ goals, goalTasks, onAddGoal, onEditGoal, onDe
               {viewingGoalId === goal.id && (
             <div onClick={() => setViewingGoalId(null)} className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
               <div onClick={(e) => e.stopPropagation()} className="bg-white border border-gray-200 rounded-lg shadow-xl p-4 w-80 max-h-[70vh] overflow-y-auto">
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="text-xs font-medium text-gray-700">{goal.title}</p>
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-base font-bold text-gray-800">{goal.title}</p>
                     <button onClick={() => setViewingGoalId(null)} className="text-gray-300 hover:text-gray-500 text-xs">&#10005;</button>
                   </div>
                   {linked.length === 0 ? (
@@ -106,9 +106,14 @@ export default function GoalsBar({ goals, goalTasks, onAddGoal, onEditGoal, onDe
                   ) : (
                     <ul className="space-y-1 max-h-48 overflow-y-auto">
                       {linked.map(t => (
-                        <li key={t.id} className="text-xs text-gray-600 flex items-center gap-1.5 cursor-pointer hover:bg-gray-50 rounded px-1 py-0.5 -mx-1" onClick={() => onMarkDone(t.id)}>
-                          <span className={t.status === 'done' ? 'text-green-500' : 'text-gray-300'}>{t.status === 'done' ? '✓' : '○'}</span>
-                          <span className={t.status === 'done' ? 'line-through text-gray-400' : ''}>{t.title}</span>
+                        <li key={t.id} className="text-xs text-gray-600 flex items-center gap-1.5 group hover:bg-gray-50 rounded px-1 py-0.5 -mx-1">
+                          <span className="cursor-pointer" onClick={() => onMarkDone(t.id)}>
+                            <span className={t.status === 'done' ? 'text-green-500' : 'text-gray-300'}>{t.status === 'done' ? '✓' : '○'}</span>
+                          </span>
+                          <span className={'flex-1 cursor-pointer ' + (t.status === 'done' ? 'line-through text-gray-400' : '')} onClick={() => onMarkDone(t.id)}>{t.title}</span>
+                          <button onClick={() => onDelete(t.id)} className="text-gray-200 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-colors shrink-0" title="Delete task">
+                            <span className="text-xs">&#x2715;</span>
+                          </button>
                         </li>
                       ))}
                     </ul>

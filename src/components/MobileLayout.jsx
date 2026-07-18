@@ -12,7 +12,7 @@ const BUCKETS = [
 
 const COLORS = ['#6366f1', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316']
 
-function MobileGoalsBar({ goals, goalTasks, onAddGoal, onEditGoal, onDeleteGoal, onMarkDone }) {
+function MobileGoalsBar({ goals, goalTasks, onAddGoal, onEditGoal, onDeleteGoal, onMarkDone, onDelete }) {
   const [adding, setAdding] = useState(false)
   const [newTitle, setNewTitle] = useState('')
   const [viewingGoalId, setViewingGoalId] = useState(null)
@@ -26,7 +26,8 @@ function MobileGoalsBar({ goals, goalTasks, onAddGoal, onEditGoal, onDeleteGoal,
   }
 
   return (
-    <div style={{ background: 'white', borderBottom: '1px solid #f3f4f6', padding: '8px 12px', display: 'flex', gap: '8px', overflowX: 'auto', flexShrink: 0 }}>
+    <div style={{ background: 'white', borderBottom: '1px solid #f3f4f6', padding: '8px 12px', display: 'flex', alignItems: 'center', gap: '8px', overflowX: 'auto', flexShrink: 0 }}>
+      <span style={{ fontSize: '10px', fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em', flexShrink: 0 }}>Goals</span>
       {goals.map(goal => {
         const linked = goalTasks.filter(t => t.goal_id === goal.id)
         const done = linked.filter(t => t.status === 'done')
@@ -48,8 +49,8 @@ function MobileGoalsBar({ goals, goalTasks, onAddGoal, onEditGoal, onDeleteGoal,
           {viewingGoalId === goal.id && (
             <div onClick={() => setViewingGoalId(null)} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <div onClick={(e) => e.stopPropagation()} style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '16px', width: '85vw', maxWidth: '320px', maxHeight: '70vh', overflowY: 'auto', boxShadow: '0 8px 24px rgba(0,0,0,0.2)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                <span style={{ fontSize: '12px', fontWeight: 500, color: '#374151' }}>{goal.title}</span>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                <span style={{ fontSize: '16px', fontWeight: 700, color: '#1f2937' }}>{goal.title}</span>
                 <span style={{ fontSize: '13px', color: '#9ca3af', cursor: 'pointer' }} onClick={() => setViewingGoalId(null)}>&times;</span>
               </div>
               {linked.length === 0 ? (
@@ -57,9 +58,10 @@ function MobileGoalsBar({ goals, goalTasks, onAddGoal, onEditGoal, onDeleteGoal,
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: '160px', overflowY: 'auto' }}>
                   {linked.map(t => (
-                    <div key={t.id} onClick={() => onMarkDone(t.id)} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: '#4b5563', cursor: 'pointer', padding: '4px 2px', WebkitTapHighlightColor: 'transparent' }}>
-                      <span style={{ color: t.status === 'done' ? '#10b981' : '#d1d5db', fontSize: '14px' }}>{t.status === 'done' ? '✓' : '○'}</span>
-                      <span style={{ textDecoration: t.status === 'done' ? 'line-through' : 'none', color: t.status === 'done' ? '#9ca3af' : '#4b5563' }}>{t.title}</span>
+                    <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: '#4b5563', padding: '4px 2px', WebkitTapHighlightColor: 'transparent' }}>
+                      <span onClick={() => onMarkDone(t.id)} style={{ color: t.status === 'done' ? '#10b981' : '#d1d5db', fontSize: '14px', cursor: 'pointer' }}>{t.status === 'done' ? '✓' : '○'}</span>
+                      <span onClick={() => onMarkDone(t.id)} style={{ flex: 1, cursor: 'pointer', textDecoration: t.status === 'done' ? 'line-through' : 'none', color: t.status === 'done' ? '#9ca3af' : '#4b5563' }}>{t.title}</span>
+                      <span onClick={() => onDelete(t.id)} style={{ color: '#d1d5db', fontSize: '13px', cursor: 'pointer', padding: '2px 4px' }}>&#x2715;</span>
                     </div>
                   ))}
                 </div>
@@ -368,7 +370,7 @@ export default function MobileLayout({
         })}
       </div>
 
-      <MobileGoalsBar goals={goals} goalTasks={goalTasks} onAddGoal={onAddGoal} onEditGoal={onEditGoal} onDeleteGoal={onDeleteGoal} onMarkDone={onMarkDone} />
+      <MobileGoalsBar goals={goals} goalTasks={goalTasks} onAddGoal={onAddGoal} onEditGoal={onEditGoal} onDeleteGoal={onDeleteGoal} onMarkDone={onMarkDone} onDelete={onDelete} />
 
       {overdueTasks.length > 0 && activeTab === 'day' && (
         <div style={{ background: '#fffbeb', borderBottom: '1px solid #fde68a', padding: '8px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
