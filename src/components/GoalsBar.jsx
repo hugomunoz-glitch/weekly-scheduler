@@ -2,7 +2,7 @@ import { useState } from 'react'
 
 const COLORS = ['#6366f1', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316']
 
-export default function GoalsBar({ goals, goalTasks, onAddGoal, onEditGoal, onDeleteGoal }) {
+export default function GoalsBar({ goals, goalTasks, onAddGoal, onEditGoal, onDeleteGoal, onMarkDone }) {
   const [adding, setAdding] = useState(false)
   const [newTitle, setNewTitle] = useState('')
   const [editingId, setEditingId] = useState(null)
@@ -106,7 +106,7 @@ export default function GoalsBar({ goals, goalTasks, onAddGoal, onEditGoal, onDe
                   ) : (
                     <ul className="space-y-1 max-h-48 overflow-y-auto">
                       {linked.map(t => (
-                        <li key={t.id} className="text-xs text-gray-600 flex items-center gap-1.5">
+                        <li key={t.id} className="text-xs text-gray-600 flex items-center gap-1.5 cursor-pointer hover:bg-gray-50 rounded px-1 py-0.5 -mx-1" onClick={() => onMarkDone(t.id)}>
                           <span className={t.status === 'done' ? 'text-green-500' : 'text-gray-300'}>{t.status === 'done' ? '✓' : '○'}</span>
                           <span className={t.status === 'done' ? 'line-through text-gray-400' : ''}>{t.title}</span>
                         </li>
