@@ -105,14 +105,15 @@ export default function GoalsBar({ goals, goalTasks, onAddGoal, onEditGoal, onDe
               <p className="text-xs text-gray-300 mt-0.5">{done.length}/{linked.length} tasks</p>
               {viewingGoalId === goal.id && (
             <div onClick={(e) => { e.stopPropagation(); setViewingGoalId(null) }} className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
-              <div onClick={(e) => e.stopPropagation()} className="relative bg-white border border-gray-200 rounded-lg shadow-xl p-4 w-80 max-h-[70vh] overflow-y-auto">
-                  <button
-                    onClick={() => setViewingGoalId(null)}
-                    className="absolute -top-3 -right-3 w-7 h-7 flex items-center justify-center rounded-full bg-gray-700 text-white text-xs hover:bg-gray-900 shadow-md"
-                    title="Close"
-                  >
-                    &#10005;
-                  </button>
+              <div className="relative w-80">
+                <button
+                  onClick={() => setViewingGoalId(null)}
+                  className="absolute -top-3 -right-3 z-10 w-7 h-7 flex items-center justify-center rounded-full bg-gray-700 text-white text-xs hover:bg-gray-900 shadow-md"
+                  title="Close"
+                >
+                  &#10005;
+                </button>
+                <div onClick={(e) => e.stopPropagation()} className="bg-white border border-gray-200 rounded-lg shadow-xl p-4 max-h-[70vh] overflow-y-auto">
                   <p className="text-base font-bold text-gray-800 mb-3">{goal.title}</p>
                   {linked.length === 0 ? (
                     <p className="text-xs text-gray-300">No tasks yet.</p>
@@ -141,6 +142,7 @@ export default function GoalsBar({ goals, goalTasks, onAddGoal, onEditGoal, onDe
                     <button type="submit" className="text-xs text-white bg-indigo-600 hover:bg-indigo-700 px-2.5 py-1.5 rounded-lg shrink-0">Add</button>
                   </form>
                 </div>
+              </div>
             </div>
           )}
             </div>

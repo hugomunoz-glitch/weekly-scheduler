@@ -57,38 +57,40 @@ function MobileGoalsBar({ goals, goalTasks, onAddGoal, onEditGoal, onDeleteGoal,
           </div>
           {viewingGoalId === goal.id && (
             <div onClick={(e) => { e.stopPropagation(); setViewingGoalId(null) }} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <div onClick={(e) => e.stopPropagation()} style={{ position: 'relative', background: 'white', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '16px', width: '85vw', maxWidth: '320px', maxHeight: '70vh', overflowY: 'auto', boxShadow: '0 8px 24px rgba(0,0,0,0.2)' }}>
-              <button
-                onClick={() => setViewingGoalId(null)}
-                style={{ position: 'absolute', top: '-12px', right: '-12px', width: '28px', height: '28px', borderRadius: '50%', background: '#374151', color: 'white', border: 'none', fontSize: '12px', cursor: 'pointer', boxShadow: '0 2px 6px rgba(0,0,0,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-              >
-                &#10005;
-              </button>
-              <p style={{ fontSize: '16px', fontWeight: 700, color: '#1f2937', marginBottom: '10px' }}>{goal.title}</p>
-              {linked.length === 0 ? (
-                <p style={{ fontSize: '11px', color: '#9ca3af' }}>No tasks yet.</p>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: '160px', overflowY: 'auto' }}>
-                  {sortedLinked.map(t => (
-                    <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: '#4b5563', padding: '4px 2px', WebkitTapHighlightColor: 'transparent' }}>
-                      <span onClick={() => onMarkDone(t.id)} style={{ color: t.status === 'done' ? '#10b981' : '#d1d5db', fontSize: '14px', cursor: 'pointer' }}>{t.status === 'done' ? '✓' : '○'}</span>
-                      <span onClick={() => onMarkDone(t.id)} style={{ flex: 1, cursor: 'pointer', textDecoration: t.status === 'done' ? 'line-through' : 'none', color: t.status === 'done' ? '#9ca3af' : '#4b5563' }}>{t.title}</span>
-                      <span onClick={() => onDelete(t.id)} style={{ color: '#d1d5db', fontSize: '13px', cursor: 'pointer', padding: '2px 4px' }}>&#x2715;</span>
+              <div style={{ position: 'relative', width: '85vw', maxWidth: '320px' }}>
+                <button
+                  onClick={() => setViewingGoalId(null)}
+                  style={{ position: 'absolute', top: '-12px', right: '-12px', zIndex: 10, width: '28px', height: '28px', borderRadius: '50%', background: '#374151', color: 'white', border: 'none', fontSize: '12px', cursor: 'pointer', boxShadow: '0 2px 6px rgba(0,0,0,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                >
+                  &#10005;
+                </button>
+                <div onClick={(e) => e.stopPropagation()} style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '16px', maxHeight: '70vh', overflowY: 'auto', boxShadow: '0 8px 24px rgba(0,0,0,0.2)' }}>
+                  <p style={{ fontSize: '16px', fontWeight: 700, color: '#1f2937', marginBottom: '10px' }}>{goal.title}</p>
+                  {linked.length === 0 ? (
+                    <p style={{ fontSize: '11px', color: '#9ca3af' }}>No tasks yet.</p>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: '160px', overflowY: 'auto' }}>
+                      {sortedLinked.map(t => (
+                        <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: '#4b5563', padding: '4px 2px', WebkitTapHighlightColor: 'transparent' }}>
+                          <span onClick={() => onMarkDone(t.id)} style={{ color: t.status === 'done' ? '#10b981' : '#d1d5db', fontSize: '14px', cursor: 'pointer' }}>{t.status === 'done' ? '✓' : '○'}</span>
+                          <span onClick={() => onMarkDone(t.id)} style={{ flex: 1, cursor: 'pointer', textDecoration: t.status === 'done' ? 'line-through' : 'none', color: t.status === 'done' ? '#9ca3af' : '#4b5563' }}>{t.title}</span>
+                          <span onClick={() => onDelete(t.id)} style={{ color: '#d1d5db', fontSize: '13px', cursor: 'pointer', padding: '2px 4px' }}>&#x2715;</span>
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  )}
+                  <form onSubmit={(e) => handleAddTaskToGoal(e, goal.id)} style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #f3f4f6' }}>
+                    <input
+                      value={newTaskTitle}
+                      onChange={e => setNewTaskTitle(e.target.value)}
+                      placeholder="Add a task to this goal"
+                      style={{ flex: 1, fontSize: '11px', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '6px 8px', outline: 'none' }}
+                    />
+                    <button type="submit" style={{ background: '#6366f1', color: 'white', border: 'none', borderRadius: '6px', padding: '6px 10px', fontSize: '11px', cursor: 'pointer', flexShrink: 0 }}>Add</button>
+                  </form>
                 </div>
-              )}
-              <form onSubmit={(e) => handleAddTaskToGoal(e, goal.id)} style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #f3f4f6' }}>
-                <input
-                  value={newTaskTitle}
-                  onChange={e => setNewTaskTitle(e.target.value)}
-                  placeholder="Add a task to this goal"
-                  style={{ flex: 1, fontSize: '11px', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '6px 8px', outline: 'none' }}
-                />
-                <button type="submit" style={{ background: '#6366f1', color: 'white', border: 'none', borderRadius: '6px', padding: '6px 10px', fontSize: '11px', cursor: 'pointer', flexShrink: 0 }}>Add</button>
-              </form>
+              </div>
             </div>
-          </div>
         )}
         </div>
       )
