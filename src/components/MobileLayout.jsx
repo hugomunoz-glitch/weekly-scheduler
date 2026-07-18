@@ -38,6 +38,7 @@ function MobileGoalsBar({ goals, goalTasks, onAddGoal, onEditGoal, onDeleteGoal,
       <span style={{ fontSize: '10px', fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em', flexShrink: 0 }}>Goals</span>
       {goals.map(goal => {
         const linked = goalTasks.filter(t => t.goal_id === goal.id)
+        const sortedLinked = [...linked].sort((a, b) => (a.status === 'done') - (b.status === 'done'))
         const done = linked.filter(t => t.status === 'done')
         const pct = linked.length > 0 ? Math.round((done.length / linked.length) * 100) : 0
       return (
@@ -68,7 +69,7 @@ function MobileGoalsBar({ goals, goalTasks, onAddGoal, onEditGoal, onDeleteGoal,
                 <p style={{ fontSize: '11px', color: '#9ca3af' }}>No tasks yet.</p>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: '160px', overflowY: 'auto' }}>
-                  {linked.map(t => (
+                  {sortedLinked.map(t => (
                     <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: '#4b5563', padding: '4px 2px', WebkitTapHighlightColor: 'transparent' }}>
                       <span onClick={() => onMarkDone(t.id)} style={{ color: t.status === 'done' ? '#10b981' : '#d1d5db', fontSize: '14px', cursor: 'pointer' }}>{t.status === 'done' ? '✓' : '○'}</span>
                       <span onClick={() => onMarkDone(t.id)} style={{ flex: 1, cursor: 'pointer', textDecoration: t.status === 'done' ? 'line-through' : 'none', color: t.status === 'done' ? '#9ca3af' : '#4b5563' }}>{t.title}</span>

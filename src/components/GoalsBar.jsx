@@ -44,6 +44,7 @@ export default function GoalsBar({ goals, goalTasks, onAddGoal, onEditGoal, onDe
       <span className="text-xs font-medium text-gray-400 uppercase tracking-wide shrink-0">Goals</span>
       {goals.map(goal => {
         const linked = goalTasks.filter(t => t.goal_id === goal.id)
+        const sortedLinked = [...linked].sort((a, b) => (a.status === 'done') - (b.status === 'done'))
         const done = linked.filter(t => t.status === 'done')
         const pct = linked.length > 0 ? Math.round((done.length / linked.length) * 100) : 0
         return (
@@ -117,7 +118,7 @@ export default function GoalsBar({ goals, goalTasks, onAddGoal, onEditGoal, onDe
                     <p className="text-xs text-gray-300">No tasks yet.</p>
                   ) : (
                     <ul className="space-y-1 max-h-48 overflow-y-auto">
-                      {linked.map(t => (
+                      {sortedLinked.map(t => (
                         <li key={t.id} className="text-xs text-gray-600 flex items-center gap-1.5 group hover:bg-gray-50 rounded px-1 py-0.5 -mx-1">
                           <span className="cursor-pointer" onClick={() => onMarkDone(t.id)}>
                             <span className={t.status === 'done' ? 'text-green-500' : 'text-gray-300'}>{t.status === 'done' ? '✓' : '○'}</span>
