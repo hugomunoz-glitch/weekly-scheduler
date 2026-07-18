@@ -12,10 +12,18 @@ const BUCKETS = [
 
 const COLORS = ['#6366f1', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316']
 
-function MobileGoalsBar({ goals, goalTasks, onAddGoal, onEditGoal, onDeleteGoal, onMarkDone, onDelete }) {
+function MobileGoalsBar({ goals, goalTasks, onAddGoal, onEditGoal, onDeleteGoal, onMarkDone, onDelete, onCreateTask }) {
   const [adding, setAdding] = useState(false)
   const [newTitle, setNewTitle] = useState('')
   const [viewingGoalId, setViewingGoalId] = useState(null)
+  const [newTaskTitle, setNewTaskTitle] = useState('')
+
+  function handleAddTaskToGoal(e, goalId) {
+    e.preventDefault()
+    if (!newTaskTitle.trim()) return
+    onCreateTask(newTaskTitle.trim(), '', goalId, null)
+    setNewTaskTitle('')
+  }
 
   function handleAdd(e) {
     e.preventDefault()
@@ -66,6 +74,15 @@ function MobileGoalsBar({ goals, goalTasks, onAddGoal, onEditGoal, onDeleteGoal,
                   ))}
                 </div>
               )}
+              <form onSubmit={(e) => handleAddTaskToGoal(e, goal.id)} style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #f3f4f6' }}>
+                <input
+                  value={newTaskTitle}
+                  onChange={e => setNewTaskTitle(e.target.value)}
+                  placeholder="Add a task to this goal"
+                  style={{ flex: 1, fontSize: '11px', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '6px 8px', outline: 'none' }}
+                />
+                <button type="submit" style={{ background: '#6366f1', color: 'white', border: 'none', borderRadius: '6px', padding: '6px 10px', fontSize: '11px', cursor: 'pointer', flexShrink: 0 }}>Add</button>
+              </form>
             </div>
           </div>
         )}
@@ -370,7 +387,7 @@ export default function MobileLayout({
         })}
       </div>
 
-      <MobileGoalsBar goals={goals} goalTasks={goalTasks} onAddGoal={onAddGoal} onEditGoal={onEditGoal} onDeleteGoal={onDeleteGoal} onMarkDone={onMarkDone} onDelete={onDelete} />
+      <MobileGoalsBar goals={goals} goalTasks={goalTasks} onAddGoal={onAddGoal} onEditGoal={onEditGoal} onDeleteGoal={onDeleteGoal} onMarkDone={onMarkDone} onDelete={onDelete} onCreateTask={onCreateTask} />
 
       {overdueTasks.length > 0 && activeTab === 'day' && (
         <div style={{ background: '#fffbeb', borderBottom: '1px solid #fde68a', padding: '8px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>

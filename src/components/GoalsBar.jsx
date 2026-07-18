@@ -2,13 +2,21 @@ import { useState } from 'react'
 
 const COLORS = ['#6366f1', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316']
 
-export default function GoalsBar({ goals, goalTasks, onAddGoal, onEditGoal, onDeleteGoal, onMarkDone, onDelete }) {
+export default function GoalsBar({ goals, goalTasks, onAddGoal, onEditGoal, onDeleteGoal, onMarkDone, onDelete, onCreateTask }) {
   const [adding, setAdding] = useState(false)
   const [newTitle, setNewTitle] = useState('')
   const [editingId, setEditingId] = useState(null)
   const [editingTitle, setEditingTitle] = useState('')
   const [confirmDeleteId, setConfirmDeleteId] = useState(null)
   const [viewingGoalId, setViewingGoalId] = useState(null)
+  const [newTaskTitle, setNewTaskTitle] = useState('')
+
+  function handleAddTaskToGoal(e, goalId) {
+    e.preventDefault()
+    if (!newTaskTitle.trim()) return
+    onCreateTask(newTaskTitle.trim(), '', goalId, null)
+    setNewTaskTitle('')
+  }
 
   function handleAdd(e) {
     e.preventDefault()
@@ -118,6 +126,15 @@ export default function GoalsBar({ goals, goalTasks, onAddGoal, onEditGoal, onDe
                       ))}
                     </ul>
                   )}
+                  <form onSubmit={(e) => handleAddTaskToGoal(e, goal.id)} className="flex items-center gap-1.5 mt-2 pt-2 border-t border-gray-100">
+                    <input
+                      value={newTaskTitle}
+                      onChange={e => setNewTaskTitle(e.target.value)}
+                      placeholder="Add a task to this goal"
+                      className="flex-1 text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-300 focus:border-indigo-400"
+                    />
+                    <button type="submit" className="text-xs text-white bg-indigo-600 hover:bg-indigo-700 px-2.5 py-1.5 rounded-lg shrink-0">Add</button>
+                  </form>
                 </div>
             </div>
           )}

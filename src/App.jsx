@@ -205,7 +205,7 @@ export default function App() {
               <button onClick={() => setShowAdd(true)} className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700">+ Add task</button>
             </div>
           </header>
-          <GoalsBar goals={goals} goalTasks={goalTasks} onAddGoal={addGoal} onEditGoal={editGoal} onDeleteGoal={deleteGoal} onMarkDone={markDone} onDelete={deleteTask} />
+          <GoalsBar goals={goals} goalTasks={goalTasks} onAddGoal={addGoal} onEditGoal={editGoal} onDeleteGoal={deleteGoal} onMarkDone={markDone} onDelete={deleteTask} onCreateTask={addTask} />
           <div className="flex flex-1 overflow-hidden">
             <main className="flex-1 overflow-x-auto overflow-y-auto p-4">
               {loading ? <div className="flex items-center justify-center h-full text-sm text-gray-400">Loading</div> : (
