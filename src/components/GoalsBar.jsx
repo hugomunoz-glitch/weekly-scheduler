@@ -108,19 +108,25 @@ export default function GoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEdit
 
   const [editingCategory, setEditingCategory] = useState('')
   const [editingPriority, setEditingPriority] = useState('')
+  const [editError, setEditError] = useState('')
 
   function startEdit(goal) {
     setEditingId(goal.id)
     setEditingTitle(goal.title)
-    setEditingCategory(goal.category || '')
+    setEditingCategory(GOAL_CATEGORIES.includes(goal.category) ? goal.category : '')
     setEditingPriority(goal.priority || '')
+    setEditError('')
   }
 
-  function handleEditSubmit(e, goalId) {
+  async function handleEditSubmit(e, goalId) {
     e.preventDefault()
     if (!editingTitle.trim()) return
-    onEditGoal(goalId, editingTitle.trim(), { category: editingCategory || null, priority: editingPriority || null })
-    setEditingId(null)
+    try {
+      await onEditGoal(goalId, editingTitle.trim(), { category: editingCategory || null, priority: editingPriority || null })
+      setEditingId(null)
+    } catch {
+      setEditError('Could not save. Try again.')
+    }
   }
 
   return (
@@ -243,6 +249,7 @@ export default function GoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEdit
                     <button type="submit" className="text-xs text-white bg-indigo-600 hover:bg-indigo-700 px-2 py-0.5 rounded">Save</button>
                     <button type="button" onClick={() => setEditingId(null)} className="text-xs text-gray-400 hover:text-gray-600">Cancel</button>
                   </div>
+                  {editError && <p className="text-xs text-red-500">{editError}</p>}
                 </form>
               ) : (
                 <div className="flex items-center justify-between gap-1">

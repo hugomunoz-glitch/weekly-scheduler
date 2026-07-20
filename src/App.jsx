@@ -140,7 +140,8 @@ export default function App() {
       if ('smartTimebound' in extra) payload.smart_timebound = extra.smartTimebound || null
     }
     const { data, error } = await supabase.from('goals').update(payload).eq('id', goalId).select().single()
-    if (!error) setGoals(prev => prev.map(g => g.id === goalId ? data : g))
+    if (error) { console.error('editGoal failed:', error); throw error }
+    setGoals(prev => prev.map(g => g.id === goalId ? data : g))
   }
 
   async function deleteGoal(goalId) {

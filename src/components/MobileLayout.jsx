@@ -51,19 +51,25 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
   const [editingTitle, setEditingTitle] = useState('')
   const [editingCategory, setEditingCategory] = useState('')
   const [editingPriority, setEditingPriority] = useState('')
+  const [editGoalError, setEditGoalError] = useState('')
 
   function startEditGoal(goal) {
     setEditingGoalId(goal.id)
     setEditingTitle(goal.title)
-    setEditingCategory(goal.category || '')
+    setEditingCategory(GOAL_CATEGORIES.includes(goal.category) ? goal.category : '')
     setEditingPriority(goal.priority || '')
+    setEditGoalError('')
   }
 
-  function handleEditGoalSubmit(e) {
+  async function handleEditGoalSubmit(e) {
     e.preventDefault()
     if (!editingTitle.trim()) return
-    onEditGoal(editingGoalId, editingTitle.trim(), { category: editingCategory || null, priority: editingPriority || null })
-    setEditingGoalId(null)
+    try {
+      await onEditGoal(editingGoalId, editingTitle.trim(), { category: editingCategory || null, priority: editingPriority || null })
+      setEditingGoalId(null)
+    } catch {
+      setEditGoalError('Could not save. Try again.')
+    }
   }
 
   function nearestDueDate(goalId) {
@@ -233,6 +239,7 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
                   <button type="submit" style={{ background: '#6366f1', color: 'white', border: 'none', borderRadius: '8px', padding: '8px 14px', fontSize: '13px', cursor: 'pointer' }}>Save</button>
                   <button type="button" onClick={() => setEditingGoalId(null)} style={{ background: 'none', border: 'none', color: '#9ca3af', fontSize: '13px', cursor: 'pointer' }}>Cancel</button>
                 </div>
+                {editGoalError && <p style={{ fontSize: '12px', color: '#ef4444', margin: 0 }}>{editGoalError}</p>}
               </form>
             </div>
           )}
