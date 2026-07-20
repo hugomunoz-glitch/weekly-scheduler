@@ -29,7 +29,7 @@ export default function App() {
       supabase.from('tasks').select('*').eq('status', 'inbox').order('created_at', { ascending: false }),
       supabase.from('tasks').select('*').gte('scheduled_date', s).lte('scheduled_date', e).order('position'),
       supabase.from('goals').select('*').order('created_at'),
-      supabase.from('tasks').select('id, title, goal_id, status, due_date, start_time').not('goal_id', 'is', null)
+      supabase.from('tasks').select('id, title, goal_id, status, due_date, start_time, priority').not('goal_id', 'is', null)
     ])
     const weekTasks = weekRes.data || []
     const inboxTasks = inboxRes.data || []
@@ -76,22 +76,23 @@ export default function App() {
     }
   }
 
-  async function addTask(title, notes, goalId, startTime, dueDate, scheduledDate) {
+  async function addTask(title, notes, goalId, startTime, dueDate, scheduledDate, priority) {
     const { data, error } = await supabase.from('tasks').insert({
       title, notes: notes || null, goal_id: goalId || null, start_time: startTime || null, due_date: dueDate || null,
       status: scheduledDate ? 'scheduled' : 'inbox',
       scheduled_date: scheduledDate || null,
-      bucket: scheduledDate ? 'morning' : null
+      bucket: scheduledDate ? 'morning' : null,
+      priority: priority || null
     }).select().single()
     if (error) { console.error('addTask failed:', error); throw error }
     setTasks(prev => [data, ...prev])
-    if (data.goal_id) setGoalTasks(prev => [...prev, { id: data.id, title: data.title, goal_id: data.goal_id, status: data.status, due_date: data.due_date, start_time: data.start_time }])
+    if (data.goal_id) setGoalTasks(prev => [...prev, { id: data.id, title: data.title, goal_id: data.goal_id, status: data.status, due_date: data.due_date, start_time: data.start_time, priority: data.priority }])
   }
 
-  async function editTask(taskId, title, notes, goalId, startTime, dueDate, scheduledDate) {
+  async function editTask(taskId, title, notes, goalId, startTime, dueDate, scheduledDate, priority) {
     const existing = tasks.find(t => t.id === taskId)
     const wasScheduled = existing && existing.scheduled_date
-    const updates = { title, notes: notes || null, goal_id: goalId || null, start_time: startTime || null, due_date: dueDate || null }
+    const updates = { title, notes: notes || null, goal_id: goalId || null, start_time: startTime || null, due_date: dueDate || null, priority: priority || null }
     if (scheduledDate) {
       updates.scheduled_date = scheduledDate
       updates.status = existing && existing.status === 'done' ? 'done' : 'scheduled'
@@ -106,19 +107,39 @@ export default function App() {
       setTasks(prev => prev.map(t => t.id === taskId ? data : t))
       setGoalTasks(prev => {
         const filtered = prev.filter(t => t.id !== taskId)
-        if (data.goal_id) return [...filtered, { id: data.id, title: data.title, goal_id: data.goal_id, status: data.status, due_date: data.due_date, start_time: data.start_time }]
+        if (data.goal_id) return [...filtered, { id: data.id, title: data.title, goal_id: data.goal_id, status: data.status, due_date: data.due_date, start_time: data.start_time, priority: data.priority }]
         return filtered
       })
     }
   }
 
-  async function addGoal(title, color) {
-    const { data, error } = await supabase.from('goals').insert({ title, color }).select().single()
+  async function addGoal(title, color, extra) {
+    const payload = { title, color }
+    if (extra) {
+      if (extra.category) payload.category = extra.category
+      if (extra.priority) payload.priority = extra.priority
+      if (extra.smartSpecific) payload.smart_specific = extra.smartSpecific
+      if (extra.smartMeasurable) payload.smart_measurable = extra.smartMeasurable
+      if (extra.smartAchievable) payload.smart_achievable = extra.smartAchievable
+      if (extra.smartRelevant) payload.smart_relevant = extra.smartRelevant
+      if (extra.smartTimebound) payload.smart_timebound = extra.smartTimebound
+    }
+    const { data, error } = await supabase.from('goals').insert(payload).select().single()
     if (!error) { setGoals(prev => [...prev, data]); return data }
   }
 
-  async function editGoal(goalId, title) {
-    const { data, error } = await supabase.from('goals').update({ title }).eq('id', goalId).select().single()
+  async function editGoal(goalId, title, extra) {
+    const payload = { title }
+    if (extra) {
+      if ('category' in extra) payload.category = extra.category || null
+      if ('priority' in extra) payload.priority = extra.priority || null
+      if ('smartSpecific' in extra) payload.smart_specific = extra.smartSpecific || null
+      if ('smartMeasurable' in extra) payload.smart_measurable = extra.smartMeasurable || null
+      if ('smartAchievable' in extra) payload.smart_achievable = extra.smartAchievable || null
+      if ('smartRelevant' in extra) payload.smart_relevant = extra.smartRelevant || null
+      if ('smartTimebound' in extra) payload.smart_timebound = extra.smartTimebound || null
+    }
+    const { data, error } = await supabase.from('goals').update(payload).eq('id', goalId).select().single()
     if (!error) setGoals(prev => prev.map(g => g.id === goalId ? data : g))
   }
 
@@ -207,14 +228,18 @@ export default function App() {
               <button onClick={() => setShowAdd(true)} className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700">+ Add task</button>
             </div>
           </header>
-          <GoalsBar goals={goals} goalTasks={goalTasks} allTasks={tasks} onAddGoal={addGoal} onEditGoal={editGoal} onDeleteGoal={deleteGoal} onMarkDone={markDone} onDelete={deleteTask} onCreateTask={addTask} onEditTask={setEditingTask} />
-          <div className="flex flex-1 overflow-hidden">
-            <main className="flex-1 overflow-x-auto overflow-y-auto p-4">
+          <div className="mx-3 mt-3 rounded-xl border border-gray-200 shadow-sm overflow-hidden shrink-0">
+            <GoalsBar goals={goals} goalTasks={goalTasks} allTasks={tasks} onAddGoal={addGoal} onEditGoal={editGoal} onDeleteGoal={deleteGoal} onMarkDone={markDone} onDelete={deleteTask} onCreateTask={addTask} onEditTask={setEditingTask} />
+          </div>
+          <div className="flex flex-1 overflow-hidden gap-3 p-3">
+            <main className="flex-1 overflow-x-auto overflow-y-auto rounded-xl border border-gray-200 shadow-sm bg-white p-4">
               {loading ? <div className="flex items-center justify-center h-full text-sm text-gray-400">Loading</div> : (
                 <WeekGrid days={weekDays} tasksForDay={tasksForDay} goalMap={goalMap} onMarkDone={markDone} onRescheduleToTomorrow={rescheduleToTomorrow} onMoveToInbox={moveToInbox} onDelete={deleteTask} onEdit={setEditingTask} onAddTaskForDay={openAddForDay} />
               )}
             </main>
-            <Sidebar tasks={inboxTasks} goalMap={goalMap} goals={goals} allTasks={tasks} onAddTask={() => setShowAdd(true)} onCreateTask={addTask} onAddGoal={addGoal} onEdit={setEditingTask} onDelete={deleteTask} />
+            <div className="rounded-xl border border-gray-200 shadow-sm overflow-hidden shrink-0">
+              <Sidebar tasks={inboxTasks} goalMap={goalMap} goals={goals} allTasks={tasks} onAddTask={() => setShowAdd(true)} onCreateTask={addTask} onAddGoal={addGoal} onEdit={setEditingTask} onDelete={deleteTask} />
+            </div>
           </div>
         </div>
       )}

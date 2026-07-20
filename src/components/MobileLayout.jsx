@@ -20,16 +20,48 @@ const BUCKETS = [
 ]
 
 const COLORS = ['#6366f1', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316']
+const PRIORITY_COLORS = { high: '#ef4444', medium: '#f59e0b', low: '#9ca3af' }
+const PRIORITY_LABELS = { high: 'High', medium: 'Med', low: 'Low' }
+const GOAL_CATEGORIES = [
+  'Career/Professional', 'Family', 'Financial', 'Intellectual',
+  'Physical (Health/Wellness)', 'Relationship (Marriage, Friends & Family)',
+  'Social (Community/Volunteering)', 'Spiritual (Prayer/Church)'
+]
 
 function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onDeleteGoal, onMarkDone, onDelete, onCreateTask, onEditTask }) {
   const [adding, setAdding] = useState(false)
   const [newTitle, setNewTitle] = useState('')
+  const [newCategory, setNewCategory] = useState('')
+  const [newPriority, setNewPriority] = useState('')
+  const [showSmart, setShowSmart] = useState(false)
+  const [smartSpecific, setSmartSpecific] = useState('')
+  const [smartMeasurable, setSmartMeasurable] = useState('')
+  const [smartAchievable, setSmartAchievable] = useState('')
+  const [smartRelevant, setSmartRelevant] = useState('')
+  const [smartTimebound, setSmartTimebound] = useState('')
   const [viewingGoalId, setViewingGoalId] = useState(null)
   const [newTaskTitle, setNewTaskTitle] = useState('')
   const [goalSearch, setGoalSearch] = useState('')
   const [showGoalSearch, setShowGoalSearch] = useState(false)
+  const [sortMode, setSortMode] = useState('deadline')
+  const [categoryFilter, setCategoryFilter] = useState('all')
 
-  const visibleGoals = goalSearch.trim() ? goals.filter(g => g.title.toLowerCase().includes(goalSearch.trim().toLowerCase())) : goals
+  function nearestDueDate(goalId) {
+    const tasks = goalTasks.filter(t => t.goal_id === goalId && t.status !== 'done' && t.due_date)
+    if (tasks.length === 0) return null
+    return tasks.reduce((min, t) => !min || t.due_date < min ? t.due_date : min, null)
+  }
+
+  let visibleGoals = goalSearch.trim() ? goals.filter(g => g.title.toLowerCase().includes(goalSearch.trim().toLowerCase())) : goals
+  if (categoryFilter !== 'all') visibleGoals = visibleGoals.filter(g => g.category === categoryFilter)
+  visibleGoals = [...visibleGoals].sort((a, b) => {
+    if (sortMode === 'alpha') return a.title.localeCompare(b.title)
+    const aDate = nearestDueDate(a.id), bDate = nearestDueDate(b.id)
+    if (!aDate && !bDate) return a.title.localeCompare(b.title)
+    if (!aDate) return 1
+    if (!bDate) return -1
+    return aDate < bDate ? -1 : aDate > bDate ? 1 : 0
+  })
 
   function handleEditTask(taskId) {
     const full = (allTasks || []).find(t => t.id === taskId)
@@ -46,8 +78,18 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
   function handleAdd(e) {
     e.preventDefault()
     if (!newTitle.trim()) return
-    onAddGoal(newTitle.trim(), COLORS[goals.length % COLORS.length])
-    setNewTitle('')
+    onAddGoal(newTitle.trim(), COLORS[goals.length % COLORS.length], {
+      category: newCategory || null,
+      priority: newPriority || null,
+      smartSpecific: smartSpecific.trim() || null,
+      smartMeasurable: smartMeasurable.trim() || null,
+      smartAchievable: smartAchievable.trim() || null,
+      smartRelevant: smartRelevant.trim() || null,
+      smartTimebound: smartTimebound.trim() || null
+    })
+    setNewTitle(''); setNewCategory(''); setNewPriority('')
+    setSmartSpecific(''); setSmartMeasurable(''); setSmartAchievable(''); setSmartRelevant(''); setSmartTimebound('')
+    setShowSmart(false)
     setAdding(false)
   }
 
@@ -55,18 +97,43 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
     <div style={{ background: 'white', borderBottom: '1px solid #f3f4f6', padding: '8px 12px', flexShrink: 0 }}>
     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflowX: 'auto' }}>
       <div style={{ position: 'sticky', left: 0, zIndex: 10, background: 'white', alignSelf: 'stretch', display: 'flex', alignItems: 'center', gap: '8px', paddingRight: '6px', flexShrink: 0 }}>
-        <span style={{ fontSize: '10px', fontWeight: 600, color: '#374151', textTransform: 'uppercase', letterSpacing: '0.05em', flexShrink: 0 }}>Goals</span>
+        <span style={{ fontSize: '11px', fontWeight: 600, color: '#374151', textTransform: 'uppercase', letterSpacing: '0.05em', flexShrink: 0 }}>Goals</span>
         {adding ? (
-          <form onSubmit={handleAdd} style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
-            <input autoFocus value={newTitle} onChange={e => setNewTitle(e.target.value)}
-              onBlur={() => { if (!newTitle.trim()) setAdding(false) }}
-              style={{ border: '1px solid #6366f1', borderRadius: '8px', padding: '4px 8px', fontSize: '12px', width: '120px', outline: 'none' }}
-              placeholder="Goal name" />
-            <button type="submit" style={{ background: '#6366f1', color: 'white', border: 'none', borderRadius: '6px', padding: '4px 8px', fontSize: '11px', cursor: 'pointer' }}>Add</button>
-          </form>
+          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setAdding(false)}>
+            <form onSubmit={handleAdd} onClick={e => e.stopPropagation()} style={{ background: 'white', borderRadius: '12px', padding: '16px', width: '85vw', maxWidth: '320px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <input autoFocus value={newTitle} onChange={e => setNewTitle(e.target.value)}
+                style={{ border: '1px solid #6366f1', borderRadius: '8px', padding: '8px', fontSize: '14px', outline: 'none' }}
+                placeholder="Goal name" />
+              <select value={newCategory} onChange={e => setNewCategory(e.target.value)} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '8px', fontSize: '12px', outline: 'none' }}>
+                <option value="">No category</option>
+                {GOAL_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+              <select value={newPriority} onChange={e => setNewPriority(e.target.value)} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '8px', fontSize: '12px', outline: 'none' }}>
+                <option value="">No priority</option>
+                <option value="high">High</option>
+                <option value="medium">Medium</option>
+                <option value="low">Low</option>
+              </select>
+              {!showSmart ? (
+                <button type="button" onClick={() => setShowSmart(true)} style={{ background: 'none', border: 'none', color: '#6366f1', fontSize: '12px', textAlign: 'left', cursor: 'pointer', padding: 0 }}>+ Make it a SMART goal (optional)</button>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', borderTop: '1px solid #f3f4f6', paddingTop: '6px' }}>
+                  <input type="text" placeholder="Specific: what & why?" value={smartSpecific} onChange={e => setSmartSpecific(e.target.value)} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '7px 8px', fontSize: '12px', outline: 'none' }} />
+                  <input type="text" placeholder="Measurable: how will you know?" value={smartMeasurable} onChange={e => setSmartMeasurable(e.target.value)} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '7px 8px', fontSize: '12px', outline: 'none' }} />
+                  <input type="text" placeholder="Achievable: realistic?" value={smartAchievable} onChange={e => setSmartAchievable(e.target.value)} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '7px 8px', fontSize: '12px', outline: 'none' }} />
+                  <input type="text" placeholder="Relevant: why does it matter?" value={smartRelevant} onChange={e => setSmartRelevant(e.target.value)} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '7px 8px', fontSize: '12px', outline: 'none' }} />
+                  <input type="text" placeholder="Time-bound: target deadline?" value={smartTimebound} onChange={e => setSmartTimebound(e.target.value)} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '7px 8px', fontSize: '12px', outline: 'none' }} />
+                </div>
+              )}
+              <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                <button type="submit" style={{ background: '#6366f1', color: 'white', border: 'none', borderRadius: '8px', padding: '8px 14px', fontSize: '13px', cursor: 'pointer' }}>Add</button>
+                <button type="button" onClick={() => { setAdding(false); setShowSmart(false) }} style={{ background: 'none', border: 'none', color: '#9ca3af', fontSize: '13px', cursor: 'pointer' }}>Cancel</button>
+              </div>
+            </form>
+          </div>
         ) : (
           <button onClick={() => setAdding(true)} title="Add goal"
-            style={{ flexShrink: 0, border: '1px dashed #c7d2fe', borderRadius: '10px', padding: '6px 10px', fontSize: '11px', color: '#6366f1', background: 'white', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+            style={{ flexShrink: 0, border: '1px dashed #c7d2fe', borderRadius: '10px', padding: '6px 10px', fontSize: '12px', color: '#6366f1', background: 'white', cursor: 'pointer', whiteSpace: 'nowrap' }}>
             +
           </button>
         )}
@@ -78,14 +145,22 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
             onChange={e => setGoalSearch(e.target.value)}
             onBlur={() => { if (!goalSearch.trim()) setShowGoalSearch(false) }}
             placeholder="Search goals…"
-            style={{ fontSize: '11px', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '6px 8px', width: '110px', flexShrink: 0, outline: 'none' }}
+            style={{ fontSize: '12px', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '6px 8px', width: '110px', flexShrink: 0, outline: 'none' }}
           />
         ) : (
           <button onClick={() => setShowGoalSearch(true)} title="Search goals"
             style={{ background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', flexShrink: 0, display: 'flex', alignItems: 'center' }}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
           </button>
         )}
+        <select value={sortMode} onChange={e => setSortMode(e.target.value)} style={{ fontSize: '11px', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '6px 4px', flexShrink: 0, outline: 'none' }}>
+          <option value="deadline">Deadline</option>
+          <option value="alpha">A-Z</option>
+        </select>
+        <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} style={{ fontSize: '11px', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '6px 4px', flexShrink: 0, outline: 'none', maxWidth: '90px' }}>
+          <option value="all">All categories</option>
+          {GOAL_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+        </select>
       </div>
       {visibleGoals.map(goal => {
         const linked = goalTasks.filter(t => t.goal_id === goal.id)
@@ -100,12 +175,20 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
         const done = linked.filter(t => t.status === 'done')
         const pct = linked.length > 0 ? Math.round((done.length / linked.length) * 100) : 0
       return (
-        <div key={goal.id} onClick={() => setViewingGoalId(goal.id)} style={{ flexShrink: 0, border: '1px solid #e5e7eb', borderRadius: '10px', padding: '6px 10px', minWidth: '120px', background: 'white', position: 'relative', cursor: 'pointer' }}>
+        <div key={goal.id} onClick={() => setViewingGoalId(goal.id)} style={{ flexShrink: 0, border: '1px solid #e5e7eb', borderRadius: '10px', padding: '6px 10px', minWidth: '130px', background: 'white', position: 'relative', cursor: 'pointer' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
             <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: goal.color, flexShrink: 0 }} />
-            <span style={{ fontSize: "11px", fontWeight: 500, color: "#374151", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "80px", cursor: "pointer" }} onClick={(e) => { e.stopPropagation(); const t = prompt("Edit goal name:", goal.title); if (t && t.trim()) onEditGoal(goal.id, t.trim()) }}>{goal.title}</span>
+            <span style={{ fontSize: "12px", fontWeight: 500, color: "#374151", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "80px", cursor: "pointer" }} onClick={(e) => { e.stopPropagation(); const t = prompt("Edit goal name:", goal.title); if (t && t.trim()) onEditGoal(goal.id, t.trim()) }}>{goal.title}</span>
             <span style={{ fontSize: "14px", color: "#9ca3af", cursor: "pointer", flexShrink: 0 }} onClick={(e) => { e.stopPropagation(); if (window.confirm(`Delete goal "${goal.title}"?`)) onDeleteGoal(goal.id) }}>&times;</span>
           </div>
+          {(goal.priority || goal.category) && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '4px' }}>
+              {goal.priority && PRIORITY_COLORS[goal.priority] && (
+                <span style={{ fontSize: '9px', fontWeight: 500, padding: '1px 5px', borderRadius: '4px', color: PRIORITY_COLORS[goal.priority], background: PRIORITY_COLORS[goal.priority] + '1a' }}>{PRIORITY_LABELS[goal.priority]}</span>
+              )}
+              {goal.category && <span style={{ fontSize: '9px', color: '#9ca3af', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '90px' }}>{goal.category}</span>}
+            </div>
+          )}
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <div style={{ flex: 1, height: '3px', background: '#f3f4f6', borderRadius: '2px', overflow: 'hidden' }}>
               <div style={{ height: '100%', width: pct + '%', background: goal.color, borderRadius: '2px' }} />
@@ -123,7 +206,22 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
                   &#10005;
                 </button>
                 <div onClick={(e) => e.stopPropagation()} style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '16px', maxHeight: '70vh', overflowY: 'auto', boxShadow: '0 8px 24px rgba(0,0,0,0.2)' }}>
-                  <p style={{ fontSize: '16px', fontWeight: 700, color: '#1f2937', marginBottom: '10px' }}>{goal.title}</p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
+                    <p style={{ fontSize: '17px', fontWeight: 700, color: '#1f2937', margin: 0 }}>{goal.title}</p>
+                    {goal.priority && PRIORITY_COLORS[goal.priority] && (
+                      <span style={{ fontSize: '10px', fontWeight: 500, padding: '1px 6px', borderRadius: '4px', color: PRIORITY_COLORS[goal.priority], background: PRIORITY_COLORS[goal.priority] + '1a' }}>{PRIORITY_LABELS[goal.priority]}</span>
+                    )}
+                  </div>
+                  {goal.category && <p style={{ fontSize: '12px', color: '#9ca3af', marginTop: '2px', marginBottom: '8px' }}>{goal.category}</p>}
+                  {(goal.smart_specific || goal.smart_measurable || goal.smart_achievable || goal.smart_relevant || goal.smart_timebound) && (
+                    <div style={{ background: '#f9fafb', borderRadius: '8px', padding: '8px', marginBottom: '10px', display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                      {goal.smart_specific && <p style={{ fontSize: '11px', color: '#4b5563', margin: 0 }}><b>Specific:</b> {goal.smart_specific}</p>}
+                      {goal.smart_measurable && <p style={{ fontSize: '11px', color: '#4b5563', margin: 0 }}><b>Measurable:</b> {goal.smart_measurable}</p>}
+                      {goal.smart_achievable && <p style={{ fontSize: '11px', color: '#4b5563', margin: 0 }}><b>Achievable:</b> {goal.smart_achievable}</p>}
+                      {goal.smart_relevant && <p style={{ fontSize: '11px', color: '#4b5563', margin: 0 }}><b>Relevant:</b> {goal.smart_relevant}</p>}
+                      {goal.smart_timebound && <p style={{ fontSize: '11px', color: '#4b5563', margin: 0 }}><b>Time-bound:</b> {goal.smart_timebound}</p>}
+                    </div>
+                  )}
                   {linked.length === 0 ? (
                     <p style={{ fontSize: '11px', color: '#9ca3af' }}>No tasks yet.</p>
                   ) : (
@@ -132,6 +230,9 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
                         <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: '#4b5563', padding: '4px 2px', WebkitTapHighlightColor: 'transparent', minWidth: 0 }}>
                           <span onClick={() => onMarkDone(t.id)} style={{ color: t.status === 'done' ? '#10b981' : '#d1d5db', fontSize: '14px', cursor: 'pointer', flexShrink: 0 }}>{t.status === 'done' ? '✓' : '○'}</span>
                           <span onClick={() => onMarkDone(t.id)} style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'pointer', textDecoration: t.status === 'done' ? 'line-through' : 'none', color: t.status === 'done' ? '#9ca3af' : '#4b5563' }}>{t.title}</span>
+                          {t.priority && PRIORITY_COLORS[t.priority] && (
+                            <span style={{ fontSize: '9px', fontWeight: 500, padding: '1px 5px', borderRadius: '4px', flexShrink: 0, color: PRIORITY_COLORS[t.priority], background: PRIORITY_COLORS[t.priority] + '1a' }}>{PRIORITY_LABELS[t.priority]}</span>
+                          )}
                           {t.start_time && (
                             <span style={{ fontSize: '9px', color: '#a5b4fc', flexShrink: 0, whiteSpace: 'nowrap' }}>{formatTime(t.start_time)}</span>
                           )}
@@ -146,9 +247,9 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
                       value={newTaskTitle}
                       onChange={e => setNewTaskTitle(e.target.value)}
                       placeholder="Add a task to this goal"
-                      style={{ flex: 1, fontSize: '11px', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '6px 8px', outline: 'none' }}
+                      style={{ flex: 1, fontSize: '12px', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '6px 8px', outline: 'none' }}
                     />
-                    <button type="submit" style={{ background: '#6366f1', color: 'white', border: 'none', borderRadius: '6px', padding: '6px 10px', fontSize: '11px', cursor: 'pointer', flexShrink: 0 }}>Add</button>
+                    <button type="submit" style={{ background: '#6366f1', color: 'white', border: 'none', borderRadius: '6px', padding: '6px 10px', fontSize: '12px', cursor: 'pointer', flexShrink: 0 }}>Add</button>
                   </form>
                 </div>
               </div>
@@ -235,7 +336,12 @@ function MobileInbox({ tasks, goalMap, onAddTask, onEdit, onDelete, search }) {
                   <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}
                     style={{ border: '1px solid ' + (snapshot.isDragging ? '#a5b4fc' : '#e5e7eb'), borderRadius: '10px', padding: '10px 12px', background: 'white', marginBottom: '8px', WebkitTouchCallout: 'none', WebkitUserSelect: 'none', userSelect: 'none', touchAction: 'manipulation' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
-                      <p style={{ fontSize: '14px', color: '#1f2937', flex: 1, margin: 0 }}>{task.title}</p>
+                      <p style={{ fontSize: '14px', color: '#1f2937', flex: 1, margin: 0 }}>
+                        {task.title}
+                        {task.priority && PRIORITY_COLORS[task.priority] && (
+                          <span style={{ fontSize: '10px', fontWeight: 500, padding: '1px 6px', borderRadius: '4px', marginLeft: '6px', color: PRIORITY_COLORS[task.priority], background: PRIORITY_COLORS[task.priority] + '1a' }}>{PRIORITY_LABELS[task.priority]}</span>
+                        )}
+                      </p>
                       {task.goal_id && goalMap[task.goal_id] && (
                         <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: goalMap[task.goal_id].color, flexShrink: 0, marginTop: '4px' }} />
                       )}
