@@ -53,21 +53,23 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
   return (
     <div style={{ background: 'white', borderBottom: '1px solid #f3f4f6', padding: '8px 12px', flexShrink: 0 }}>
     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflowX: 'auto' }}>
-      <span style={{ fontSize: '10px', fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em', flexShrink: 0 }}>Goals</span>
-      {adding ? (
-        <form onSubmit={handleAdd} style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
-          <input autoFocus value={newTitle} onChange={e => setNewTitle(e.target.value)}
-            onBlur={() => { if (!newTitle.trim()) setAdding(false) }}
-            style={{ border: '1px solid #6366f1', borderRadius: '8px', padding: '4px 8px', fontSize: '12px', width: '120px', outline: 'none' }}
-            placeholder="Goal name" />
-          <button type="submit" style={{ background: '#6366f1', color: 'white', border: 'none', borderRadius: '6px', padding: '4px 8px', fontSize: '11px', cursor: 'pointer' }}>Add</button>
-        </form>
-      ) : (
-        <button onClick={() => setAdding(true)} title="Add goal"
-          style={{ flexShrink: 0, border: '1px dashed #c7d2fe', borderRadius: '10px', padding: '6px 10px', fontSize: '11px', color: '#6366f1', background: 'white', cursor: 'pointer', whiteSpace: 'nowrap' }}>
-          +
-        </button>
-      )}
+      <div style={{ position: 'sticky', left: 0, zIndex: 10, background: 'white', display: 'flex', alignItems: 'center', gap: '8px', paddingRight: '6px', flexShrink: 0 }}>
+        <span style={{ fontSize: '10px', fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em', flexShrink: 0 }}>Goals</span>
+        {adding ? (
+          <form onSubmit={handleAdd} style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+            <input autoFocus value={newTitle} onChange={e => setNewTitle(e.target.value)}
+              onBlur={() => { if (!newTitle.trim()) setAdding(false) }}
+              style={{ border: '1px solid #6366f1', borderRadius: '8px', padding: '4px 8px', fontSize: '12px', width: '120px', outline: 'none' }}
+              placeholder="Goal name" />
+            <button type="submit" style={{ background: '#6366f1', color: 'white', border: 'none', borderRadius: '6px', padding: '4px 8px', fontSize: '11px', cursor: 'pointer' }}>Add</button>
+          </form>
+        ) : (
+          <button onClick={() => setAdding(true)} title="Add goal"
+            style={{ flexShrink: 0, border: '1px dashed #c7d2fe', borderRadius: '10px', padding: '6px 10px', fontSize: '11px', color: '#6366f1', background: 'white', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+            +
+          </button>
+        )}
+      </div>
       {visibleGoals.map(goal => {
         const linked = goalTasks.filter(t => t.goal_id === goal.id)
         const sortedLinked = [...linked].sort((a, b) => {

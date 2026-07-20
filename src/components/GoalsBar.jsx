@@ -59,30 +59,32 @@ export default function GoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEdit
   return (
     <div className="bg-white border-b border-gray-100 px-6 py-2 shrink-0">
       <div className="flex items-center gap-3 overflow-x-auto">
-      <span className="text-xs font-medium text-gray-400 uppercase tracking-wide shrink-0">Goals</span>
-      {adding ? (
-        <form onSubmit={handleAdd} className="flex items-center gap-2 shrink-0">
-          <input
-            autoFocus
-            type="text"
-            placeholder="Goal name"
-            value={newTitle}
-            onChange={e => setNewTitle(e.target.value)}
-            onBlur={() => { if (!newTitle.trim()) setAdding(false) }}
-            className="border border-indigo-300 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-300 w-36"
-          />
-          <button type="submit" className="text-xs text-white bg-indigo-600 px-2 py-1 rounded-lg hover:bg-indigo-700">Add</button>
-          <button type="button" onClick={() => setAdding(false)} className="text-xs text-gray-400 hover:text-gray-600">Cancel</button>
-        </form>
-      ) : (
-        <button
-          onClick={() => setAdding(true)}
-          className="text-xs text-indigo-500 hover:text-indigo-700 border border-dashed border-indigo-200 hover:border-indigo-400 rounded-lg px-3 py-1.5 shrink-0 transition-colors"
-          title="Add goal"
-        >
-          +
-        </button>
-      )}
+      <div className="sticky left-0 z-10 bg-white flex items-center gap-3 pr-3 shrink-0">
+        <span className="text-xs font-medium text-gray-400 uppercase tracking-wide shrink-0">Goals</span>
+        {adding ? (
+          <form onSubmit={handleAdd} className="flex items-center gap-2 shrink-0">
+            <input
+              autoFocus
+              type="text"
+              placeholder="Goal name"
+              value={newTitle}
+              onChange={e => setNewTitle(e.target.value)}
+              onBlur={() => { if (!newTitle.trim()) setAdding(false) }}
+              className="border border-indigo-300 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-300 w-36"
+            />
+            <button type="submit" className="text-xs text-white bg-indigo-600 px-2 py-1 rounded-lg hover:bg-indigo-700">Add</button>
+            <button type="button" onClick={() => setAdding(false)} className="text-xs text-gray-400 hover:text-gray-600">Cancel</button>
+          </form>
+        ) : (
+          <button
+            onClick={() => setAdding(true)}
+            className="text-xs text-indigo-500 hover:text-indigo-700 border border-dashed border-indigo-200 hover:border-indigo-400 rounded-lg px-3 py-1.5 shrink-0 transition-colors"
+            title="Add goal"
+          >
+            +
+          </button>
+        )}
+      </div>
       {visibleGoals.map(goal => {
         const linked = goalTasks.filter(t => t.goal_id === goal.id)
         const sortedLinked = [...linked].sort((a, b) => {
