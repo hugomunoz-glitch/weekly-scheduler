@@ -48,17 +48,19 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
   const [editingGoalId, setEditingGoalId] = useState(null)
   const [editingTitle, setEditingTitle] = useState('')
   const [editingCategory, setEditingCategory] = useState('')
+  const [editingPriority, setEditingPriority] = useState('')
 
   function startEditGoal(goal) {
     setEditingGoalId(goal.id)
     setEditingTitle(goal.title)
     setEditingCategory(goal.category || '')
+    setEditingPriority(goal.priority || '')
   }
 
   function handleEditGoalSubmit(e) {
     e.preventDefault()
     if (!editingTitle.trim()) return
-    onEditGoal(editingGoalId, editingTitle.trim(), { category: editingCategory || null })
+    onEditGoal(editingGoalId, editingTitle.trim(), { category: editingCategory || null, priority: editingPriority || null })
     setEditingGoalId(null)
   }
 
@@ -212,6 +214,12 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
                 <select value={editingCategory} onChange={e => setEditingCategory(e.target.value)} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '8px', fontSize: '12px', outline: 'none' }}>
                   <option value="">No category</option>
                   {GOAL_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+                <select value={editingPriority} onChange={e => setEditingPriority(e.target.value)} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '8px', fontSize: '12px', outline: 'none' }}>
+                  <option value="">No priority</option>
+                  <option value="high">High</option>
+                  <option value="medium">Medium</option>
+                  <option value="low">Low</option>
                 </select>
                 <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
                   <button type="submit" style={{ background: '#6366f1', color: 'white', border: 'none', borderRadius: '8px', padding: '8px 14px', fontSize: '13px', cursor: 'pointer' }}>Save</button>

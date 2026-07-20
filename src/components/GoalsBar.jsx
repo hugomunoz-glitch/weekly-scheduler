@@ -100,17 +100,19 @@ export default function GoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEdit
   }
 
   const [editingCategory, setEditingCategory] = useState('')
+  const [editingPriority, setEditingPriority] = useState('')
 
   function startEdit(goal) {
     setEditingId(goal.id)
     setEditingTitle(goal.title)
     setEditingCategory(goal.category || '')
+    setEditingPriority(goal.priority || '')
   }
 
   function handleEditSubmit(e, goalId) {
     e.preventDefault()
     if (!editingTitle.trim()) return
-    onEditGoal(goalId, editingTitle.trim(), { category: editingCategory || null })
+    onEditGoal(goalId, editingTitle.trim(), { category: editingCategory || null, priority: editingPriority || null })
     setEditingId(null)
   }
 
@@ -219,6 +221,16 @@ export default function GoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEdit
                   >
                     <option value="">No category</option>
                     {GOAL_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                  <select
+                    value={editingPriority}
+                    onChange={e => setEditingPriority(e.target.value)}
+                    className="text-xs border border-gray-200 rounded px-1 py-0.5 w-full focus:outline-none"
+                  >
+                    <option value="">No priority</option>
+                    <option value="high">High</option>
+                    <option value="medium">Medium</option>
+                    <option value="low">Low</option>
                   </select>
                   <div className="flex gap-1.5">
                     <button type="submit" className="text-xs text-white bg-indigo-600 hover:bg-indigo-700 px-2 py-0.5 rounded">Save</button>
