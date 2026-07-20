@@ -59,6 +59,7 @@ export default function App() {
     const { draggableId: taskId, destination, source } = result
     if (!destination) return
     if (destination.droppableId === source.droppableId && destination.index === source.index) return
+    if (destination.droppableId.startsWith('goalpopup-')) return
     if (destination.droppableId === source.droppableId) {
       const parts = destination.droppableId.split('-')
       const bucket = parts[0]

@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
+import { Droppable, Draggable } from '@hello-pangea/dnd'
 
 const COLORS = ['#6366f1', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316']
 
@@ -30,6 +31,27 @@ function PriorityBadge({ priority }) {
   )
 }
 
+// Returns handlers that fire onLongPress if the mouse is held ~550ms without moving.
+// Safe alongside real drag-and-drop: dnd only activates on movement, so a still
+// press never starts a drag, and any movement here cancels the long-press timer.
+// Plain factory (not a hook) so it can be called inside .map() loops; timerRef/firedRef
+// are shared refs passed in from the component, one press active at a time is fine.
+function longPressHandlers(timerRef, firedRef, onLongPress, ms = 550) {
+  function clear() { if (timerRef.current) { clearTimeout(timerRef.current); timerRef.current = null } }
+  return {
+    onMouseDown(e) {
+      e.stopPropagation()
+      firedRef.current = false
+      clear()
+      timerRef.current = setTimeout(() => { firedRef.current = true; onLongPress() }, ms)
+    },
+    onMouseMove: clear,
+    onMouseUp: clear,
+    onMouseLeave: clear,
+    onClick(e) { if (firedRef.current) { e.preventDefault(); e.stopPropagation() } }
+  }
+}
+
 export default function GoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onDeleteGoal, onMarkDone, onDelete, onCreateTask, onEditTask }) {
   const [adding, setAdding] = useState(false)
   const [newTitle, setNewTitle] = useState('')
@@ -53,6 +75,39 @@ export default function GoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEdit
   const [sortMode, setSortMode] = useState('deadline')
   const [categoryFilter, setCategoryFilter] = useState('all')
   const allCategories = [...new Set([...GOAL_CATEGORIES, ...goals.map(g => g.category).filter(Boolean)])].sort()
+  const [popupPos, setPopupPos] = useState(null)
+  const dragRef = useRef(null)
+  const [longPressGoalId, setLongPressGoalId] = useState(null)
+  const [longPressTaskId, setLongPressTaskId] = useState(null)
+  const pressTimerRef = useRef(null)
+  const pressFiredRef = useRef(false)
+
+  function openPopup(goalId, e) {
+    setViewingGoalId(goalId)
+    const rect = e.currentTarget.getBoundingClientRect()
+    const left = Math.min(Math.max(rect.left, 12), window.innerWidth - 600)
+    const top = Math.min(rect.bottom + 8, window.innerHeight - 200)
+    setPopupPos({ top, left })
+  }
+
+  function startPopupDrag(e) {
+    e.preventDefault()
+    const startX = e.clientX, startY = e.clientY
+    const origin = popupPos
+    dragRef.current = { startX, startY, origin }
+    function onMove(ev) {
+      const d = dragRef.current
+      if (!d) return
+      setPopupPos({ top: d.origin.top + (ev.clientY - d.startY), left: d.origin.left + (ev.clientX - d.startX) })
+    }
+    function onUp() {
+      dragRef.current = null
+      window.removeEventListener('mousemove', onMove)
+      window.removeEventListener('mouseup', onUp)
+    }
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup', onUp)
+  }
 
   function nearestDueDate(goalId) {
     const tasks = goalTasks.filter(t => t.goal_id === goalId && t.status !== 'done' && t.due_date)
@@ -254,7 +309,7 @@ export default function GoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEdit
         const done = linked.filter(t => t.status === 'done')
         const pct = linked.length > 0 ? Math.round((done.length / linked.length) * 100) : 0
         return (
-          <div key={goal.id} className="flex items-start gap-2 border border-gray-200 rounded-lg px-3 py-1.5 shrink-0 min-w-[160px] group cursor-pointer relative" onClick={() => setViewingGoalId(goal.id)}>
+          <div key={goal.id} className="flex items-start gap-2 border border-gray-200 rounded-lg px-3 py-1.5 shrink-0 min-w-[160px] group cursor-pointer relative" onClick={(e) => openPopup(goal.id, e)}>
             <div className="w-2 h-2 rounded-full shrink-0 mt-1.5" style={{ background: goal.color }} />
             <div className="flex-1 min-w-0">
               {editingId === goal.id ? (
@@ -305,8 +360,9 @@ export default function GoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEdit
                 <div className="flex items-center justify-between gap-1">
                   <p
                     className="text-sm font-medium text-gray-700 truncate cursor-pointer hover:text-indigo-600"
-                    onClick={(e) => { e.stopPropagation(); startEdit(goal) }}
-                    title="Click to edit"
+                    {...longPressHandlers(pressTimerRef, pressFiredRef, () => setLongPressGoalId(goal.id))}
+                    onDoubleClick={(e) => { e.stopPropagation(); startEdit(goal) }}
+                    title="Click to edit, hold to delete"
                   >
                     {goal.title}
                   </p>
@@ -325,15 +381,14 @@ export default function GoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEdit
                         No
                       </button>
                     </div>
-                  ) : (
+                  ) : longPressGoalId === goal.id ? (
                     <button
-                      onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(goal.id) }}
-                      className="text-gray-200 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 shrink-0"
-                      title="Delete goal"
+                      onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(goal.id); setLongPressGoalId(null) }}
+                      className="text-xs text-red-500 hover:text-red-700 font-medium shrink-0"
                     >
-                      <span className="text-xs">&#x2715;</span>
+                      Delete?
                     </button>
-                  )}
+                  ) : null}
                 </div>
               )}
               {(goal.priority || goal.category) && (
@@ -349,68 +404,101 @@ export default function GoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEdit
                 <span className="text-xs text-gray-400 shrink-0">{pct}%</span>
               </div>
               <p className="text-xs text-gray-300 mt-0.5">{done.length}/{linked.length}</p>
-              {viewingGoalId === goal.id && (
-            <div onClick={(e) => { e.stopPropagation(); setViewingGoalId(null) }} className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
-              <div className="relative w-[960px] max-w-[92vw]">
-                <button
-                  onClick={() => setViewingGoalId(null)}
-                  className="absolute -top-3 -right-3 z-10 w-8 h-8 flex items-center justify-center rounded-full bg-gray-700 text-white text-sm hover:bg-gray-900 shadow-md"
-                  title="Close"
+              {viewingGoalId === goal.id && popupPos && (
+                <div
+                  onClick={(e) => e.stopPropagation()}
+                  className="fixed z-50 bg-white border border-gray-200 rounded-lg shadow-2xl w-[580px] max-w-[92vw]"
+                  style={{ top: popupPos.top, left: popupPos.left }}
                 >
-                  &#10005;
-                </button>
-                <div onClick={(e) => e.stopPropagation()} className="bg-white border border-gray-200 rounded-lg shadow-xl p-6 max-h-[85vh] overflow-y-auto">
-                  <div className="flex items-center gap-2 mb-1">
-                    <p className="text-2xl font-bold text-gray-800">{goal.title}</p>
-                    <PriorityBadge priority={goal.priority} />
-                  </div>
-                  {goal.category && <p className="text-sm text-gray-400 mb-3">{goal.category}</p>}
-                  {(goal.smart_specific || goal.smart_measurable || goal.smart_achievable || goal.smart_relevant || goal.smart_timebound) && (
-                    <div className="mb-4 p-3 bg-gray-50 rounded-lg space-y-1">
-                      {goal.smart_specific && <p className="text-sm text-gray-600"><span className="font-semibold text-gray-700">Specific:</span> {goal.smart_specific}</p>}
-                      {goal.smart_measurable && <p className="text-sm text-gray-600"><span className="font-semibold text-gray-700">Measurable:</span> {goal.smart_measurable}</p>}
-                      {goal.smart_achievable && <p className="text-sm text-gray-600"><span className="font-semibold text-gray-700">Achievable:</span> {goal.smart_achievable}</p>}
-                      {goal.smart_relevant && <p className="text-sm text-gray-600"><span className="font-semibold text-gray-700">Relevant:</span> {goal.smart_relevant}</p>}
-                      {goal.smart_timebound && <p className="text-sm text-gray-600"><span className="font-semibold text-gray-700">Time-bound:</span> {goal.smart_timebound}</p>}
+                  <div
+                    onMouseDown={startPopupDrag}
+                    className="flex items-center justify-between gap-2 px-4 py-2 border-b border-gray-100 rounded-t-lg bg-gray-50 cursor-move select-none"
+                    title="Drag to move"
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="text-gray-400 text-sm">&#10021;</span>
+                      <p className="text-3xl font-bold text-gray-800 truncate">{goal.title}</p>
+                      <PriorityBadge priority={goal.priority} />
                     </div>
-                  )}
-                  {linked.length === 0 ? (
-                    <p className="text-sm text-gray-300">No tasks yet.</p>
-                  ) : (
-                    <ul className="space-y-1.5 max-h-[50vh] overflow-y-auto">
-                      {sortedLinked.map(t => (
-                        <li key={t.id} className="text-sm text-gray-600 flex items-center gap-2 group hover:bg-gray-50 rounded px-2 py-1.5 -mx-2">
-                          <span className="cursor-pointer" onClick={() => onMarkDone(t.id)}>
-                            <span className={t.status === 'done' ? 'text-green-500' : 'text-gray-300'}>{t.status === 'done' ? '✓' : '○'}</span>
-                          </span>
-                          <span className={'flex-1 truncate cursor-pointer ' + (t.status === 'done' ? 'line-through text-gray-400' : '')} onClick={() => onMarkDone(t.id)}>{t.title}</span>
-                          <PriorityBadge priority={t.priority} />
-                          {t.start_time && (
-                            <span className="text-xs text-indigo-400 shrink-0 whitespace-nowrap">{formatTime(t.start_time)}</span>
-                          )}
-                          <button onClick={() => handleEditTask(t.id)} className="text-gray-300 hover:text-indigo-500 opacity-0 group-hover:opacity-100 transition-colors shrink-0" title="Edit task">
-                            <span className="text-sm">&#9998;</span>
-                          </button>
-                          <button onClick={() => onDelete(t.id)} className="text-gray-200 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-colors shrink-0" title="Delete task">
-                            <span className="text-sm">&#x2715;</span>
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                  <form onSubmit={(e) => handleAddTaskToGoal(e, goal.id)} className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-100">
-                    <input
-                      value={newTaskTitle}
-                      onChange={e => setNewTaskTitle(e.target.value)}
-                      placeholder="Add a task to this goal"
-                      className="flex-1 text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-indigo-300 focus:border-indigo-400"
-                    />
-                    <button type="submit" className="text-sm text-white bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded-lg shrink-0">Add</button>
-                  </form>
+                    <button
+                      onClick={() => setViewingGoalId(null)}
+                      className="w-7 h-7 flex items-center justify-center rounded-full bg-gray-700 text-white text-sm hover:bg-gray-900 shrink-0"
+                      title="Close"
+                    >
+                      &#10005;
+                    </button>
+                  </div>
+                  <div className="p-4 max-h-[70vh] overflow-y-auto">
+                    {goal.category && <p className="text-base text-gray-400 mb-3">{goal.category}</p>}
+                    {(goal.smart_specific || goal.smart_measurable || goal.smart_achievable || goal.smart_relevant || goal.smart_timebound) && (
+                      <div className="mb-4 p-3 bg-gray-50 rounded-lg space-y-1">
+                        {goal.smart_specific && <p className="text-base text-gray-600"><span className="font-semibold text-gray-700">Specific:</span> {goal.smart_specific}</p>}
+                        {goal.smart_measurable && <p className="text-base text-gray-600"><span className="font-semibold text-gray-700">Measurable:</span> {goal.smart_measurable}</p>}
+                        {goal.smart_achievable && <p className="text-base text-gray-600"><span className="font-semibold text-gray-700">Achievable:</span> {goal.smart_achievable}</p>}
+                        {goal.smart_relevant && <p className="text-base text-gray-600"><span className="font-semibold text-gray-700">Relevant:</span> {goal.smart_relevant}</p>}
+                        {goal.smart_timebound && <p className="text-base text-gray-600"><span className="font-semibold text-gray-700">Time-bound:</span> {goal.smart_timebound}</p>}
+                      </div>
+                    )}
+                    <p className="text-xs text-gray-400 mb-2">Drag a task onto any day on the calendar to schedule it.</p>
+                    {linked.length === 0 ? (
+                      <p className="text-base text-gray-300">No tasks yet.</p>
+                    ) : (
+                      <Droppable droppableId={'goalpopup-' + goal.id}>
+                        {(provided) => (
+                          <ul ref={provided.innerRef} {...provided.droppableProps} className="space-y-1.5 max-h-[50vh] overflow-y-auto">
+                            {sortedLinked.map((t, idx) => {
+                              const longPress = longPressHandlers(pressTimerRef, pressFiredRef, () => setLongPressTaskId(t.id))
+                              return (
+                                <Draggable key={t.id} draggableId={t.id} index={idx}>
+                                  {(dragProvided, dragSnapshot) => (
+                                    <li
+                                      ref={dragProvided.innerRef}
+                                      {...dragProvided.draggableProps}
+                                      {...dragProvided.dragHandleProps}
+                                      {...longPress}
+                                      className={'text-xl text-gray-600 flex items-center gap-2 group rounded px-2 py-1.5 -mx-2 ' + (dragSnapshot.isDragging ? 'bg-indigo-50 shadow-md' : 'hover:bg-gray-50')}
+                                    >
+                                      <span className="cursor-pointer shrink-0" onClick={() => onMarkDone(t.id)}>
+                                        <span className={t.status === 'done' ? 'text-green-500' : 'text-gray-300'}>{t.status === 'done' ? '✓' : '○'}</span>
+                                      </span>
+                                      <span className={'flex-1 truncate cursor-pointer ' + (t.status === 'done' ? 'line-through text-gray-400' : '')} onClick={() => onMarkDone(t.id)}>{t.title}</span>
+                                      <PriorityBadge priority={t.priority} />
+                                      {t.start_time && (
+                                        <span className="text-sm text-indigo-400 shrink-0 whitespace-nowrap">{formatTime(t.start_time)}</span>
+                                      )}
+                                      <button onClick={() => handleEditTask(t.id)} className="text-gray-300 hover:text-indigo-500 opacity-0 group-hover:opacity-100 transition-colors shrink-0" title="Edit task">
+                                        <span className="text-base">&#9998;</span>
+                                      </button>
+                                      {longPressTaskId === t.id && (
+                                        <button
+                                          onClick={(e) => { e.stopPropagation(); onDelete(t.id); setLongPressTaskId(null) }}
+                                          className="text-sm text-red-500 hover:text-red-700 font-medium shrink-0"
+                                        >
+                                          Delete?
+                                        </button>
+                                      )}
+                                    </li>
+                                  )}
+                                </Draggable>
+                              )
+                            })}
+                            {provided.placeholder}
+                          </ul>
+                        )}
+                      </Droppable>
+                    )}
+                    <form onSubmit={(e) => handleAddTaskToGoal(e, goal.id)} className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-100">
+                      <input
+                        value={newTaskTitle}
+                        onChange={e => setNewTaskTitle(e.target.value)}
+                        placeholder="Add a task to this goal"
+                        className="flex-1 text-base border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-indigo-300 focus:border-indigo-400"
+                      />
+                      <button type="submit" className="text-base text-white bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded-lg shrink-0">Add</button>
+                    </form>
+                  </div>
                 </div>
-              </div>
-            </div>
-          )}
+              )}
             </div>
           </div>
         )

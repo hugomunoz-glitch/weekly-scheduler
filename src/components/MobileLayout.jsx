@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { useAssistantHistory } from '../hooks/useAssistantHistory'
 import { format, isToday } from 'date-fns'
@@ -30,6 +30,25 @@ const GOAL_CATEGORIES = [
   'Social (Community/Volunteering)', 'Spiritual (Prayer/Church)'
 ]
 
+// Returns handlers that fire onLongPress after ~550ms of holding without releasing.
+// Uses pointer events so it works reliably for touch. Plain factory (not a hook) so
+// it can be called inside .map() loops; timerRef/firedRef are shared refs from the caller.
+function longPressHandlers(timerRef, firedRef, onLongPress, ms = 550) {
+  function clear() { if (timerRef.current) { clearTimeout(timerRef.current); timerRef.current = null } }
+  return {
+    onPointerDown(e) {
+      firedRef.current = false
+      clear()
+      timerRef.current = setTimeout(() => { firedRef.current = true; onLongPress() }, ms)
+    },
+    onPointerMove: clear,
+    onPointerUp: clear,
+    onPointerLeave: clear,
+    onPointerCancel: clear,
+    onClick(e) { if (firedRef.current) { e.preventDefault(); e.stopPropagation() } }
+  }
+}
+
 function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onDeleteGoal, onMarkDone, onDelete, onCreateTask, onEditTask }) {
   const [adding, setAdding] = useState(false)
   const [newTitle, setNewTitle] = useState('')
@@ -57,6 +76,10 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
   const [editingPriority, setEditingPriority] = useState('')
   const [editGoalError, setEditGoalError] = useState('')
   const allCategories = [...new Set([...GOAL_CATEGORIES, ...goals.map(g => g.category).filter(Boolean)])].sort()
+  const [longPressGoalId, setLongPressGoalId] = useState(null)
+  const [longPressTaskId, setLongPressTaskId] = useState(null)
+  const pressTimerRef = useRef(null)
+  const pressFiredRef = useRef(false)
 
   function startEditGoal(goal) {
     setEditingGoalId(goal.id)
@@ -240,8 +263,12 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
         <div key={goal.id} onClick={() => setViewingGoalId(goal.id)} style={{ flexShrink: 0, border: '1px solid #e5e7eb', borderRadius: '10px', padding: '6px 10px', minWidth: '130px', background: 'white', position: 'relative', cursor: 'pointer' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
             <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: goal.color, flexShrink: 0 }} />
-            <span style={{ fontSize: "12px", fontWeight: 500, color: "#374151", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "80px", cursor: "pointer" }} onClick={(e) => { e.stopPropagation(); startEditGoal(goal) }}>{goal.title}</span>
-            <span style={{ fontSize: "14px", color: "#9ca3af", cursor: "pointer", flexShrink: 0 }} onClick={(e) => { e.stopPropagation(); if (window.confirm(`Delete goal "${goal.title}"?`)) onDeleteGoal(goal.id) }}>&times;</span>
+            <span
+              style={{ fontSize: "12px", fontWeight: 500, color: "#374151", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "110px", cursor: "pointer" }}
+              onClick={(e) => { e.stopPropagation(); startEditGoal(goal) }}
+              {...longPressHandlers(pressTimerRef, pressFiredRef, () => { if (window.confirm(`Delete goal "${goal.title}"?`)) onDeleteGoal(goal.id) })}
+              title="Tap to edit, hold to delete"
+            >{goal.title}</span>
           </div>
           {(goal.priority || goal.category) && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '4px' }}>
@@ -299,7 +326,7 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
           )}
           {viewingGoalId === goal.id && (
             <div onClick={(e) => { e.stopPropagation(); setViewingGoalId(null) }} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <div style={{ position: 'relative', width: '85vw', maxWidth: '320px' }}>
+              <div style={{ position: 'relative', width: '90vw', maxWidth: '380px' }}>
                 <button
                   onClick={() => setViewingGoalId(null)}
                   style={{ position: 'absolute', top: '-12px', right: '-12px', zIndex: 10, width: '28px', height: '28px', borderRadius: '50%', background: '#374151', color: 'white', border: 'none', fontSize: '12px', cursor: 'pointer', boxShadow: '0 2px 6px rgba(0,0,0,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
@@ -308,7 +335,7 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
                 </button>
                 <div onClick={(e) => e.stopPropagation()} style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '16px', maxHeight: '70vh', overflowY: 'auto', boxShadow: '0 8px 24px rgba(0,0,0,0.2)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
-                    <p style={{ fontSize: '17px', fontWeight: 700, color: '#1f2937', margin: 0 }}>{goal.title}</p>
+                    <p style={{ fontSize: '30px', fontWeight: 700, color: '#1f2937', margin: 0 }}>{goal.title}</p>
                     {goal.priority && PRIORITY_COLORS[goal.priority] && (
                       <span style={{ fontSize: '10px', fontWeight: 500, padding: '1px 6px', borderRadius: '4px', color: PRIORITY_COLORS[goal.priority], background: PRIORITY_COLORS[goal.priority] + '1a' }}>{PRIORITY_LABELS[goal.priority]}</span>
                     )}
@@ -327,20 +354,25 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
                     <p style={{ fontSize: '11px', color: '#9ca3af' }}>No tasks yet.</p>
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: '160px', overflowY: 'auto' }}>
-                      {sortedLinked.map(t => (
-                        <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: '#4b5563', padding: '4px 2px', WebkitTapHighlightColor: 'transparent', minWidth: 0 }}>
-                          <span onClick={() => onMarkDone(t.id)} style={{ color: t.status === 'done' ? '#10b981' : '#d1d5db', fontSize: '14px', cursor: 'pointer', flexShrink: 0 }}>{t.status === 'done' ? '✓' : '○'}</span>
+                      {sortedLinked.map(t => {
+                        const longPress = longPressHandlers(pressTimerRef, pressFiredRef, () => setLongPressTaskId(t.id))
+                        return (
+                        <div key={t.id} {...longPress} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '20px', color: '#4b5563', padding: '6px 2px', WebkitTapHighlightColor: 'transparent', minWidth: 0, touchAction: 'manipulation' }}>
+                          <span onClick={() => onMarkDone(t.id)} style={{ color: t.status === 'done' ? '#10b981' : '#d1d5db', fontSize: '22px', cursor: 'pointer', flexShrink: 0 }}>{t.status === 'done' ? '✓' : '○'}</span>
                           <span onClick={() => onMarkDone(t.id)} style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'pointer', textDecoration: t.status === 'done' ? 'line-through' : 'none', color: t.status === 'done' ? '#9ca3af' : '#4b5563' }}>{t.title}</span>
                           {t.priority && PRIORITY_COLORS[t.priority] && (
-                            <span style={{ fontSize: '9px', fontWeight: 500, padding: '1px 5px', borderRadius: '4px', flexShrink: 0, color: PRIORITY_COLORS[t.priority], background: PRIORITY_COLORS[t.priority] + '1a' }}>{PRIORITY_LABELS[t.priority]}</span>
+                            <span style={{ fontSize: '11px', fontWeight: 500, padding: '1px 5px', borderRadius: '4px', flexShrink: 0, color: PRIORITY_COLORS[t.priority], background: PRIORITY_COLORS[t.priority] + '1a' }}>{PRIORITY_LABELS[t.priority]}</span>
                           )}
                           {t.start_time && (
-                            <span style={{ fontSize: '9px', color: '#a5b4fc', flexShrink: 0, whiteSpace: 'nowrap' }}>{formatTime(t.start_time)}</span>
+                            <span style={{ fontSize: '13px', color: '#a5b4fc', flexShrink: 0, whiteSpace: 'nowrap' }}>{formatTime(t.start_time)}</span>
                           )}
-                          <span onClick={() => handleEditTask(t.id)} style={{ color: '#c7d2fe', fontSize: '13px', cursor: 'pointer', padding: '2px 4px', flexShrink: 0 }}>&#9998;</span>
-                          <span onClick={() => onDelete(t.id)} style={{ color: '#d1d5db', fontSize: '13px', cursor: 'pointer', padding: '2px 4px', flexShrink: 0 }}>&#x2715;</span>
+                          <span onClick={() => handleEditTask(t.id)} style={{ color: '#c7d2fe', fontSize: '18px', cursor: 'pointer', padding: '2px 4px', flexShrink: 0 }}>&#9998;</span>
+                          {longPressTaskId === t.id && (
+                            <span onClick={(e) => { e.stopPropagation(); onDelete(t.id); setLongPressTaskId(null) }} style={{ color: '#ef4444', fontSize: '15px', fontWeight: 500, cursor: 'pointer', padding: '2px 4px', flexShrink: 0 }}>Delete?</span>
+                          )}
                         </div>
-                      ))}
+                        )
+                      })}
                     </div>
                   )}
                   <form onSubmit={(e) => handleAddTaskToGoal(e, goal.id)} style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #f3f4f6' }}>
