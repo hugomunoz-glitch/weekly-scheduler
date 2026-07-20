@@ -9,6 +9,7 @@ const GOAL_CATEGORIES = [
 ]
 
 const PRIORITY_COLORS = { high: '#ef4444', medium: '#f59e0b', low: '#9ca3af' }
+const PRIORITY_RANK = { high: 0, medium: 1, low: 2 }
 const PRIORITY_LABELS = { high: 'High', medium: 'Medium', low: 'Low' }
 
 function formatTime(t) {
@@ -61,6 +62,12 @@ export default function GoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEdit
 
   visibleGoals = [...visibleGoals].sort((a, b) => {
     if (sortMode === 'alpha') return a.title.localeCompare(b.title)
+    if (sortMode === 'priority') {
+      const aRank = a.priority in PRIORITY_RANK ? PRIORITY_RANK[a.priority] : 3
+      const bRank = b.priority in PRIORITY_RANK ? PRIORITY_RANK[b.priority] : 3
+      if (aRank !== bRank) return aRank - bRank
+      return a.title.localeCompare(b.title)
+    }
     const aDate = nearestDueDate(a.id), bDate = nearestDueDate(b.id)
     if (!aDate && !bDate) return a.title.localeCompare(b.title)
     if (!aDate) return 1
@@ -355,6 +362,7 @@ export default function GoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEdit
       <div className="flex items-center gap-2 mt-2">
         <select value={sortMode} onChange={e => setSortMode(e.target.value)} className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-300" title="Sort goals">
           <option value="deadline">Sort: Deadline</option>
+          <option value="priority">Sort: Priority</option>
           <option value="alpha">Sort: A-Z</option>
         </select>
         <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-300" title="Filter by category">

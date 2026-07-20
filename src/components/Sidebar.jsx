@@ -2,11 +2,19 @@ import { useState } from 'react'
 import { Droppable, Draggable } from '@hello-pangea/dnd'
 import { useAssistantHistory } from '../hooks/useAssistantHistory'
 
+const PRIORITY_RANK = { high: 0, medium: 1, low: 2 }
+
 function Inbox({ tasks, goalMap, onEdit, onDelete, search, sortMode }) {
   const [hoverId, setHoverId] = useState(null)
   const filteredTasks = search && search.trim() ? tasks.filter(t => t.title.toLowerCase().includes(search.trim().toLowerCase())) : tasks
   const visibleTasks = [...filteredTasks].sort((a, b) => {
     if (sortMode === 'alpha') return a.title.localeCompare(b.title)
+    if (sortMode === 'priority') {
+      const aRank = a.priority in PRIORITY_RANK ? PRIORITY_RANK[a.priority] : 3
+      const bRank = b.priority in PRIORITY_RANK ? PRIORITY_RANK[b.priority] : 3
+      if (aRank !== bRank) return aRank - bRank
+      return a.title.localeCompare(b.title)
+    }
     if (!a.due_date && !b.due_date) return 0
     if (!a.due_date) return 1
     if (!b.due_date) return -1
@@ -244,6 +252,7 @@ export default function Sidebar({ tasks, goalMap, goals, allTasks, onAddTask, on
             <div className="px-4 pb-2 flex justify-end shrink-0">
               <select value={taskSort} onChange={e => setTaskSort(e.target.value)} className="text-xs border border-gray-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-indigo-300" title="Sort tasks">
                 <option value="deadline">Sort: Deadline</option>
+                <option value="priority">Sort: Priority</option>
                 <option value="alpha">Sort: A-Z</option>
               </select>
             </div>
