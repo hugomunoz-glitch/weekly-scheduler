@@ -31,39 +31,6 @@ function PriorityBadge({ priority }) {
   )
 }
 
-// Returns handlers that fire onLongPress if the mouse is held ~550ms without moving.
-// Safe alongside real drag-and-drop: dnd only activates on movement, so a still
-// press never starts a drag, and any movement here cancels the long-press timer.
-// Plain factory (not a hook) so it can be called inside .map() loops; timerRef/firedRef
-// are shared refs passed in from the component, one press active at a time is fine.
-function longPressHandlers(timerRef, firedRef, onLongPress, ms = 550) {
-  function clear() { if (timerRef.current) { clearTimeout(timerRef.current); timerRef.current = null } }
-  return {
-    onMouseDown(e) {
-      e.stopPropagation()
-      firedRef.current = false
-      clear()
-      timerRef.current = setTimeout(() => { firedRef.current = true; onLongPress() }, ms)
-    },
-    onMouseMove: clear,
-    onMouseUp: clear,
-    onMouseLeave: clear,
-    onClick(e) { if (firedRef.current) { e.preventDefault(); e.stopPropagation() } }
-  }
-}
-
-// Merges two prop objects, calling BOTH handlers (in order) for any event name present
-// in both, instead of the later one silently overwriting the earlier one.
-function composeProps(a, b) {
-  const result = { ...a, ...b }
-  for (const key of Object.keys(a)) {
-    if (typeof a[key] === 'function' && typeof b[key] === 'function') {
-      result[key] = (...args) => { a[key](...args); b[key](...args) }
-    }
-  }
-  return result
-}
-
 export default function GoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onDeleteGoal, onMarkDone, onDelete, onCreateTask, onEditTask }) {
   const [adding, setAdding] = useState(false)
   const [newTitle, setNewTitle] = useState('')
@@ -89,10 +56,6 @@ export default function GoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEdit
   const allCategories = [...new Set([...GOAL_CATEGORIES, ...goals.map(g => g.category).filter(Boolean)])].sort()
   const [popupPos, setPopupPos] = useState(null)
   const dragRef = useRef(null)
-  const [longPressGoalId, setLongPressGoalId] = useState(null)
-  const [longPressTaskId, setLongPressTaskId] = useState(null)
-  const pressTimerRef = useRef(null)
-  const pressFiredRef = useRef(false)
 
   function openPopup(goalId, e) {
     setViewingGoalId(goalId)
@@ -444,14 +407,13 @@ export default function GoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEdit
                         {(provided) => (
                           <ul ref={provided.innerRef} {...provided.droppableProps} className="space-y-1.5 max-h-[50vh] overflow-y-auto">
                             {sortedLinked.map((t, idx) => {
-                              const longPress = longPressHandlers(pressTimerRef, pressFiredRef, () => setLongPressTaskId(t.id))
                               return (
                                 <Draggable key={t.id} draggableId={t.id} index={idx}>
                                   {(dragProvided, dragSnapshot) => (
                                     <li
                                       ref={dragProvided.innerRef}
                                       {...dragProvided.draggableProps}
-                                      {...composeProps(dragProvided.dragHandleProps, longPress)}
+                                      {...dragProvided.dragHandleProps}
                                       className={'text-xl text-gray-600 flex items-center gap-2 group rounded px-2 py-1.5 -mx-2 ' + (dragSnapshot.isDragging ? 'bg-indigo-50 shadow-md' : 'hover:bg-gray-50')}
                                     >
                                       <span className="cursor-pointer shrink-0" onClick={() => onMarkDone(t.id)}>
@@ -465,14 +427,13 @@ export default function GoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEdit
                                       <button onClick={() => handleEditTask(t.id)} className="text-gray-300 hover:text-indigo-500 opacity-0 group-hover:opacity-100 transition-colors shrink-0" title="Edit task">
                                         <span className="text-base">&#9998;</span>
                                       </button>
-                                      {longPressTaskId === t.id && (
-                                        <button
-                                          onClick={(e) => { e.stopPropagation(); onDelete(t.id); setLongPressTaskId(null) }}
-                                          className="text-sm text-red-500 hover:text-red-700 font-medium shrink-0"
-                                        >
-                                          Delete?
-                                        </button>
-                                      )}
+                                      <button
+                                        onClick={(e) => { e.stopPropagation(); onDelete(t.id) }}
+                                        className="w-3.5 h-3.5 rounded-full bg-red-500 hover:bg-red-600 text-white text-[8px] font-semibold flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                                        title="Delete task"
+                                      >
+                                        &#10005;
+                                      </button>
                                     </li>
                                   )}
                                 </Draggable>

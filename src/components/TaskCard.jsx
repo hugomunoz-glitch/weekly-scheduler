@@ -23,10 +23,19 @@ export default function TaskCard({ task, isDone, isDragging, goalColor, onMarkDo
 
   return (
     <div
-      className={'rounded-lg border px-2.5 py-2 text-base transition-all ' + (isDragging ? 'border-indigo-300 bg-white shadow-lg rotate-1' : isDone ? 'border-gray-100 bg-gray-50 opacity-60' : 'border-gray-200 bg-white hover:border-gray-300')}
+      className={'relative group rounded-lg border px-2.5 py-2 text-base transition-all ' + (isDragging ? 'border-indigo-300 bg-white shadow-lg rotate-1' : isDone ? 'border-gray-100 bg-gray-50 opacity-60' : 'border-gray-200 bg-white hover:border-gray-300')}
       onMouseEnter={() => setShowActions(true)}
       onMouseLeave={() => setShowActions(false)}
     >
+      {!isDragging && (
+        <button
+          onClick={(e) => { e.stopPropagation(); onDelete(task.id) }}
+          className="hidden md:flex absolute -top-1.5 -right-1.5 w-2.5 h-2.5 rounded-full bg-red-500 hover:bg-red-600 text-white text-[5px] font-semibold items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm z-10"
+          title="Delete task"
+        >
+          &#10005;
+        </button>
+      )}
       <div className="flex items-start gap-2">
         <button
           onClick={() => onMarkDone(task.id)}
@@ -63,7 +72,7 @@ export default function TaskCard({ task, isDone, isDragging, goalColor, onMarkDo
         {!isDragging && (
           <button
             onClick={(e) => { e.stopPropagation(); setShowActions(v => !v) }}
-            className="shrink-0 text-gray-300 hover:text-gray-500 px-1 -mr-1 leading-none"
+            className="md:hidden shrink-0 text-gray-300 hover:text-gray-500 px-1 -mr-1 leading-none"
             title="More actions"
           >
             &#8942;
@@ -72,7 +81,7 @@ export default function TaskCard({ task, isDone, isDragging, goalColor, onMarkDo
       </div>
       {isDone && showActions && (
         <div className="flex justify-end gap-2 mt-1">
-          <button onClick={() => onDelete(task.id)} className="text-xs text-gray-300 hover:text-red-400 transition-colors px-1">Delete</button>
+          <button onClick={() => onDelete(task.id)} className="md:hidden text-xs text-gray-300 hover:text-red-400 transition-colors px-1">Delete</button>
         </div>
       )}
       {!isDone && !isDragging && showActions && (
@@ -80,7 +89,7 @@ export default function TaskCard({ task, isDone, isDragging, goalColor, onMarkDo
           <button onClick={() => onEdit(task)} className="text-xs text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 px-1 py-0.5 rounded transition-colors">Edit</button>
           <button onClick={() => onRescheduleToTomorrow(task.id, task.scheduled_date)} className="text-xs text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 px-1 py-0.5 rounded transition-colors">Tomorrow</button>
           <button onClick={() => onMoveToInbox(task.id)} className="text-xs text-gray-500 hover:text-orange-600 hover:bg-orange-50 px-1 py-0.5 rounded transition-colors">Task List</button>
-          <button onClick={() => onDelete(task.id)} className="text-xs text-gray-500 hover:text-red-400 hover:bg-red-50 px-1 py-0.5 rounded transition-colors">Delete</button>
+          <button onClick={() => onDelete(task.id)} className="md:hidden text-xs text-gray-500 hover:text-red-400 hover:bg-red-50 px-1 py-0.5 rounded transition-colors">Delete</button>
         </div>
       )}
     </div>
