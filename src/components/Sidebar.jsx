@@ -40,7 +40,7 @@ function Inbox({ tasks, goalMap, onEdit, onDelete, search, sortMode }) {
                     {!snapshot.isDragging && (
                       <button
                         onClick={(e) => { e.stopPropagation(); onDelete(task.id) }}
-                        className="absolute -top-1.5 -right-1.5 w-2.5 h-2.5 rounded-full bg-red-500 hover:bg-red-600 text-white text-[5px] font-semibold flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm z-10"
+                        className="absolute -top-2 -right-2 w-4 h-4 rounded-full bg-red-500 hover:bg-red-600 text-white text-[9px] font-semibold flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm z-10"
                         title="Delete task"
                       >
                         &#10005;
@@ -55,7 +55,7 @@ function Inbox({ tasks, goalMap, onEdit, onDelete, search, sortMode }) {
                     {task.notes && <p className="text-xs text-gray-400 mt-1 truncate">{task.notes}</p>}
                     {!snapshot.isDragging && hoverId === task.id && (
                       <div className="flex gap-2 mt-1.5">
-                        <button onClick={() => onEdit(task)} className="text-xs text-indigo-500 hover:text-indigo-700">Edit</button>
+                        <button onClick={() => onEdit(task)} className="text-lg text-indigo-400 hover:text-indigo-600 leading-none" title="Edit">&#9998;</button>
                       </div>
                     )}
                   </div>
@@ -229,7 +229,7 @@ export default function Sidebar({ tasks, goalMap, goals, allTasks, onAddTask, on
       <div className="flex border-b border-gray-100 shrink-0">
         <button onClick={() => setTab('inbox')}
           className={'flex-1 py-2.5 text-xs font-medium transition-colors ' + (tab === 'inbox' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-400 hover:text-gray-600')}>
-          Task List {tasks.length > 0 && <span className="ml-1 bg-indigo-100 text-indigo-600 px-1.5 py-0.5 rounded-full">{tasks.length}</span>}
+          &#128221; Task List {tasks.length > 0 && <span className="ml-1 bg-indigo-100 text-indigo-600 px-1.5 py-0.5 rounded-full">{tasks.length}</span>}
         </button>
         <button onClick={() => setTab('assistant')}
           className={'flex-1 py-2.5 text-xs font-medium transition-colors ' + (tab === 'assistant' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-400 hover:text-gray-600')}>

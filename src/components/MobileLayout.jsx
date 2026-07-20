@@ -263,7 +263,7 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
         <div key={goal.id} onClick={() => setViewingGoalId(goal.id)} style={{ flexShrink: 0, border: '1px solid #e5e7eb', borderRadius: '10px', padding: '6px 10px', minWidth: '130px', background: 'white', position: 'relative', cursor: 'pointer' }}>
           <span
             onClick={(e) => { e.stopPropagation(); onDeleteGoal(goal.id) }}
-            style={{ position: 'absolute', top: '-5px', right: '-5px', width: '13px', height: '13px', borderRadius: '50%', background: '#ef4444', color: 'white', fontSize: '7px', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.2)', zIndex: 5 }}
+            style={{ position: 'absolute', top: '2px', right: '2px', width: '13px', height: '13px', borderRadius: '50%', background: '#ef4444', color: 'white', fontSize: '7px', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.2)', zIndex: 5 }}
             title="Delete goal"
           >
             &#10005;
@@ -743,7 +743,7 @@ export default function MobileLayout({
       {activeTab === 'inbox' && (
         <>
           <div style={{ padding: '10px 16px 6px', flexShrink: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '15px', fontWeight: 500, color: '#111827' }}>Task List <span style={{ fontSize: '13px', color: '#9ca3af', fontWeight: 400 }}>{inboxTasks.length}</span></span>
+            <span style={{ fontSize: '15px', fontWeight: 500, color: '#111827' }}>&#128221; Task List <span style={{ fontSize: '13px', color: '#9ca3af', fontWeight: 400 }}>{inboxTasks.length}</span></span>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               {showTaskSearch ? (
                 <input

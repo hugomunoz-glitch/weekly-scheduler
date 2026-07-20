@@ -345,7 +345,7 @@ export default function GoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEdit
               {editingId !== goal.id && (
                 <span
                   onClick={(e) => { e.stopPropagation(); onDeleteGoal(goal.id) }}
-                  className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-red-500 hover:bg-red-600 text-white text-[5px] font-semibold flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm z-10"
+                  className="absolute top-0.5 right-0.5 w-2.5 h-2.5 rounded-full bg-red-500 hover:bg-red-600 text-white text-[5px] font-semibold flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm z-10"
                   title="Delete goal"
                 >
                   &#10005;
@@ -429,7 +429,7 @@ export default function GoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEdit
                                       </button>
                                       <button
                                         onClick={(e) => { e.stopPropagation(); onDelete(t.id) }}
-                                        className="w-3.5 h-3.5 rounded-full bg-red-500 hover:bg-red-600 text-white text-[8px] font-semibold flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                                        className="w-5 h-5 rounded-full bg-red-500 hover:bg-red-600 text-white text-[11px] font-semibold flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
                                         title="Delete task"
                                       >
                                         &#10005;
