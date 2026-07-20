@@ -28,7 +28,7 @@ export default function App() {
       supabase.from('tasks').select('*').eq('status', 'inbox').order('created_at', { ascending: false }),
       supabase.from('tasks').select('*').gte('scheduled_date', s).lte('scheduled_date', e).order('position'),
       supabase.from('goals').select('*').order('created_at'),
-      supabase.from('tasks').select('id, title, goal_id, status').not('goal_id', 'is', null)
+      supabase.from('tasks').select('id, title, goal_id, status, due_date').not('goal_id', 'is', null)
     ])
     const weekTasks = weekRes.data || []
     const inboxTasks = inboxRes.data || []
@@ -84,7 +84,7 @@ export default function App() {
     }).select().single()
     if (error) { console.error('addTask failed:', error); throw error }
     setTasks(prev => [data, ...prev])
-    if (data.goal_id) setGoalTasks(prev => [...prev, { id: data.id, goal_id: data.goal_id, status: data.status }])
+    if (data.goal_id) setGoalTasks(prev => [...prev, { id: data.id, title: data.title, goal_id: data.goal_id, status: data.status, due_date: data.due_date }])
   }
 
   async function editTask(taskId, title, notes, goalId, startTime, dueDate, scheduledDate) {
@@ -105,7 +105,7 @@ export default function App() {
       setTasks(prev => prev.map(t => t.id === taskId ? data : t))
       setGoalTasks(prev => {
         const filtered = prev.filter(t => t.id !== taskId)
-        if (data.goal_id) return [...filtered, { id: data.id, goal_id: data.goal_id, status: data.status }]
+        if (data.goal_id) return [...filtered, { id: data.id, title: data.title, goal_id: data.goal_id, status: data.status, due_date: data.due_date }]
         return filtered
       })
     }
@@ -113,7 +113,7 @@ export default function App() {
 
   async function addGoal(title, color) {
     const { data, error } = await supabase.from('goals').insert({ title, color }).select().single()
-    if (!error) setGoals(prev => [...prev, data])
+    if (!error) { setGoals(prev => [...prev, data]); return data }
   }
 
   async function editGoal(goalId, title) {
@@ -205,7 +205,7 @@ export default function App() {
               <button onClick={() => setShowAdd(true)} className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700">+ Add task</button>
             </div>
           </header>
-          <GoalsBar goals={goals} goalTasks={goalTasks} onAddGoal={addGoal} onEditGoal={editGoal} onDeleteGoal={deleteGoal} onMarkDone={markDone} onDelete={deleteTask} onCreateTask={addTask} />
+          <GoalsBar goals={goals} goalTasks={goalTasks} allTasks={tasks} onAddGoal={addGoal} onEditGoal={editGoal} onDeleteGoal={deleteGoal} onMarkDone={markDone} onDelete={deleteTask} onCreateTask={addTask} onEditTask={setEditingTask} />
           <div className="flex flex-1 overflow-hidden">
             <main className="flex-1 overflow-x-auto overflow-y-auto p-4">
               {loading ? <div className="flex items-center justify-center h-full text-sm text-gray-400">Loading</div> : (
@@ -216,8 +216,8 @@ export default function App() {
           </div>
         </div>
       )}
-      {showAdd && <AddTaskModal onAdd={addTask} onClose={() => setShowAdd(false)} goals={goals} />}
-      {editingTask && <AddTaskModal editingTask={editingTask} onEdit={editTask} onClose={() => setEditingTask(null)} goals={goals} />}
+      {showAdd && <AddTaskModal onAdd={addTask} onClose={() => setShowAdd(false)} goals={goals} onAddGoal={addGoal} />}
+      {editingTask && <AddTaskModal editingTask={editingTask} onEdit={editTask} onClose={() => setEditingTask(null)} goals={goals} onAddGoal={addGoal} />}
     </DragDropContext>
   )
 }

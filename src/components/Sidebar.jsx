@@ -4,18 +4,29 @@ import { useAssistantHistory } from '../hooks/useAssistantHistory'
 
 function Inbox({ tasks, goalMap, onEdit, onDelete }) {
   const [hoverId, setHoverId] = useState(null)
+  const [search, setSearch] = useState('')
+  const visibleTasks = search.trim() ? tasks.filter(t => t.title.toLowerCase().includes(search.trim().toLowerCase())) : tasks
   return (
     <div className="flex flex-col h-full">
+      <div className="px-3 pt-2">
+        <input
+          type="text"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Search tasks…"
+          className="w-full text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-300 focus:border-indigo-400"
+        />
+      </div>
       <Droppable droppableId="inbox">
         {(provided, snapshot) => (
           <div ref={provided.innerRef} {...provided.droppableProps}
             className={'flex-1 overflow-y-auto p-3 space-y-2 min-h-[60px] transition-colors ' + (snapshot.isDraggingOver ? 'bg-indigo-50' : '')}>
-            {tasks.length === 0 && !snapshot.isDraggingOver && (
+            {visibleTasks.length === 0 && !snapshot.isDraggingOver && (
               <div className="text-center pt-10">
-                <p className="text-xs text-gray-400 leading-relaxed">Nothing waiting.<br />Add a task to get started.</p>
+                <p className="text-xs text-gray-400 leading-relaxed">{search.trim() ? 'No matching tasks.' : <>Nothing waiting.<br />Add a task to get started.</>}</p>
               </div>
             )}
-            {tasks.map((task, index) => (
+            {visibleTasks.map((task, index) => (
               <Draggable key={task.id} draggableId={task.id} index={index}>
                 {(provided, snapshot) => (
                   <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}
@@ -205,7 +216,7 @@ export default function Sidebar({ tasks, goalMap, goals, allTasks, onAddTask, on
       <div className="flex border-b border-gray-100 shrink-0">
         <button onClick={() => setTab('inbox')}
           className={'flex-1 py-2.5 text-xs font-medium transition-colors ' + (tab === 'inbox' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-400 hover:text-gray-600')}>
-          Inbox {tasks.length > 0 && <span className="ml-1 bg-indigo-100 text-indigo-600 px-1.5 py-0.5 rounded-full">{tasks.length}</span>}
+          Task List {tasks.length > 0 && <span className="ml-1 bg-indigo-100 text-indigo-600 px-1.5 py-0.5 rounded-full">{tasks.length}</span>}
         </button>
         <button onClick={() => setTab('assistant')}
           className={'flex-1 py-2.5 text-xs font-medium transition-colors ' + (tab === 'assistant' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-400 hover:text-gray-600')}>

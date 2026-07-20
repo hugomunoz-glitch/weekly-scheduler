@@ -2,7 +2,7 @@ import { useState } from 'react'
 
 const COLORS = ['#6366f1', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316']
 
-export default function GoalsBar({ goals, goalTasks, onAddGoal, onEditGoal, onDeleteGoal, onMarkDone, onDelete, onCreateTask }) {
+export default function GoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onDeleteGoal, onMarkDone, onDelete, onCreateTask, onEditTask }) {
   const [adding, setAdding] = useState(false)
   const [newTitle, setNewTitle] = useState('')
   const [editingId, setEditingId] = useState(null)
@@ -10,6 +10,14 @@ export default function GoalsBar({ goals, goalTasks, onAddGoal, onEditGoal, onDe
   const [confirmDeleteId, setConfirmDeleteId] = useState(null)
   const [viewingGoalId, setViewingGoalId] = useState(null)
   const [newTaskTitle, setNewTaskTitle] = useState('')
+  const [goalSearch, setGoalSearch] = useState('')
+
+  const visibleGoals = goalSearch.trim() ? goals.filter(g => g.title.toLowerCase().includes(goalSearch.trim().toLowerCase())) : goals
+
+  function handleEditTask(taskId) {
+    const full = (allTasks || []).find(t => t.id === taskId)
+    if (full) onEditTask(full)
+  }
 
   function handleAddTaskToGoal(e, goalId) {
     e.preventDefault()
@@ -42,9 +50,46 @@ export default function GoalsBar({ goals, goalTasks, onAddGoal, onEditGoal, onDe
   return (
     <div className="bg-white border-b border-gray-100 px-6 py-2 flex items-center gap-3 overflow-x-auto shrink-0">
       <span className="text-xs font-medium text-gray-400 uppercase tracking-wide shrink-0">Goals</span>
-      {goals.map(goal => {
+      {adding ? (
+        <form onSubmit={handleAdd} className="flex items-center gap-2 shrink-0">
+          <input
+            autoFocus
+            type="text"
+            placeholder="Goal name"
+            value={newTitle}
+            onChange={e => setNewTitle(e.target.value)}
+            onBlur={() => { if (!newTitle.trim()) setAdding(false) }}
+            className="border border-indigo-300 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-300 w-36"
+          />
+          <button type="submit" className="text-xs text-white bg-indigo-600 px-2 py-1 rounded-lg hover:bg-indigo-700">Add</button>
+          <button type="button" onClick={() => setAdding(false)} className="text-xs text-gray-400 hover:text-gray-600">Cancel</button>
+        </form>
+      ) : (
+        <button
+          onClick={() => setAdding(true)}
+          className="text-xs text-indigo-500 hover:text-indigo-700 border border-dashed border-indigo-200 hover:border-indigo-400 rounded-lg px-3 py-1.5 shrink-0 transition-colors"
+        >
+          + Add goal
+        </button>
+      )}
+      <input
+        type="text"
+        value={goalSearch}
+        onChange={e => setGoalSearch(e.target.value)}
+        placeholder="Search goals…"
+        className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 w-32 shrink-0 focus:outline-none focus:ring-1 focus:ring-indigo-300 focus:border-indigo-400"
+      />
+      <div className="w-px h-5 bg-gray-100 shrink-0" />
+      {visibleGoals.map(goal => {
         const linked = goalTasks.filter(t => t.goal_id === goal.id)
-        const sortedLinked = [...linked].sort((a, b) => (a.status === 'done') - (b.status === 'done'))
+        const sortedLinked = [...linked].sort((a, b) => {
+          const aDone = a.status === 'done', bDone = b.status === 'done'
+          if (aDone !== bDone) return aDone ? 1 : -1
+          if (!a.due_date && !b.due_date) return 0
+          if (!a.due_date) return 1
+          if (!b.due_date) return -1
+          return new Date(a.due_date) - new Date(b.due_date)
+        })
         const done = linked.filter(t => t.status === 'done')
         const pct = linked.length > 0 ? Math.round((done.length / linked.length) * 100) : 0
         return (
@@ -102,7 +147,7 @@ export default function GoalsBar({ goals, goalTasks, onAddGoal, onEditGoal, onDe
                 </div>
                 <span className="text-xs text-gray-400 shrink-0">{pct}%</span>
               </div>
-              <p className="text-xs text-gray-300 mt-0.5">{done.length}/{linked.length} tasks</p>
+              <p className="text-xs text-gray-300 mt-0.5">{done.length}/{linked.length} tasks · <span className="text-indigo-300">tap to view &amp; add</span></p>
               {viewingGoalId === goal.id && (
             <div onClick={(e) => { e.stopPropagation(); setViewingGoalId(null) }} className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
               <div className="relative w-80">
@@ -125,6 +170,9 @@ export default function GoalsBar({ goals, goalTasks, onAddGoal, onEditGoal, onDe
                             <span className={t.status === 'done' ? 'text-green-500' : 'text-gray-300'}>{t.status === 'done' ? '✓' : '○'}</span>
                           </span>
                           <span className={'flex-1 cursor-pointer ' + (t.status === 'done' ? 'line-through text-gray-400' : '')} onClick={() => onMarkDone(t.id)}>{t.title}</span>
+                          <button onClick={() => handleEditTask(t.id)} className="text-gray-300 hover:text-indigo-500 opacity-0 group-hover:opacity-100 transition-colors shrink-0" title="Edit task">
+                            <span className="text-xs">&#9998;</span>
+                          </button>
                           <button onClick={() => onDelete(t.id)} className="text-gray-200 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-colors shrink-0" title="Delete task">
                             <span className="text-xs">&#x2715;</span>
                           </button>
@@ -149,28 +197,6 @@ export default function GoalsBar({ goals, goalTasks, onAddGoal, onEditGoal, onDe
           </div>
         )
       })}
-      {adding ? (
-        <form onSubmit={handleAdd} className="flex items-center gap-2 shrink-0">
-          <input
-            autoFocus
-            type="text"
-            placeholder="Goal name"
-            value={newTitle}
-            onChange={e => setNewTitle(e.target.value)}
-            onBlur={() => { if (!newTitle.trim()) setAdding(false) }}
-            className="border border-indigo-300 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-300 w-36"
-          />
-          <button type="submit" className="text-xs text-white bg-indigo-600 px-2 py-1 rounded-lg hover:bg-indigo-700">Add</button>
-          <button type="button" onClick={() => setAdding(false)} className="text-xs text-gray-400 hover:text-gray-600">Cancel</button>
-        </form>
-      ) : (
-        <button
-          onClick={() => setAdding(true)}
-          className="text-xs text-indigo-500 hover:text-indigo-700 border border-dashed border-indigo-200 hover:border-indigo-400 rounded-lg px-3 py-1.5 shrink-0 transition-colors"
-        >
-          + Add goal
-        </button>
-      )}
     </div>
   )
 }

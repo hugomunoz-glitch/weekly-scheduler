@@ -62,7 +62,7 @@ export default function TaskCard({ task, isDone, isDragging, goalColor, onMarkDo
         <div className="flex flex-wrap gap-1 mt-2 pt-1.5 border-t border-gray-100">
           <button onClick={() => onEdit(task)} className="text-xs text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 px-1 py-0.5 rounded transition-colors">Edit</button>
           <button onClick={() => onRescheduleToTomorrow(task.id, task.scheduled_date)} className="text-xs text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 px-1 py-0.5 rounded transition-colors">Tomorrow</button>
-          <button onClick={() => onMoveToInbox(task.id)} className="text-xs text-gray-500 hover:text-orange-600 hover:bg-orange-50 px-1 py-0.5 rounded transition-colors">Inbox</button>
+          <button onClick={() => onMoveToInbox(task.id)} className="text-xs text-gray-500 hover:text-orange-600 hover:bg-orange-50 px-1 py-0.5 rounded transition-colors">Task List</button>
           <button onClick={() => onDelete(task.id)} className="text-xs text-gray-500 hover:text-red-400 hover:bg-red-50 px-1 py-0.5 rounded transition-colors">Delete</button>
         </div>
       )}

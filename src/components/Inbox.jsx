@@ -8,7 +8,7 @@ export default function Inbox({ tasks, goalMap, onAddTask, onEdit, onDelete }) {
     <div className="flex flex-col h-full">
       <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-2">
-          <h2 className="text-sm font-semibold text-gray-700">Inbox</h2>
+          <h2 className="text-sm font-semibold text-gray-700">Task List</h2>
           {tasks.length > 0 && (
             <span className="text-xs bg-indigo-100 text-indigo-600 font-medium px-1.5 py-0.5 rounded-full">{tasks.length}</span>
           )}

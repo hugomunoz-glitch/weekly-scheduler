@@ -1,12 +1,14 @@
 import { useState, useEffect, useRef } from 'react'
 
-export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTask }) {
+export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTask, onAddGoal }) {
   const [title, setTitle] = useState(editingTask ? editingTask.title : '')
   const [notes, setNotes] = useState(editingTask ? (editingTask.notes || '') : '')
   const [goalId, setGoalId] = useState(editingTask ? (editingTask.goal_id || '') : '')
   const [startTime, setStartTime] = useState(editingTask ? (editingTask.start_time || '') : '')
   const [dueDate, setDueDate] = useState(editingTask ? (editingTask.due_date || '') : '')
   const [scheduledDate, setScheduledDate] = useState(editingTask ? (editingTask.scheduled_date || '') : '')
+  const [addingGoal, setAddingGoal] = useState(false)
+  const [newGoalTitle, setNewGoalTitle] = useState('')
   const inputRef = useRef(null)
 
   useEffect(() => { inputRef.current?.focus() }, [])
@@ -15,6 +17,15 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
     document.addEventListener('keydown', handleKey)
     return () => document.removeEventListener('keydown', handleKey)
   }, [onClose])
+
+  async function handleAddNewGoal() {
+    if (!newGoalTitle.trim()) return
+    const colors = ['#6366f1', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#06b6d4']
+    const created = await onAddGoal(newGoalTitle.trim(), colors[(goals || []).length % colors.length])
+    if (created) setGoalId(created.id)
+    setNewGoalTitle('')
+    setAddingGoal(false)
+  }
 
   function handleSubmit(e) {
     e.preventDefault()
@@ -50,13 +61,17 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
           <div className="flex gap-3">
             <select
               value={goalId}
-              onChange={e => setGoalId(e.target.value)}
+              onChange={e => {
+                if (e.target.value === '__new__') { setAddingGoal(true); return }
+                setGoalId(e.target.value)
+              }}
               className="flex-1 border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 text-gray-700"
             >
               <option value="">No goal</option>
               {(goals || []).map(g => (
                 <option key={g.id} value={g.id}>{g.title}</option>
               ))}
+              {onAddGoal && <option value="__new__">+ New goal…</option>}
             </select>
             <input
               type="time"
@@ -65,15 +80,30 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
               className="w-32 border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 text-gray-700"
             />
           </div>
+          {addingGoal && (
+            <div className="flex gap-2 -mt-1">
+              <input
+                autoFocus
+                type="text"
+                placeholder="New goal title"
+                value={newGoalTitle}
+                onChange={e => setNewGoalTitle(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAddNewGoal() } }}
+                className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400"
+              />
+              <button type="button" onClick={handleAddNewGoal} className="text-sm text-white bg-indigo-600 hover:bg-indigo-700 px-3 py-2 rounded-lg">Create</button>
+              <button type="button" onClick={() => { setAddingGoal(false); setNewGoalTitle('') }} className="text-sm text-gray-400 hover:text-gray-600 px-2">Cancel</button>
+            </div>
+          )}
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">Schedule to day (optional)</label>
+            <label className="block text-xs font-medium text-gray-500 mb-1">Soft deadline (optional)</label>
             <input
               type="date"
               value={scheduledDate}
               onChange={e => setScheduledDate(e.target.value)}
               className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 text-gray-700"
             />
-            <p className="text-[11px] text-gray-400 mt-1">Leave blank to keep in Inbox. Clearing this later sends it back to Inbox.</p>
+            <p className="text-[11px] text-gray-400 mt-1">Leave blank to keep in Task List. Clearing this later sends it back to Task List.</p>
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-500 mb-1">Due date (optional)</label>
@@ -86,7 +116,7 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
           </div>
           <div className="flex gap-2 pt-1">
             <button type="button" onClick={onClose} className="flex-1 py-2 text-sm text-gray-500 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">Cancel</button>
-            <button type="submit" disabled={!title.trim()} className="flex-1 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">{editingTask ? 'Save changes' : 'Add to inbox'}</button>
+            <button type="submit" disabled={!title.trim()} className="flex-1 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">{editingTask ? 'Save changes' : 'Add to Task List'}</button>
           </div>
         </form>
       </div>
