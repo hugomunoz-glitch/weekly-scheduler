@@ -160,20 +160,57 @@ export default function App() {
     setGoals(prev => prev.map(g => g.id === goalId ? data : g))
   }
 
-  async function deleteGoal(goalId) {
+  const [undoQueue, setUndoQueue] = useState([]) // [{ id, type, label, timerId }]
+  const UNDO_MS = 6000
+
+  async function performDeleteGoal(goalId) {
     const { error } = await supabase.from('goals').delete().eq('id', goalId)
-    if (!error) {
-      setGoals(prev => prev.filter(g => g.id !== goalId))
-      setGoalTasks(prev => prev.filter(t => t.goal_id !== goalId))
-    }
+    if (error) console.error('deleteGoal failed:', error)
   }
 
-  async function deleteTask(taskId) {
+  async function performDeleteTask(taskId) {
     const { error } = await supabase.from('tasks').delete().eq('id', taskId)
-    if (!error) {
-      setTasks(prev => prev.filter(t => t.id !== taskId))
-      setGoalTasks(prev => prev.filter(t => t.id !== taskId))
-    }
+    if (error) console.error('deleteTask failed:', error)
+  }
+
+  function deleteGoal(goalId) {
+    const goal = goals.find(g => g.id === goalId)
+    if (!goal) return
+    const relatedGoalTasks = goalTasks.filter(t => t.goal_id === goalId)
+    setGoals(prev => prev.filter(g => g.id !== goalId))
+    setGoalTasks(prev => prev.filter(t => t.goal_id !== goalId))
+    const timerId = setTimeout(() => {
+      performDeleteGoal(goalId)
+      setUndoQueue(prev => prev.filter(u => u.id !== goalId))
+    }, UNDO_MS)
+    setUndoQueue(prev => [...prev, { id: goalId, type: 'goal', label: goal.title, timerId, restore: () => {
+      setGoals(prev => [...prev, goal])
+      setGoalTasks(prev => [...prev, ...relatedGoalTasks])
+    } }])
+  }
+
+  function deleteTask(taskId) {
+    const task = tasks.find(t => t.id === taskId)
+    if (!task) return
+    const relatedGoalTask = goalTasks.find(t => t.id === taskId)
+    setTasks(prev => prev.filter(t => t.id !== taskId))
+    setGoalTasks(prev => prev.filter(t => t.id !== taskId))
+    const timerId = setTimeout(() => {
+      performDeleteTask(taskId)
+      setUndoQueue(prev => prev.filter(u => u.id !== taskId))
+    }, UNDO_MS)
+    setUndoQueue(prev => [...prev, { id: taskId, type: 'task', label: task.title, timerId, restore: () => {
+      setTasks(prev => [...prev, task])
+      if (relatedGoalTask) setGoalTasks(prev => [...prev, relatedGoalTask])
+    } }])
+  }
+
+  function undoDelete(id) {
+    setUndoQueue(prev => {
+      const entry = prev.find(u => u.id === id)
+      if (entry) { clearTimeout(entry.timerId); entry.restore() }
+      return prev.filter(u => u.id !== id)
+    })
   }
 
   async function markDone(taskId) {
@@ -262,6 +299,16 @@ export default function App() {
       )}
       {showAdd && <AddTaskModal onAdd={addTask} onClose={() => { setShowAdd(false); setAddForDate(null) }} goals={goals} onAddGoal={addGoal} initialScheduledDate={addForDate} />}
       {editingTask && <AddTaskModal editingTask={editingTask} onEdit={editTask} onClose={() => setEditingTask(null)} goals={goals} onAddGoal={addGoal} />}
+      {undoQueue.length > 0 && (
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[2000] flex flex-col gap-2 items-center">
+          {undoQueue.map(u => (
+            <div key={u.id} className="bg-gray-800 text-white text-sm rounded-lg shadow-xl px-4 py-2.5 flex items-center gap-3">
+              <span>{u.type === 'goal' ? 'Goal' : 'Task'} "{u.label}" deleted.</span>
+              <button onClick={() => undoDelete(u.id)} className="text-indigo-300 hover:text-indigo-200 font-semibold shrink-0">Undo</button>
+            </div>
+          ))}
+        </div>
+      )}
     </DragDropContext>
   )
 }
