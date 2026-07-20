@@ -300,10 +300,10 @@ export default function App() {
       {showAdd && <AddTaskModal onAdd={addTask} onClose={() => { setShowAdd(false); setAddForDate(null) }} goals={goals} onAddGoal={addGoal} initialScheduledDate={addForDate} />}
       {editingTask && <AddTaskModal editingTask={editingTask} onEdit={editTask} onClose={() => setEditingTask(null)} goals={goals} onAddGoal={addGoal} />}
       {undoQueue.length > 0 && (
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[2000] flex flex-col gap-2 items-center">
+        <div className={'fixed left-1/2 -translate-x-1/2 z-[2000] flex flex-col gap-2 items-center ' + (isMobile ? 'bottom-20' : 'bottom-4')}>
           {undoQueue.map(u => (
-            <div key={u.id} className="bg-gray-800 text-white text-sm rounded-lg shadow-xl px-4 py-2.5 flex items-center gap-3">
-              <span>{u.type === 'goal' ? 'Goal' : 'Task'} "{u.label}" deleted.</span>
+            <div key={u.id} className="bg-gray-800 text-white text-sm rounded-lg shadow-xl px-4 py-2.5 flex items-center gap-3 max-w-[90vw]">
+              <span className="truncate">{u.type === 'goal' ? 'Goal' : 'Task'} "{u.label}" deleted.</span>
               <button onClick={() => undoDelete(u.id)} className="text-indigo-300 hover:text-indigo-200 font-semibold shrink-0">Undo</button>
             </div>
           ))}

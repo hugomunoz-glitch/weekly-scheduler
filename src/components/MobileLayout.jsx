@@ -261,25 +261,19 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
         const pct = linked.length > 0 ? Math.round((done.length / linked.length) * 100) : 0
       return (
         <div key={goal.id} onClick={() => setViewingGoalId(goal.id)} style={{ flexShrink: 0, border: '1px solid #e5e7eb', borderRadius: '10px', padding: '6px 10px', minWidth: '130px', background: 'white', position: 'relative', cursor: 'pointer' }}>
-          {longPressGoalId === goal.id && (
-            <span
-              onClick={(e) => { e.stopPropagation(); onDeleteGoal(goal.id); setLongPressGoalId(null) }}
-              style={{ position: 'absolute', top: '-6px', right: '-6px', width: '16px', height: '16px', borderRadius: '50%', background: '#fca5a5', color: 'white', fontSize: '9px', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.2)', zIndex: 5 }}
-            >
-              &#10005;
-            </span>
-          )}
+          <span
+            onClick={(e) => { e.stopPropagation(); onDeleteGoal(goal.id) }}
+            style={{ position: 'absolute', top: '-5px', right: '-5px', width: '13px', height: '13px', borderRadius: '50%', background: '#ef4444', color: 'white', fontSize: '7px', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.2)', zIndex: 5 }}
+            title="Delete goal"
+          >
+            &#10005;
+          </span>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
             <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: goal.color, flexShrink: 0 }} />
             <span
               style={{ fontSize: "12px", fontWeight: 500, color: "#374151", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "110px", cursor: "pointer" }}
-              {...longPressHandlers(pressTimerRef, pressFiredRef, () => setLongPressGoalId(goal.id))}
-              onClick={(e) => {
-                if (pressFiredRef.current) { pressFiredRef.current = false; return }
-                e.stopPropagation()
-                startEditGoal(goal)
-              }}
-              title="Tap to edit, hold to delete"
+              onClick={(e) => { e.stopPropagation(); startEditGoal(goal) }}
+              title="Tap to edit"
             >{goal.title}</span>
           </div>
           {(goal.priority || goal.category) && (
@@ -366,10 +360,8 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
                     <p style={{ fontSize: '11px', color: '#9ca3af' }}>No tasks yet.</p>
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: '160px', overflowY: 'auto' }}>
-                      {sortedLinked.map(t => {
-                        const longPress = longPressHandlers(pressTimerRef, pressFiredRef, () => setLongPressTaskId(t.id))
-                        return (
-                        <div key={t.id} {...longPress} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '20px', color: '#4b5563', padding: '6px 2px', WebkitTapHighlightColor: 'transparent', minWidth: 0, touchAction: 'manipulation' }}>
+                      {sortedLinked.map(t => (
+                        <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '20px', color: '#4b5563', padding: '6px 2px', minWidth: 0 }}>
                           <span onClick={() => onMarkDone(t.id)} style={{ color: t.status === 'done' ? '#10b981' : '#d1d5db', fontSize: '22px', cursor: 'pointer', flexShrink: 0 }}>{t.status === 'done' ? '✓' : '○'}</span>
                           <span onClick={() => onMarkDone(t.id)} style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'pointer', textDecoration: t.status === 'done' ? 'line-through' : 'none', color: t.status === 'done' ? '#9ca3af' : '#4b5563' }}>{t.title}</span>
                           {t.priority && PRIORITY_COLORS[t.priority] && (
@@ -379,12 +371,9 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
                             <span style={{ fontSize: '13px', color: '#a5b4fc', flexShrink: 0, whiteSpace: 'nowrap' }}>{formatTime(t.start_time)}</span>
                           )}
                           <span onClick={() => handleEditTask(t.id)} style={{ color: '#c7d2fe', fontSize: '18px', cursor: 'pointer', padding: '2px 4px', flexShrink: 0 }}>&#9998;</span>
-                          {longPressTaskId === t.id && (
-                            <span onClick={(e) => { e.stopPropagation(); onDelete(t.id); setLongPressTaskId(null) }} style={{ color: '#fca5a5', fontSize: '15px', fontWeight: 500, cursor: 'pointer', padding: '2px 4px', flexShrink: 0, lineHeight: 1 }}>&#10005;</span>
-                          )}
+                          <span onClick={(e) => { e.stopPropagation(); onDelete(t.id) }} style={{ color: '#ef4444', fontSize: '17px', fontWeight: 500, cursor: 'pointer', padding: '2px 4px', flexShrink: 0, lineHeight: 1 }}>&#10005;</span>
                         </div>
-                        )
-                      })}
+                      ))}
                     </div>
                   )}
                   <form onSubmit={(e) => handleAddTaskToGoal(e, goal.id)} style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #f3f4f6' }}>
