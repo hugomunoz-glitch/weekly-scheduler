@@ -164,7 +164,7 @@ export default function GoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEdit
         ) : (
           <button
             onClick={() => setAdding(true)}
-            className="text-sm text-indigo-500 hover:text-indigo-700 border border-dashed border-indigo-200 hover:border-indigo-400 rounded-lg px-3 py-1.5 shrink-0 transition-colors"
+            className="text-sm text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg px-3 py-1.5 shrink-0 font-medium transition-colors"
             title="Add goal"
           >
             +

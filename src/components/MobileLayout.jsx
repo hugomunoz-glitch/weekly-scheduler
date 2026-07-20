@@ -151,7 +151,7 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
           </div>
         ) : (
           <button onClick={() => setAdding(true)} title="Add goal"
-            style={{ flexShrink: 0, border: '1px dashed #c7d2fe', borderRadius: '10px', padding: '6px 10px', fontSize: '12px', color: '#6366f1', background: 'white', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+            style={{ flexShrink: 0, border: 'none', borderRadius: '10px', padding: '6px 10px', fontSize: '12px', color: 'white', background: '#6366f1', cursor: 'pointer', whiteSpace: 'nowrap', fontWeight: 500 }}>
             +
           </button>
         )}
