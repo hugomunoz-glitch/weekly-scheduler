@@ -231,7 +231,7 @@ export default function Sidebar({ tasks, goalMap, goals, allTasks, onAddTask, on
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
                 </button>
               )}
-              <button onClick={onAddTask} className="text-xs text-indigo-600 hover:text-indigo-800 font-medium" title="Add task">+</button>
+              <button onClick={onAddTask} className="text-xs text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg px-2.5 py-1 font-medium" title="Add task">+</button>
             </div>
             <Inbox tasks={tasks} goalMap={goalMap} onEdit={onEdit} onDelete={onDelete} search={taskSearch} />
           </>

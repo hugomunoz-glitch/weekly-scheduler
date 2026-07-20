@@ -99,15 +99,18 @@ export default function GoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEdit
     setAdding(false)
   }
 
+  const [editingCategory, setEditingCategory] = useState('')
+
   function startEdit(goal) {
     setEditingId(goal.id)
     setEditingTitle(goal.title)
+    setEditingCategory(goal.category || '')
   }
 
   function handleEditSubmit(e, goalId) {
     e.preventDefault()
     if (!editingTitle.trim()) return
-    onEditGoal(goalId, editingTitle.trim())
+    onEditGoal(goalId, editingTitle.trim(), { category: editingCategory || null })
     setEditingId(null)
   }
 
@@ -202,14 +205,25 @@ export default function GoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEdit
             <div className="w-2 h-2 rounded-full shrink-0 mt-1.5" style={{ background: goal.color }} />
             <div className="flex-1 min-w-0">
               {editingId === goal.id ? (
-                <form onSubmit={(e) => handleEditSubmit(e, goal.id)} className="flex items-center gap-1">
+                <form onSubmit={(e) => handleEditSubmit(e, goal.id)} className="space-y-1" onClick={(e) => e.stopPropagation()}>
                   <input
                     autoFocus
                     value={editingTitle}
                     onChange={e => setEditingTitle(e.target.value)}
-                    onBlur={() => setEditingId(null)}
-                    className="text-sm font-medium text-gray-700 border border-indigo-300 rounded px-1 w-full focus:outline-none"
+                    className="text-sm font-medium text-gray-700 border border-indigo-300 rounded px-1.5 py-0.5 w-full focus:outline-none"
                   />
+                  <select
+                    value={editingCategory}
+                    onChange={e => setEditingCategory(e.target.value)}
+                    className="text-xs border border-gray-200 rounded px-1 py-0.5 w-full focus:outline-none"
+                  >
+                    <option value="">No category</option>
+                    {GOAL_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                  <div className="flex gap-1.5">
+                    <button type="submit" className="text-xs text-white bg-indigo-600 hover:bg-indigo-700 px-2 py-0.5 rounded">Save</button>
+                    <button type="button" onClick={() => setEditingId(null)} className="text-xs text-gray-400 hover:text-gray-600">Cancel</button>
+                  </div>
                 </form>
               ) : (
                 <div className="flex items-center justify-between gap-1">
