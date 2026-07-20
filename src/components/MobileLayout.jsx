@@ -265,8 +265,12 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
             <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: goal.color, flexShrink: 0 }} />
             <span
               style={{ fontSize: "12px", fontWeight: 500, color: "#374151", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "110px", cursor: "pointer" }}
-              onClick={(e) => { e.stopPropagation(); startEditGoal(goal) }}
               {...longPressHandlers(pressTimerRef, pressFiredRef, () => { if (window.confirm(`Delete goal "${goal.title}"?`)) onDeleteGoal(goal.id) })}
+              onClick={(e) => {
+                if (pressFiredRef.current) { pressFiredRef.current = false; return }
+                e.stopPropagation()
+                startEditGoal(goal)
+              }}
               title="Tap to edit, hold to delete"
             >{goal.title}</span>
           </div>

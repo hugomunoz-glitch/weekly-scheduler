@@ -52,6 +52,18 @@ function longPressHandlers(timerRef, firedRef, onLongPress, ms = 550) {
   }
 }
 
+// Merges two prop objects, calling BOTH handlers (in order) for any event name present
+// in both, instead of the later one silently overwriting the earlier one.
+function composeProps(a, b) {
+  const result = { ...a, ...b }
+  for (const key of Object.keys(a)) {
+    if (typeof a[key] === 'function' && typeof b[key] === 'function') {
+      result[key] = (...args) => { a[key](...args); b[key](...args) }
+    }
+  }
+  return result
+}
+
 export default function GoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onDeleteGoal, onMarkDone, onDelete, onCreateTask, onEditTask }) {
   const [adding, setAdding] = useState(false)
   const [newTitle, setNewTitle] = useState('')
@@ -361,7 +373,11 @@ export default function GoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEdit
                   <p
                     className="text-sm font-medium text-gray-700 truncate cursor-pointer hover:text-indigo-600"
                     {...longPressHandlers(pressTimerRef, pressFiredRef, () => setLongPressGoalId(goal.id))}
-                    onDoubleClick={(e) => { e.stopPropagation(); startEdit(goal) }}
+                    onClick={(e) => {
+                      if (pressFiredRef.current) { pressFiredRef.current = false; return }
+                      e.stopPropagation()
+                      startEdit(goal)
+                    }}
                     title="Click to edit, hold to delete"
                   >
                     {goal.title}
@@ -454,8 +470,7 @@ export default function GoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEdit
                                     <li
                                       ref={dragProvided.innerRef}
                                       {...dragProvided.draggableProps}
-                                      {...dragProvided.dragHandleProps}
-                                      {...longPress}
+                                      {...composeProps(dragProvided.dragHandleProps, longPress)}
                                       className={'text-xl text-gray-600 flex items-center gap-2 group rounded px-2 py-1.5 -mx-2 ' + (dragSnapshot.isDragging ? 'bg-indigo-50 shadow-md' : 'hover:bg-gray-50')}
                                     >
                                       <span className="cursor-pointer shrink-0" onClick={() => onMarkDone(t.id)}>
