@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef } from 'react'
 
-export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTask, onAddGoal }) {
+export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTask, onAddGoal, initialScheduledDate }) {
   const [title, setTitle] = useState(editingTask ? editingTask.title : '')
   const [notes, setNotes] = useState(editingTask ? (editingTask.notes || '') : '')
   const [goalId, setGoalId] = useState(editingTask ? (editingTask.goal_id || '') : '')
   const [startTime, setStartTime] = useState(editingTask ? (editingTask.start_time || '') : '')
   const [dueDate, setDueDate] = useState(editingTask ? (editingTask.due_date || '') : '')
-  const [scheduledDate, setScheduledDate] = useState(editingTask ? (editingTask.scheduled_date || '') : '')
+  const [scheduledDate, setScheduledDate] = useState(editingTask ? (editingTask.scheduled_date || '') : (initialScheduledDate || ''))
   const [addingGoal, setAddingGoal] = useState(false)
   const [newGoalTitle, setNewGoalTitle] = useState('')
   const inputRef = useRef(null)
@@ -41,7 +41,7 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 p-6">
-        <h2 className="text-base font-semibold text-gray-900 mb-4">{editingTask ? 'Edit task' : 'Add task'}</h2>
+        <h2 className="text-base font-semibold text-gray-900 mb-4">{editingTask ? 'Edit task' : initialScheduledDate ? 'Add task for ' + initialScheduledDate : 'Add task'}</h2>
         <form onSubmit={handleSubmit} className="space-y-3">
           <input
             ref={inputRef}

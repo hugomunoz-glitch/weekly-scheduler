@@ -9,7 +9,7 @@ const BUCKETS = [
   { id: 'afternoon', label: 'Evening' },
 ]
 
-export default function DayColumn({ date, tasks, goalMap, onMarkDone, onRescheduleToTomorrow, onMoveToInbox, onDelete, onEdit }) {
+export default function DayColumn({ date, tasks, goalMap, onMarkDone, onRescheduleToTomorrow, onMoveToInbox, onDelete, onEdit, onAddTaskForDay }) {
   const today = isToday(date)
   const isPast = isBefore(date, startOfDay(new Date())) && !today
   const dateStr = format(date, 'yyyy-MM-dd')
@@ -24,7 +24,10 @@ export default function DayColumn({ date, tasks, goalMap, onMarkDone, onReschedu
       <div className={'px-3 pt-3 pb-2 border-b ' + (today ? 'border-indigo-100' : 'border-gray-100')}>
         <div className="flex items-center justify-between mb-1.5">
           <span className={'text-xs font-medium uppercase tracking-wide ' + (isPast ? 'text-gray-300' : 'text-gray-500')}>{format(date, 'EEE')}</span>
-          <span className={'text-xs font-semibold px-1.5 py-0.5 rounded ' + (today ? 'bg-indigo-600 text-white' : isPast ? 'text-gray-300' : 'text-gray-500')}>{format(date, 'd')}</span>
+          <div className="flex items-center gap-1.5">
+            <button onClick={() => onAddTaskForDay(date)} className="text-xs text-indigo-400 hover:text-indigo-600 leading-none" title="Add task for this day">+Add</button>
+            <span className={'text-xs font-semibold px-1.5 py-0.5 rounded ' + (today ? 'bg-indigo-600 text-white' : isPast ? 'text-gray-300' : 'text-gray-500')}>{format(date, 'd')}</span>
+          </div>
         </div>
         <div className="h-1 bg-gray-100 rounded-full overflow-hidden">
           <div className={'h-full rounded-full transition-all duration-300 ' + capColor} style={{ width: fillPct + '%' }} />

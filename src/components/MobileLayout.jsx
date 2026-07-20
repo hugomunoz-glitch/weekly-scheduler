@@ -4,6 +4,15 @@ import { format, isToday } from 'date-fns'
 import { Droppable, Draggable } from '@hello-pangea/dnd'
 import TaskCard from './TaskCard'
 
+function formatTime(t) {
+  if (!t) return null
+  const [h, m] = t.split(':')
+  const hour = parseInt(h)
+  const ampm = hour >= 12 ? 'PM' : 'AM'
+  const display = hour % 12 === 0 ? 12 : hour % 12
+  return display + ':' + m + ' ' + ampm
+}
+
 const BUCKETS = [
   { id: 'morning', label: 'Morning' },
   { id: 'midday', label: 'Afternoon' },
@@ -42,7 +51,8 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
   }
 
   return (
-    <div style={{ background: 'white', borderBottom: '1px solid #f3f4f6', padding: '8px 12px', display: 'flex', alignItems: 'center', gap: '8px', overflowX: 'auto', flexShrink: 0 }}>
+    <div style={{ background: 'white', borderBottom: '1px solid #f3f4f6', padding: '8px 12px', flexShrink: 0 }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflowX: 'auto' }}>
       <span style={{ fontSize: '10px', fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em', flexShrink: 0 }}>Goals</span>
       {adding ? (
         <form onSubmit={handleAdd} style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
@@ -53,19 +63,11 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
           <button type="submit" style={{ background: '#6366f1', color: 'white', border: 'none', borderRadius: '6px', padding: '4px 8px', fontSize: '11px', cursor: 'pointer' }}>Add</button>
         </form>
       ) : (
-        <button onClick={() => setAdding(true)}
+        <button onClick={() => setAdding(true)} title="Add goal"
           style={{ flexShrink: 0, border: '1px dashed #c7d2fe', borderRadius: '10px', padding: '6px 10px', fontSize: '11px', color: '#6366f1', background: 'white', cursor: 'pointer', whiteSpace: 'nowrap' }}>
-          + Goal
+          +
         </button>
       )}
-      <input
-        type="text"
-        value={goalSearch}
-        onChange={e => setGoalSearch(e.target.value)}
-        placeholder="Search goals…"
-        style={{ fontSize: '11px', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '6px 8px', width: '96px', flexShrink: 0, outline: 'none' }}
-      />
-      <div style={{ width: '1px', height: '20px', background: '#f3f4f6', flexShrink: 0 }} />
       {visibleGoals.map(goal => {
         const linked = goalTasks.filter(t => t.goal_id === goal.id)
         const sortedLinked = [...linked].sort((a, b) => {
@@ -109,11 +111,14 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: '160px', overflowY: 'auto' }}>
                       {sortedLinked.map(t => (
-                        <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: '#4b5563', padding: '4px 2px', WebkitTapHighlightColor: 'transparent' }}>
-                          <span onClick={() => onMarkDone(t.id)} style={{ color: t.status === 'done' ? '#10b981' : '#d1d5db', fontSize: '14px', cursor: 'pointer' }}>{t.status === 'done' ? '✓' : '○'}</span>
-                          <span onClick={() => onMarkDone(t.id)} style={{ flex: 1, cursor: 'pointer', textDecoration: t.status === 'done' ? 'line-through' : 'none', color: t.status === 'done' ? '#9ca3af' : '#4b5563' }}>{t.title}</span>
-                          <span onClick={() => handleEditTask(t.id)} style={{ color: '#c7d2fe', fontSize: '13px', cursor: 'pointer', padding: '2px 4px' }}>&#9998;</span>
-                          <span onClick={() => onDelete(t.id)} style={{ color: '#d1d5db', fontSize: '13px', cursor: 'pointer', padding: '2px 4px' }}>&#x2715;</span>
+                        <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: '#4b5563', padding: '4px 2px', WebkitTapHighlightColor: 'transparent', minWidth: 0 }}>
+                          <span onClick={() => onMarkDone(t.id)} style={{ color: t.status === 'done' ? '#10b981' : '#d1d5db', fontSize: '14px', cursor: 'pointer', flexShrink: 0 }}>{t.status === 'done' ? '✓' : '○'}</span>
+                          <span onClick={() => onMarkDone(t.id)} style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'pointer', textDecoration: t.status === 'done' ? 'line-through' : 'none', color: t.status === 'done' ? '#9ca3af' : '#4b5563' }}>{t.title}</span>
+                          {t.start_time && (
+                            <span style={{ fontSize: '9px', color: '#a5b4fc', flexShrink: 0, whiteSpace: 'nowrap' }}>{formatTime(t.start_time)}</span>
+                          )}
+                          <span onClick={() => handleEditTask(t.id)} style={{ color: '#c7d2fe', fontSize: '13px', cursor: 'pointer', padding: '2px 4px', flexShrink: 0 }}>&#9998;</span>
+                          <span onClick={() => onDelete(t.id)} style={{ color: '#d1d5db', fontSize: '13px', cursor: 'pointer', padding: '2px 4px', flexShrink: 0 }}>&#x2715;</span>
                         </div>
                       ))}
                     </div>
@@ -135,16 +140,29 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
       )
     })}
     </div>
+    <div style={{ marginTop: '8px' }}>
+      <input
+        type="text"
+        value={goalSearch}
+        onChange={e => setGoalSearch(e.target.value)}
+        placeholder="Search goals…"
+        style={{ fontSize: '11px', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '6px 8px', width: '160px', outline: 'none' }}
+      />
+    </div>
+    </div>
   )
 }
 
-function MobileDayView({ date, tasks, goalMap, onMarkDone, onRescheduleToTomorrow, onMoveToInbox, onDelete, onEdit }) {
+function MobileDayView({ date, tasks, goalMap, onMarkDone, onRescheduleToTomorrow, onMoveToInbox, onDelete, onEdit, onAddTaskForDay }) {
   const activeTasks = tasks.filter(t => t.status !== 'done')
   const doneTasks = tasks.filter(t => t.status === 'done')
   const dateStr = format(date, 'yyyy-MM-dd')
 
   return (
     <div style={{ flex: 1, overflowY: 'auto', padding: '12px' }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '8px' }}>
+        <button onClick={() => onAddTaskForDay(date)} style={{ background: '#eef2ff', color: '#6366f1', border: 'none', borderRadius: '8px', padding: '5px 10px', fontSize: '12px', cursor: 'pointer' }}>+ Add task for this day</button>
+      </div>
       {BUCKETS.map(bucket => {
         const bucketTasks = activeTasks.filter(t => (t.bucket || 'morning') === bucket.id).sort((a, b) => (a.position || 0) - (b.position || 0))
         const bucketDone = doneTasks.filter(t => (t.bucket || 'morning') === bucket.id)
@@ -212,7 +230,7 @@ function MobileInbox({ tasks, goalMap, onAddTask, onEdit, onDelete }) {
                 ) : (
                   <>
                     <p style={{ fontSize: '13px', color: '#9ca3af', margin: '0 0 12px' }}>Nothing in the task list.</p>
-                    <button onClick={onAddTask} style={{ background: '#6366f1', color: 'white', border: 'none', borderRadius: '8px', padding: '8px 16px', fontSize: '13px', cursor: 'pointer' }}>+ Add task</button>
+                    <button onClick={onAddTask} style={{ background: '#6366f1', color: 'white', border: 'none', borderRadius: '8px', padding: '8px 16px', fontSize: '13px', cursor: 'pointer' }} title="Add task">+</button>
                   </>
                 )}
               </div>
@@ -395,7 +413,7 @@ function MobileAssistant({ goals, tasks, onCreateTask, onAddGoal }) {
 export default function MobileLayout({
   weekStart, weekDays, tasks, goals, goalMap, goalTasks, inboxTasks,
   overdueTasks, onPrevWeek, onNextWeek, onMarkDone,
-  onRescheduleToTomorrow, onMoveToInbox, onDelete, onEdit, onAddTask, onCreateTask,
+  onRescheduleToTomorrow, onMoveToInbox, onDelete, onEdit, onAddTask, onAddTaskForDay, onCreateTask,
   onRollover, onAddGoal, onEditGoal, onDeleteGoal
 }) {
   const [selectedDay, setSelectedDay] = useState(() => {
@@ -450,7 +468,7 @@ export default function MobileLayout({
             <span style={{ fontSize: '15px', fontWeight: 500, color: '#111827' }}>{format(selectedDay, 'EEEE, MMM d')}</span>
             <button onClick={onAddTask} style={{ background: '#6366f1', color: 'white', border: 'none', borderRadius: '8px', padding: '6px 12px', fontSize: '12px', cursor: 'pointer' }}>+ Add</button>
           </div>
-          <MobileDayView date={selectedDay} tasks={tasksForDay(selectedDay)} goalMap={goalMap} onMarkDone={onMarkDone} onRescheduleToTomorrow={onRescheduleToTomorrow} onMoveToInbox={onMoveToInbox} onDelete={onDelete} onEdit={onEdit} />
+          <MobileDayView date={selectedDay} tasks={tasksForDay(selectedDay)} goalMap={goalMap} onMarkDone={onMarkDone} onRescheduleToTomorrow={onRescheduleToTomorrow} onMoveToInbox={onMoveToInbox} onDelete={onDelete} onEdit={onEdit} onAddTaskForDay={onAddTaskForDay} />
         </>
       )}
 
@@ -458,7 +476,7 @@ export default function MobileLayout({
         <>
           <div style={{ padding: '10px 16px 6px', flexShrink: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: '15px', fontWeight: 500, color: '#111827' }}>Task List <span style={{ fontSize: '13px', color: '#9ca3af', fontWeight: 400 }}>{inboxTasks.length}</span></span>
-            <button onClick={onAddTask} style={{ background: '#6366f1', color: 'white', border: 'none', borderRadius: '8px', padding: '6px 12px', fontSize: '12px', cursor: 'pointer' }}>+ Add</button>
+            <button onClick={onAddTask} style={{ background: '#6366f1', color: 'white', border: 'none', borderRadius: '8px', padding: '6px 12px', fontSize: '12px', cursor: 'pointer' }} title="Add task">+</button>
           </div>
           <MobileInbox tasks={inboxTasks} goalMap={goalMap} onAddTask={onAddTask} onEdit={onEdit} onDelete={onDelete} />
         </>

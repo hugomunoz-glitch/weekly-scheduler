@@ -13,7 +13,7 @@ export default function Inbox({ tasks, goalMap, onAddTask, onEdit, onDelete }) {
             <span className="text-xs bg-indigo-100 text-indigo-600 font-medium px-1.5 py-0.5 rounded-full">{tasks.length}</span>
           )}
         </div>
-        <button onClick={onAddTask} className="text-xs text-indigo-600 hover:text-indigo-800 font-medium transition-colors">+ Add</button>
+        <button onClick={onAddTask} className="text-xs text-indigo-600 hover:text-indigo-800 font-medium transition-colors" title="Add task">+</button>
       </div>
       <Droppable droppableId="inbox">
         {(provided, snapshot) => (

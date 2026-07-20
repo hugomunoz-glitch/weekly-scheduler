@@ -17,6 +17,7 @@ export default function App() {
   const [goalTasks, setGoalTasks] = useState([])
   const [loading, setLoading] = useState(true)
   const [showAdd, setShowAdd] = useState(false)
+  const [addForDate, setAddForDate] = useState(null)
   const [editingTask, setEditingTask] = useState(null)
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i))
 
@@ -28,7 +29,7 @@ export default function App() {
       supabase.from('tasks').select('*').eq('status', 'inbox').order('created_at', { ascending: false }),
       supabase.from('tasks').select('*').gte('scheduled_date', s).lte('scheduled_date', e).order('position'),
       supabase.from('goals').select('*').order('created_at'),
-      supabase.from('tasks').select('id, title, goal_id, status, due_date').not('goal_id', 'is', null)
+      supabase.from('tasks').select('id, title, goal_id, status, due_date, start_time').not('goal_id', 'is', null)
     ])
     const weekTasks = weekRes.data || []
     const inboxTasks = inboxRes.data || []
@@ -84,7 +85,7 @@ export default function App() {
     }).select().single()
     if (error) { console.error('addTask failed:', error); throw error }
     setTasks(prev => [data, ...prev])
-    if (data.goal_id) setGoalTasks(prev => [...prev, { id: data.id, title: data.title, goal_id: data.goal_id, status: data.status, due_date: data.due_date }])
+    if (data.goal_id) setGoalTasks(prev => [...prev, { id: data.id, title: data.title, goal_id: data.goal_id, status: data.status, due_date: data.due_date, start_time: data.start_time }])
   }
 
   async function editTask(taskId, title, notes, goalId, startTime, dueDate, scheduledDate) {
@@ -105,7 +106,7 @@ export default function App() {
       setTasks(prev => prev.map(t => t.id === taskId ? data : t))
       setGoalTasks(prev => {
         const filtered = prev.filter(t => t.id !== taskId)
-        if (data.goal_id) return [...filtered, { id: data.id, title: data.title, goal_id: data.goal_id, status: data.status, due_date: data.due_date }]
+        if (data.goal_id) return [...filtered, { id: data.id, title: data.title, goal_id: data.goal_id, status: data.status, due_date: data.due_date, start_time: data.start_time }]
         return filtered
       })
     }
@@ -172,12 +173,13 @@ export default function App() {
 
   const inboxTasks = tasks.filter(t => t.status === 'inbox')
   const tasksForDay = (date) => tasks.filter(t => t.scheduled_date === format(date, 'yyyy-MM-dd'))
+  const openAddForDay = (date) => { setAddForDate(format(date, 'yyyy-MM-dd')); setShowAdd(true) }
 
   const sharedProps = {
     weekStart, weekDays, tasks, goals, goalMap, goalTasks, inboxTasks,
     overdueTasks, onMarkDone: markDone, onRescheduleToTomorrow: rescheduleToTomorrow,
     onMoveToInbox: moveToInbox, onDelete: deleteTask, onEdit: setEditingTask,
-    onAddTask: () => setShowAdd(true), onCreateTask: addTask, onRollover: rolloverOverdue,
+    onAddTask: () => setShowAdd(true), onAddTaskForDay: openAddForDay, onCreateTask: addTask, onRollover: rolloverOverdue,
     onAddGoal: addGoal, onEditGoal: editGoal, onDeleteGoal: deleteGoal,
     onPrevWeek: () => setWeekStart(w => subWeeks(w, 1)),
     onNextWeek: () => setWeekStart(w => addWeeks(w, 1)),
@@ -209,14 +211,14 @@ export default function App() {
           <div className="flex flex-1 overflow-hidden">
             <main className="flex-1 overflow-x-auto overflow-y-auto p-4">
               {loading ? <div className="flex items-center justify-center h-full text-sm text-gray-400">Loading</div> : (
-                <WeekGrid days={weekDays} tasksForDay={tasksForDay} goalMap={goalMap} onMarkDone={markDone} onRescheduleToTomorrow={rescheduleToTomorrow} onMoveToInbox={moveToInbox} onDelete={deleteTask} onEdit={setEditingTask} />
+                <WeekGrid days={weekDays} tasksForDay={tasksForDay} goalMap={goalMap} onMarkDone={markDone} onRescheduleToTomorrow={rescheduleToTomorrow} onMoveToInbox={moveToInbox} onDelete={deleteTask} onEdit={setEditingTask} onAddTaskForDay={openAddForDay} />
               )}
             </main>
             <Sidebar tasks={inboxTasks} goalMap={goalMap} goals={goals} allTasks={tasks} onAddTask={() => setShowAdd(true)} onCreateTask={addTask} onAddGoal={addGoal} onEdit={setEditingTask} onDelete={deleteTask} />
           </div>
         </div>
       )}
-      {showAdd && <AddTaskModal onAdd={addTask} onClose={() => setShowAdd(false)} goals={goals} onAddGoal={addGoal} />}
+      {showAdd && <AddTaskModal onAdd={addTask} onClose={() => { setShowAdd(false); setAddForDate(null) }} goals={goals} onAddGoal={addGoal} initialScheduledDate={addForDate} />}
       {editingTask && <AddTaskModal editingTask={editingTask} onEdit={editTask} onClose={() => setEditingTask(null)} goals={goals} onAddGoal={addGoal} />}
     </DragDropContext>
   )

@@ -2,6 +2,15 @@ import { useState } from 'react'
 
 const COLORS = ['#6366f1', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316']
 
+function formatTime(t) {
+  if (!t) return null
+  const [h, m] = t.split(':')
+  const hour = parseInt(h)
+  const ampm = hour >= 12 ? 'PM' : 'AM'
+  const display = hour % 12 === 0 ? 12 : hour % 12
+  return display + ':' + m + ' ' + ampm
+}
+
 export default function GoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onDeleteGoal, onMarkDone, onDelete, onCreateTask, onEditTask }) {
   const [adding, setAdding] = useState(false)
   const [newTitle, setNewTitle] = useState('')
@@ -48,7 +57,8 @@ export default function GoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEdit
   }
 
   return (
-    <div className="bg-white border-b border-gray-100 px-6 py-2 flex items-center gap-3 overflow-x-auto shrink-0">
+    <div className="bg-white border-b border-gray-100 px-6 py-2 shrink-0">
+      <div className="flex items-center gap-3 overflow-x-auto">
       <span className="text-xs font-medium text-gray-400 uppercase tracking-wide shrink-0">Goals</span>
       {adding ? (
         <form onSubmit={handleAdd} className="flex items-center gap-2 shrink-0">
@@ -68,18 +78,11 @@ export default function GoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEdit
         <button
           onClick={() => setAdding(true)}
           className="text-xs text-indigo-500 hover:text-indigo-700 border border-dashed border-indigo-200 hover:border-indigo-400 rounded-lg px-3 py-1.5 shrink-0 transition-colors"
+          title="Add goal"
         >
-          + Add goal
+          +
         </button>
       )}
-      <input
-        type="text"
-        value={goalSearch}
-        onChange={e => setGoalSearch(e.target.value)}
-        placeholder="Search goals…"
-        className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 w-32 shrink-0 focus:outline-none focus:ring-1 focus:ring-indigo-300 focus:border-indigo-400"
-      />
-      <div className="w-px h-5 bg-gray-100 shrink-0" />
       {visibleGoals.map(goal => {
         const linked = goalTasks.filter(t => t.goal_id === goal.id)
         const sortedLinked = [...linked].sort((a, b) => {
@@ -169,7 +172,10 @@ export default function GoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEdit
                           <span className="cursor-pointer" onClick={() => onMarkDone(t.id)}>
                             <span className={t.status === 'done' ? 'text-green-500' : 'text-gray-300'}>{t.status === 'done' ? '✓' : '○'}</span>
                           </span>
-                          <span className={'flex-1 cursor-pointer ' + (t.status === 'done' ? 'line-through text-gray-400' : '')} onClick={() => onMarkDone(t.id)}>{t.title}</span>
+                          <span className={'flex-1 truncate cursor-pointer ' + (t.status === 'done' ? 'line-through text-gray-400' : '')} onClick={() => onMarkDone(t.id)}>{t.title}</span>
+                          {t.start_time && (
+                            <span className="text-[10px] text-indigo-400 shrink-0 whitespace-nowrap">{formatTime(t.start_time)}</span>
+                          )}
                           <button onClick={() => handleEditTask(t.id)} className="text-gray-300 hover:text-indigo-500 opacity-0 group-hover:opacity-100 transition-colors shrink-0" title="Edit task">
                             <span className="text-xs">&#9998;</span>
                           </button>
@@ -197,6 +203,16 @@ export default function GoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEdit
           </div>
         )
       })}
+      </div>
+      <div className="mt-2">
+        <input
+          type="text"
+          value={goalSearch}
+          onChange={e => setGoalSearch(e.target.value)}
+          placeholder="Search goals…"
+          className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 w-48 focus:outline-none focus:ring-1 focus:ring-indigo-300 focus:border-indigo-400"
+        />
+      </div>
     </div>
   )
 }
