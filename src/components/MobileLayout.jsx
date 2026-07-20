@@ -368,7 +368,7 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
                           )}
                           <span onClick={() => handleEditTask(t.id)} style={{ color: '#c7d2fe', fontSize: '18px', cursor: 'pointer', padding: '2px 4px', flexShrink: 0 }}>&#9998;</span>
                           {longPressTaskId === t.id && (
-                            <span onClick={(e) => { e.stopPropagation(); onDelete(t.id); setLongPressTaskId(null) }} style={{ color: '#ef4444', fontSize: '15px', fontWeight: 500, cursor: 'pointer', padding: '2px 4px', flexShrink: 0 }}>Delete?</span>
+                            <span onClick={(e) => { e.stopPropagation(); onDelete(t.id); setLongPressTaskId(null) }} style={{ color: '#ef4444', fontSize: '20px', fontWeight: 600, cursor: 'pointer', padding: '2px 6px', flexShrink: 0, lineHeight: 1 }}>&#10005;</span>
                           )}
                         </div>
                         )
