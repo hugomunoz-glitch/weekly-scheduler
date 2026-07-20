@@ -2,9 +2,16 @@ import { useState } from 'react'
 import { Droppable, Draggable } from '@hello-pangea/dnd'
 import { useAssistantHistory } from '../hooks/useAssistantHistory'
 
-function Inbox({ tasks, goalMap, onEdit, onDelete, search }) {
+function Inbox({ tasks, goalMap, onEdit, onDelete, search, sortMode }) {
   const [hoverId, setHoverId] = useState(null)
-  const visibleTasks = search && search.trim() ? tasks.filter(t => t.title.toLowerCase().includes(search.trim().toLowerCase())) : tasks
+  const filteredTasks = search && search.trim() ? tasks.filter(t => t.title.toLowerCase().includes(search.trim().toLowerCase())) : tasks
+  const visibleTasks = [...filteredTasks].sort((a, b) => {
+    if (sortMode === 'alpha') return a.title.localeCompare(b.title)
+    if (!a.due_date && !b.due_date) return 0
+    if (!a.due_date) return 1
+    if (!b.due_date) return -1
+    return a.due_date < b.due_date ? -1 : a.due_date > b.due_date ? 1 : 0
+  })
   return (
     <div className="flex flex-col h-full">
       <Droppable droppableId="inbox">
@@ -200,6 +207,7 @@ export default function Sidebar({ tasks, goalMap, goals, allTasks, onAddTask, on
   const [tab, setTab] = useState('inbox')
   const [taskSearch, setTaskSearch] = useState('')
   const [showTaskSearch, setShowTaskSearch] = useState(false)
+  const [taskSort, setTaskSort] = useState('deadline')
   return (
     <div className="w-64 bg-white flex flex-col shrink-0 overflow-hidden h-full">
       <div className="flex border-b border-gray-100 shrink-0">
@@ -233,7 +241,13 @@ export default function Sidebar({ tasks, goalMap, goals, allTasks, onAddTask, on
               )}
               <button onClick={onAddTask} className="text-xs text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg px-2.5 py-1 font-medium" title="Add task">+</button>
             </div>
-            <Inbox tasks={tasks} goalMap={goalMap} onEdit={onEdit} onDelete={onDelete} search={taskSearch} />
+            <div className="px-4 pb-2 flex justify-end shrink-0">
+              <select value={taskSort} onChange={e => setTaskSort(e.target.value)} className="text-xs border border-gray-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-indigo-300" title="Sort tasks">
+                <option value="deadline">Sort: Deadline</option>
+                <option value="alpha">Sort: A-Z</option>
+              </select>
+            </div>
+            <Inbox tasks={tasks} goalMap={goalMap} onEdit={onEdit} onDelete={onDelete} search={taskSearch} sortMode={taskSort} />
           </>
         ) : (
           <Assistant goals={goals} tasks={allTasks} onCreateTask={onCreateTask} onAddGoal={onAddGoal} />

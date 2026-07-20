@@ -343,8 +343,15 @@ function MobileDayView({ date, tasks, goalMap, onMarkDone, onRescheduleToTomorro
   )
 }
 
-function MobileInbox({ tasks, goalMap, onAddTask, onEdit, onDelete, search }) {
-  const visibleTasks = search && search.trim() ? tasks.filter(t => t.title.toLowerCase().includes(search.trim().toLowerCase())) : tasks
+function MobileInbox({ tasks, goalMap, onAddTask, onEdit, onDelete, search, sortMode }) {
+  const filteredTasks = search && search.trim() ? tasks.filter(t => t.title.toLowerCase().includes(search.trim().toLowerCase())) : tasks
+  const visibleTasks = [...filteredTasks].sort((a, b) => {
+    if (sortMode === 'alpha') return a.title.localeCompare(b.title)
+    if (!a.due_date && !b.due_date) return 0
+    if (!a.due_date) return 1
+    if (!b.due_date) return -1
+    return a.due_date < b.due_date ? -1 : a.due_date > b.due_date ? 1 : 0
+  })
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
       <div style={{ flex: 1, overflowY: 'auto' }}>
@@ -559,6 +566,7 @@ export default function MobileLayout({
   const [activeTab, setActiveTab] = useState('day')
   const [taskSearch, setTaskSearch] = useState('')
   const [showTaskSearch, setShowTaskSearch] = useState(false)
+  const [taskSort, setTaskSort] = useState('deadline')
 
   const tasksForDay = (date) => tasks.filter(t => t.scheduled_date === format(date, 'yyyy-MM-dd'))
   const dayNames = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
@@ -633,7 +641,13 @@ export default function MobileLayout({
               <button onClick={onAddTask} style={{ background: '#6366f1', color: 'white', border: 'none', borderRadius: '8px', padding: '6px 12px', fontSize: '12px', cursor: 'pointer' }} title="Add task">+</button>
             </div>
           </div>
-          <MobileInbox tasks={inboxTasks} goalMap={goalMap} onAddTask={onAddTask} onEdit={onEdit} onDelete={onDelete} search={taskSearch} />
+          <div style={{ padding: '0 16px 8px', display: 'flex', justifyContent: 'flex-end', flexShrink: 0 }}>
+            <select value={taskSort} onChange={e => setTaskSort(e.target.value)} style={{ fontSize: '11px', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '5px 8px', outline: 'none' }}>
+              <option value="deadline">Sort: Deadline</option>
+              <option value="alpha">Sort: A-Z</option>
+            </select>
+          </div>
+          <MobileInbox tasks={inboxTasks} goalMap={goalMap} onAddTask={onAddTask} onEdit={onEdit} onDelete={onDelete} search={taskSearch} sortMode={taskSort} />
         </>
       )}
 
