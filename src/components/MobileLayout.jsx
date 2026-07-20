@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useAssistantHistory } from '../hooks/useAssistantHistory'
 import { format, isToday } from 'date-fns'
 import { Droppable, Draggable } from '@hello-pangea/dnd'
@@ -116,7 +117,7 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflowX: 'auto' }}>
       <div style={{ position: 'sticky', left: 0, zIndex: 10, background: 'white', alignSelf: 'stretch', display: 'flex', alignItems: 'center', gap: '8px', paddingRight: '6px', flexShrink: 0 }}>
         <span style={{ fontSize: '11px', fontWeight: 600, color: '#374151', textTransform: 'uppercase', letterSpacing: '0.05em', flexShrink: 0 }}>Goals</span>
-        {adding ? (
+        {adding ? createPortal((
           <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setAdding(false)}>
             <form onSubmit={handleAdd} onClick={e => e.stopPropagation()} style={{ background: 'white', borderRadius: '12px', padding: '16px', width: '85vw', maxWidth: '320px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <input autoFocus value={newTitle} onChange={e => setNewTitle(e.target.value)}
@@ -149,7 +150,7 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
               </div>
             </form>
           </div>
-        ) : (
+        ), document.body) : (
           <button onClick={() => setAdding(true)} title="Add goal"
             style={{ flexShrink: 0, border: 'none', borderRadius: '10px', padding: '6px 10px', fontSize: '12px', color: 'white', background: '#6366f1', cursor: 'pointer', whiteSpace: 'nowrap', fontWeight: 500 }}>
             +
