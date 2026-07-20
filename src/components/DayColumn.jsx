@@ -23,10 +23,10 @@ export default function DayColumn({ date, tasks, goalMap, onMarkDone, onReschedu
     <div className={'flex flex-col rounded-xl border transition-colors ' + (today ? 'border-indigo-200 bg-white' : isPast ? 'border-gray-100 bg-gray-50' : 'border-gray-200 bg-white')}>
       <div className={'px-3 pt-3 pb-2 border-b ' + (today ? 'border-indigo-100' : 'border-gray-100')}>
         <div className="flex items-center justify-between mb-1.5">
-          <span className={'text-xs font-medium uppercase tracking-wide ' + (isPast ? 'text-gray-400' : 'text-gray-700')}>{format(date, 'EEE')}</span>
+          <span className={'text-lg font-semibold uppercase tracking-wide ' + (isPast ? 'text-gray-400' : 'text-gray-700')}>{format(date, 'EEE')}</span>
           <div className="flex items-center gap-1.5">
             <button onClick={() => onAddTaskForDay(date)} className="text-xs text-indigo-400 hover:text-indigo-600 leading-none" title="Add task for this day">+</button>
-            <span className={'text-xs font-semibold px-1.5 py-0.5 rounded ' + (today ? 'bg-indigo-600 text-white' : isPast ? 'text-gray-400' : 'text-gray-700')}>{format(date, 'd')}</span>
+            <span className={'text-lg font-bold px-2 py-0.5 rounded ' + (today ? 'bg-indigo-600 text-white' : isPast ? 'text-gray-400' : 'text-gray-700')}>{format(date, 'd')}</span>
           </div>
         </div>
         <div className="h-1 bg-gray-100 rounded-full overflow-hidden">

@@ -184,14 +184,6 @@ export default function GoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEdit
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
           </button>
         )}
-        <select value={sortMode} onChange={e => setSortMode(e.target.value)} className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 shrink-0 focus:outline-none focus:ring-1 focus:ring-indigo-300" title="Sort goals">
-          <option value="deadline">Sort: Deadline</option>
-          <option value="alpha">Sort: A-Z</option>
-        </select>
-        <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 shrink-0 focus:outline-none focus:ring-1 focus:ring-indigo-300" title="Filter by category">
-          <option value="all">All categories</option>
-          {GOAL_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-        </select>
       </div>
       {visibleGoals.map(goal => {
         const linked = goalTasks.filter(t => t.goal_id === goal.id)
@@ -333,6 +325,16 @@ export default function GoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEdit
           </div>
         )
       })}
+      </div>
+      <div className="flex items-center gap-2 mt-2">
+        <select value={sortMode} onChange={e => setSortMode(e.target.value)} className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-300" title="Sort goals">
+          <option value="deadline">Sort: Deadline</option>
+          <option value="alpha">Sort: A-Z</option>
+        </select>
+        <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-300" title="Filter by category">
+          <option value="all">All categories</option>
+          {GOAL_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+        </select>
       </div>
     </div>
   )

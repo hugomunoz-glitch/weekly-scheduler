@@ -153,14 +153,6 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
           </button>
         )}
-        <select value={sortMode} onChange={e => setSortMode(e.target.value)} style={{ fontSize: '11px', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '6px 4px', flexShrink: 0, outline: 'none' }}>
-          <option value="deadline">Deadline</option>
-          <option value="alpha">A-Z</option>
-        </select>
-        <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} style={{ fontSize: '11px', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '6px 4px', flexShrink: 0, outline: 'none', maxWidth: '90px' }}>
-          <option value="all">All categories</option>
-          {GOAL_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-        </select>
       </div>
       {visibleGoals.map(goal => {
         const linked = goalTasks.filter(t => t.goal_id === goal.id)
@@ -258,6 +250,16 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
         </div>
       )
     })}
+    </div>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px' }}>
+      <select value={sortMode} onChange={e => setSortMode(e.target.value)} style={{ fontSize: '11px', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '6px 8px', outline: 'none' }}>
+        <option value="deadline">Sort: Deadline</option>
+        <option value="alpha">Sort: A-Z</option>
+      </select>
+      <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} style={{ fontSize: '11px', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '6px 8px', outline: 'none', maxWidth: '140px' }}>
+        <option value="all">All categories</option>
+        {GOAL_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+      </select>
     </div>
     </div>
   )
@@ -546,9 +548,9 @@ export default function MobileLayout({
           return (
             <button key={i} onClick={() => { setSelectedDay(day); setActiveTab('day') }}
               style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 2px' }}>
-              <span style={{ fontSize: '10px', color: isSelected ? '#6366f1' : '#374151', fontWeight: 500, textTransform: 'uppercase' }}>{dayNames[i]}</span>
-              <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: isSelected ? '#6366f1' : today ? '#e0e7ff' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <span style={{ fontSize: '13px', fontWeight: isSelected || today ? 600 : 400, color: isSelected ? 'white' : today ? '#6366f1' : '#374151' }}>{format(day, 'd')}</span>
+              <span style={{ fontSize: '12px', color: isSelected ? '#6366f1' : '#374151', fontWeight: 600, textTransform: 'uppercase' }}>{dayNames[i]}</span>
+              <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: isSelected ? '#6366f1' : today ? '#e0e7ff' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <span style={{ fontSize: '17px', fontWeight: isSelected || today ? 700 : 500, color: isSelected ? 'white' : today ? '#6366f1' : '#374151' }}>{format(day, 'd')}</span>
               </div>
               {count > 0 && <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: isSelected ? '#6366f1' : '#d1d5db' }} />}
             </button>
