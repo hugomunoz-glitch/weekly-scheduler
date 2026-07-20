@@ -94,7 +94,6 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
             <span style={{ fontSize: "10px", color: "#9ca3af", flexShrink: 0 }}>{pct}%</span>
             <span style={{ fontSize: "10px", color: "#9ca3af", flexShrink: 0 }}>{done.length}/{linked.length}</span>
           </div>
-          <p style={{ fontSize: '9px', color: '#a5b4fc', marginTop: '2px' }}>Tap to view &amp; add tasks</p>
           {viewingGoalId === goal.id && (
             <div onClick={(e) => { e.stopPropagation(); setViewingGoalId(null) }} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <div style={{ position: 'relative', width: '85vw', maxWidth: '320px' }}>
@@ -189,9 +188,6 @@ function MobileDayView({ date, tasks, goalMap, onMarkDone, onRescheduleToTomorro
                       <TaskCard task={task} isDone goalColor={goalMap[task.goal_id] ? goalMap[task.goal_id].color : null} onMarkDone={onMarkDone} onRescheduleToTomorrow={onRescheduleToTomorrow} onMoveToInbox={onMoveToInbox} onDelete={onDelete} onEdit={onEdit} />
                     </div>
                   ))}
-                  {bucketTasks.length === 0 && !snapshot.isDraggingOver && (
-                    <p style={{ fontSize: '11px', color: '#e5e7eb', textAlign: 'center', padding: '8px 0', margin: 0 }}>drop here</p>
-                  )}
                 </div>
               )}
             </Droppable>

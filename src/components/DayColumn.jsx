@@ -37,14 +37,14 @@ export default function DayColumn({ date, tasks, goalMap, onMarkDone, onReschedu
           <span className="text-xs text-gray-300">max {DAILY_CAP}</span>
         </div>
       </div>
-      <div className="flex-1">
+      <div className="flex-1 flex flex-col">
         {BUCKETS.map(bucket => {
           const bucketTasks = activeTasks.filter(t => (t.bucket || 'morning') === bucket.id).sort((a, b) => (a.position || 0) - (b.position || 0))
           const bucketDone = doneTasks.filter(t => (t.bucket || 'morning') === bucket.id)
           const droppableId = bucket.id + '-' + dateStr
           return (
-            <div key={bucket.id} className="border-b border-gray-50 last:border-0">
-              <div className="px-3 py-1.5 flex items-center gap-1.5">
+            <div key={bucket.id} className="flex-1 flex flex-col border-b border-gray-50 last:border-0">
+              <div className="px-3 py-1.5 flex items-center gap-1.5 shrink-0">
                 <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">{bucket.label}</span>
                 {bucketTasks.length > 0 && <span className="text-xs text-gray-300">{bucketTasks.length}</span>}
               </div>
@@ -53,7 +53,7 @@ export default function DayColumn({ date, tasks, goalMap, onMarkDone, onReschedu
                   <div
                     ref={provided.innerRef}
                     {...provided.droppableProps}
-                    className={'px-2 pb-2 min-h-[44px] transition-colors ' + (snapshot.isDraggingOver ? 'bg-indigo-50' : '')}
+                    className={'flex-1 px-2 pb-2 min-h-[44px] transition-colors ' + (snapshot.isDraggingOver ? 'bg-indigo-50' : '')}
                   >
                     {bucketTasks.map((task, index) => (
                       <Draggable key={task.id} draggableId={task.id} index={index}>
@@ -70,9 +70,6 @@ export default function DayColumn({ date, tasks, goalMap, onMarkDone, onReschedu
                         <TaskCard task={task} isDone goalColor={goalMap[task.goal_id] ? goalMap[task.goal_id].color : null} onMarkDone={onMarkDone} onRescheduleToTomorrow={onRescheduleToTomorrow} onMoveToInbox={onMoveToInbox} onDelete={onDelete} onEdit={onEdit} />
                       </div>
                     ))}
-                    {bucketTasks.length === 0 && !snapshot.isDraggingOver && (
-                      <p className="text-xs text-gray-200 text-center py-1 select-none">drop here</p>
-                    )}
                   </div>
                 )}
               </Droppable>
