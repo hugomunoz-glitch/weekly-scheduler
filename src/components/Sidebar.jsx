@@ -45,9 +45,6 @@ function Inbox({ tasks, goalMap, onEdit, onDelete }) {
                         <button onClick={() => onDelete(task.id)} className="text-xs text-gray-300 hover:text-red-400">Delete</button>
                       </div>
                     )}
-                    {!snapshot.isDragging && hoverId !== task.id && (
-                      <p className="text-xs text-gray-400 mt-1.5">Drag to a day</p>
-                    )}
                   </div>
                 )}
               </Draggable>

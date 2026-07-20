@@ -150,7 +150,7 @@ export default function GoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEdit
                 </div>
                 <span className="text-xs text-gray-400 shrink-0">{pct}%</span>
               </div>
-              <p className="text-xs text-gray-300 mt-0.5">{done.length}/{linked.length} tasks</p>
+              <p className="text-xs text-gray-300 mt-0.5">{done.length}/{linked.length}</p>
               {viewingGoalId === goal.id && (
             <div onClick={(e) => { e.stopPropagation(); setViewingGoalId(null) }} className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
               <div className="relative w-80">

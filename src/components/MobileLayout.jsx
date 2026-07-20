@@ -202,8 +202,8 @@ function MobileInbox({ tasks, goalMap, onAddTask, onEdit, onDelete }) {
   const [search, setSearch] = useState('')
   const visibleTasks = search.trim() ? tasks.filter(t => t.title.toLowerCase().includes(search.trim().toLowerCase())) : tasks
   return (
-    <div style={{ flex: 1, overflowY: 'auto' }}>
-      <div style={{ padding: '10px 12px 0' }}>
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+      <div style={{ padding: '10px 12px', flexShrink: 0, background: 'white' }}>
         <input
           type="text"
           value={search}
@@ -212,10 +212,11 @@ function MobileInbox({ tasks, goalMap, onAddTask, onEdit, onDelete }) {
           style={{ width: '100%', fontSize: '13px', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '8px 10px', outline: 'none', boxSizing: 'border-box' }}
         />
       </div>
+      <div style={{ flex: 1, overflowY: 'auto' }}>
       <Droppable droppableId="inbox">
         {(provided, snapshot) => (
           <div ref={provided.innerRef} {...provided.droppableProps}
-            style={{ minHeight: '100px', padding: '12px', background: snapshot.isDraggingOver ? '#eef2ff' : 'transparent' }}>
+            style={{ minHeight: '100px', padding: '0 12px 12px', background: snapshot.isDraggingOver ? '#eef2ff' : 'transparent' }}>
             {visibleTasks.length === 0 && !snapshot.isDraggingOver && (
               <div style={{ textAlign: 'center', paddingTop: '40px' }}>
                 {search.trim() ? (
@@ -254,6 +255,7 @@ function MobileInbox({ tasks, goalMap, onAddTask, onEdit, onDelete }) {
           </div>
         )}
       </Droppable>
+      </div>
     </div>
   )
 }
