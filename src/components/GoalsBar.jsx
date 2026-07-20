@@ -372,40 +372,21 @@ export default function GoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEdit
                 <div className="flex items-center justify-between gap-1">
                   <p
                     className="text-sm font-medium text-gray-700 truncate cursor-pointer hover:text-indigo-600"
-                    {...longPressHandlers(pressTimerRef, pressFiredRef, () => setLongPressGoalId(goal.id))}
-                    onClick={(e) => {
-                      if (pressFiredRef.current) { pressFiredRef.current = false; return }
-                      e.stopPropagation()
-                      startEdit(goal)
-                    }}
-                    title="Click to edit, hold to delete"
+                    onClick={(e) => { e.stopPropagation(); startEdit(goal) }}
+                    title="Click to edit"
                   >
                     {goal.title}
                   </p>
-                  {confirmDeleteId === goal.id ? (
-                    <div className="flex items-center gap-1 shrink-0">
-                      <button
-                        onClick={(e) => { e.stopPropagation(); onDeleteGoal(goal.id); setConfirmDeleteId(null) }}
-                        className="text-xs text-red-500 hover:text-red-700 font-medium"
-                      >
-                        Yes
-                      </button>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(null) }}
-                        className="text-xs text-gray-400 hover:text-gray-600"
-                      >
-                        No
-                      </button>
-                    </div>
-                  ) : longPressGoalId === goal.id ? (
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(goal.id); setLongPressGoalId(null) }}
-                      className="text-xs text-red-500 hover:text-red-700 font-medium shrink-0"
-                    >
-                      Delete?
-                    </button>
-                  ) : null}
                 </div>
+              )}
+              {editingId !== goal.id && (
+                <span
+                  onClick={(e) => { e.stopPropagation(); onDeleteGoal(goal.id) }}
+                  className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-red-300 hover:bg-red-400 text-white text-[9px] font-semibold flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm z-10"
+                  title="Delete goal"
+                >
+                  &#10005;
+                </span>
               )}
               {(goal.priority || goal.category) && (
                 <div className="flex items-center gap-1 mt-0.5">

@@ -264,7 +264,7 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
           {longPressGoalId === goal.id && (
             <span
               onClick={(e) => { e.stopPropagation(); onDeleteGoal(goal.id); setLongPressGoalId(null) }}
-              style={{ position: 'absolute', top: '-8px', right: '-8px', width: '22px', height: '22px', borderRadius: '50%', background: '#ef4444', color: 'white', fontSize: '13px', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 4px rgba(0,0,0,0.25)', zIndex: 5 }}
+              style={{ position: 'absolute', top: '-6px', right: '-6px', width: '16px', height: '16px', borderRadius: '50%', background: '#fca5a5', color: 'white', fontSize: '9px', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.2)', zIndex: 5 }}
             >
               &#10005;
             </span>
@@ -380,7 +380,7 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
                           )}
                           <span onClick={() => handleEditTask(t.id)} style={{ color: '#c7d2fe', fontSize: '18px', cursor: 'pointer', padding: '2px 4px', flexShrink: 0 }}>&#9998;</span>
                           {longPressTaskId === t.id && (
-                            <span onClick={(e) => { e.stopPropagation(); onDelete(t.id); setLongPressTaskId(null) }} style={{ color: '#ef4444', fontSize: '20px', fontWeight: 600, cursor: 'pointer', padding: '2px 6px', flexShrink: 0, lineHeight: 1 }}>&#10005;</span>
+                            <span onClick={(e) => { e.stopPropagation(); onDelete(t.id); setLongPressTaskId(null) }} style={{ color: '#fca5a5', fontSize: '15px', fontWeight: 500, cursor: 'pointer', padding: '2px 4px', flexShrink: 0, lineHeight: 1 }}>&#10005;</span>
                           )}
                         </div>
                         )
