@@ -459,7 +459,7 @@ export default function MobileLayout({
         <>
           <div style={{ padding: '10px 16px 6px', flexShrink: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: '15px', fontWeight: 500, color: '#111827' }}>{format(selectedDay, 'EEEE, MMM d')}</span>
-            <button onClick={onAddTask} style={{ background: '#6366f1', color: 'white', border: 'none', borderRadius: '8px', padding: '6px 12px', fontSize: '12px', cursor: 'pointer' }} title="Add task">+</button>
+            <button onClick={() => onAddTaskForDay(selectedDay)} style={{ background: '#6366f1', color: 'white', border: 'none', borderRadius: '8px', padding: '6px 12px', fontSize: '12px', cursor: 'pointer' }} title="Add task for this day">+</button>
           </div>
           <MobileDayView date={selectedDay} tasks={tasksForDay(selectedDay)} goalMap={goalMap} onMarkDone={onMarkDone} onRescheduleToTomorrow={onRescheduleToTomorrow} onMoveToInbox={onMoveToInbox} onDelete={onDelete} onEdit={onEdit} onAddTaskForDay={onAddTaskForDay} />
         </>
@@ -487,7 +487,7 @@ export default function MobileLayout({
       <div style={{ background: 'white', borderTop: '1px solid #e5e7eb', padding: '6px 0 8px', display: 'flex', flexShrink: 0 }}>
         {[
           { id: 'day', label: 'Today', emoji: '&#128197;' },
-          { id: 'inbox', label: 'Inbox', emoji: '&#128228;', badge: inboxTasks.length },
+          { id: 'inbox', label: 'Task List', emoji: '&#128221;', badge: inboxTasks.length },
           { id: 'assistant', label: 'Assistant', emoji: '&#129302;' }
         ].map(tab => (
           <button key={tab.id} onClick={() => setActiveTab(tab.id)}
