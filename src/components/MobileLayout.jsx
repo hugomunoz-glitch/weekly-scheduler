@@ -34,6 +34,8 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
   const [adding, setAdding] = useState(false)
   const [newTitle, setNewTitle] = useState('')
   const [newCategory, setNewCategory] = useState('')
+  const [customCategory, setCustomCategory] = useState(false)
+  const [newCategoryCustom, setNewCategoryCustom] = useState('')
   const [newPriority, setNewPriority] = useState('')
   const [showSmart, setShowSmart] = useState(false)
   const [smartSpecific, setSmartSpecific] = useState('')
@@ -50,13 +52,24 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
   const [editingGoalId, setEditingGoalId] = useState(null)
   const [editingTitle, setEditingTitle] = useState('')
   const [editingCategory, setEditingCategory] = useState('')
+  const [editingCustomCategory, setEditingCustomCategory] = useState(false)
+  const [editingCategoryCustom, setEditingCategoryCustom] = useState('')
   const [editingPriority, setEditingPriority] = useState('')
   const [editGoalError, setEditGoalError] = useState('')
+  const allCategories = [...new Set([...GOAL_CATEGORIES, ...goals.map(g => g.category).filter(Boolean)])].sort()
 
   function startEditGoal(goal) {
     setEditingGoalId(goal.id)
     setEditingTitle(goal.title)
-    setEditingCategory(GOAL_CATEGORIES.includes(goal.category) ? goal.category : '')
+    if (goal.category && !GOAL_CATEGORIES.includes(goal.category)) {
+      setEditingCustomCategory(true)
+      setEditingCategoryCustom(goal.category)
+      setEditingCategory('')
+    } else {
+      setEditingCustomCategory(false)
+      setEditingCategoryCustom('')
+      setEditingCategory(goal.category || '')
+    }
     setEditingPriority(goal.priority || '')
     setEditGoalError('')
   }
@@ -65,7 +78,8 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
     e.preventDefault()
     if (!editingTitle.trim()) return
     try {
-      await onEditGoal(editingGoalId, editingTitle.trim(), { category: editingCategory || null, priority: editingPriority || null })
+      const category = editingCustomCategory ? editingCategoryCustom.trim() : editingCategory
+      await onEditGoal(editingGoalId, editingTitle.trim(), { category: category || null, priority: editingPriority || null })
       setEditingGoalId(null)
     } catch {
       setEditGoalError('Could not save. Try again.')
@@ -111,7 +125,7 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
     e.preventDefault()
     if (!newTitle.trim()) return
     onAddGoal(newTitle.trim(), COLORS[goals.length % COLORS.length], {
-      category: newCategory || null,
+      category: (customCategory ? newCategoryCustom.trim() : newCategory) || null,
       priority: newPriority || null,
       smartSpecific: smartSpecific.trim() || null,
       smartMeasurable: smartMeasurable.trim() || null,
@@ -119,7 +133,7 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
       smartRelevant: smartRelevant.trim() || null,
       smartTimebound: smartTimebound.trim() || null
     })
-    setNewTitle(''); setNewCategory(''); setNewPriority('')
+    setNewTitle(''); setNewCategory(''); setNewPriority(''); setCustomCategory(false); setNewCategoryCustom('')
     setSmartSpecific(''); setSmartMeasurable(''); setSmartAchievable(''); setSmartRelevant(''); setSmartTimebound('')
     setShowSmart(false)
     setAdding(false)
@@ -136,10 +150,26 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
               <input autoFocus value={newTitle} onChange={e => setNewTitle(e.target.value)}
                 style={{ border: '1px solid #6366f1', borderRadius: '8px', padding: '8px', fontSize: '14px', outline: 'none' }}
                 placeholder="Goal name" />
-              <select value={newCategory} onChange={e => setNewCategory(e.target.value)} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '8px', fontSize: '12px', outline: 'none' }}>
-                <option value="">No category</option>
-                {GOAL_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
+              {customCategory ? (
+                <input
+                  autoFocus
+                  type="text"
+                  placeholder="Custom category name"
+                  value={newCategoryCustom}
+                  onChange={e => setNewCategoryCustom(e.target.value)}
+                  style={{ border: '1px solid #6366f1', borderRadius: '8px', padding: '8px', fontSize: '12px', outline: 'none' }}
+                />
+              ) : (
+                <select
+                  value={newCategory}
+                  onChange={e => { if (e.target.value === '__custom__') { setCustomCategory(true); return } setNewCategory(e.target.value) }}
+                  style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '8px', fontSize: '12px', outline: 'none' }}
+                >
+                  <option value="">No category</option>
+                  {allCategories.map(c => <option key={c} value={c}>{c}</option>)}
+                  <option value="__custom__">+ New category…</option>
+                </select>
+              )}
               <select value={newPriority} onChange={e => setNewPriority(e.target.value)} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '8px', fontSize: '12px', outline: 'none' }}>
                 <option value="">No priority</option>
                 <option value="high">High</option>
@@ -225,10 +255,26 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
               <form onSubmit={handleEditGoalSubmit} onClick={e => e.stopPropagation()} style={{ background: 'white', borderRadius: '12px', padding: '16px', width: '85vw', maxWidth: '320px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <input autoFocus value={editingTitle} onChange={e => setEditingTitle(e.target.value)}
                   style={{ border: '1px solid #6366f1', borderRadius: '8px', padding: '8px', fontSize: '14px', outline: 'none' }} />
-                <select value={editingCategory} onChange={e => setEditingCategory(e.target.value)} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '8px', fontSize: '12px', outline: 'none' }}>
-                  <option value="">No category</option>
-                  {GOAL_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
+                {editingCustomCategory ? (
+                  <input
+                    autoFocus
+                    type="text"
+                    placeholder="Custom category name"
+                    value={editingCategoryCustom}
+                    onChange={e => setEditingCategoryCustom(e.target.value)}
+                    style={{ border: '1px solid #6366f1', borderRadius: '8px', padding: '8px', fontSize: '12px', outline: 'none' }}
+                  />
+                ) : (
+                  <select
+                    value={editingCategory}
+                    onChange={e => { if (e.target.value === '__custom__') { setEditingCustomCategory(true); return } setEditingCategory(e.target.value) }}
+                    style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '8px', fontSize: '12px', outline: 'none' }}
+                  >
+                    <option value="">No category</option>
+                    {allCategories.map(c => <option key={c} value={c}>{c}</option>)}
+                    <option value="__custom__">+ New category…</option>
+                  </select>
+                )}
                 <select value={editingPriority} onChange={e => setEditingPriority(e.target.value)} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '8px', fontSize: '12px', outline: 'none' }}>
                   <option value="">No priority</option>
                   <option value="high">High</option>
@@ -314,7 +360,7 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
       </select>
       <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} style={{ fontSize: '11px', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '6px 8px', outline: 'none', maxWidth: '140px' }}>
         <option value="all">All categories</option>
-        {GOAL_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+        {allCategories.map(c => <option key={c} value={c}>{c}</option>)}
       </select>
     </div>
     </div>

@@ -34,6 +34,8 @@ export default function GoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEdit
   const [adding, setAdding] = useState(false)
   const [newTitle, setNewTitle] = useState('')
   const [newCategory, setNewCategory] = useState('')
+  const [customCategory, setCustomCategory] = useState(false)
+  const [newCategoryCustom, setNewCategoryCustom] = useState('')
   const [newPriority, setNewPriority] = useState('')
   const [showSmart, setShowSmart] = useState(false)
   const [smartSpecific, setSmartSpecific] = useState('')
@@ -50,6 +52,7 @@ export default function GoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEdit
   const [showGoalSearch, setShowGoalSearch] = useState(false)
   const [sortMode, setSortMode] = useState('deadline')
   const [categoryFilter, setCategoryFilter] = useState('all')
+  const allCategories = [...new Set([...GOAL_CATEGORIES, ...goals.map(g => g.category).filter(Boolean)])].sort()
 
   function nearestDueDate(goalId) {
     const tasks = goalTasks.filter(t => t.goal_id === goalId && t.status !== 'done' && t.due_date)
@@ -92,7 +95,7 @@ export default function GoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEdit
     if (!newTitle.trim()) return
     const color = COLORS[goals.length % COLORS.length]
     onAddGoal(newTitle.trim(), color, {
-      category: newCategory || null,
+      category: (customCategory ? newCategoryCustom.trim() : newCategory) || null,
       priority: newPriority || null,
       smartSpecific: smartSpecific.trim() || null,
       smartMeasurable: smartMeasurable.trim() || null,
@@ -100,20 +103,30 @@ export default function GoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEdit
       smartRelevant: smartRelevant.trim() || null,
       smartTimebound: smartTimebound.trim() || null
     })
-    setNewTitle(''); setNewCategory(''); setNewPriority('')
+    setNewTitle(''); setNewCategory(''); setNewPriority(''); setCustomCategory(false); setNewCategoryCustom('')
     setSmartSpecific(''); setSmartMeasurable(''); setSmartAchievable(''); setSmartRelevant(''); setSmartTimebound('')
     setShowSmart(false)
     setAdding(false)
   }
 
   const [editingCategory, setEditingCategory] = useState('')
+  const [editingCustomCategory, setEditingCustomCategory] = useState(false)
+  const [editingCategoryCustom, setEditingCategoryCustom] = useState('')
   const [editingPriority, setEditingPriority] = useState('')
   const [editError, setEditError] = useState('')
 
   function startEdit(goal) {
     setEditingId(goal.id)
     setEditingTitle(goal.title)
-    setEditingCategory(GOAL_CATEGORIES.includes(goal.category) ? goal.category : '')
+    if (goal.category && !GOAL_CATEGORIES.includes(goal.category)) {
+      setEditingCustomCategory(true)
+      setEditingCategoryCustom(goal.category)
+      setEditingCategory('')
+    } else {
+      setEditingCustomCategory(false)
+      setEditingCategoryCustom('')
+      setEditingCategory(goal.category || '')
+    }
     setEditingPriority(goal.priority || '')
     setEditError('')
   }
@@ -122,7 +135,8 @@ export default function GoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEdit
     e.preventDefault()
     if (!editingTitle.trim()) return
     try {
-      await onEditGoal(goalId, editingTitle.trim(), { category: editingCategory || null, priority: editingPriority || null })
+      const category = editingCustomCategory ? editingCategoryCustom.trim() : editingCategory
+      await onEditGoal(goalId, editingTitle.trim(), { category: category || null, priority: editingPriority || null })
       setEditingId(null)
     } catch {
       setEditError('Could not save. Try again.')
@@ -146,10 +160,26 @@ export default function GoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEdit
                 className="w-full border border-indigo-300 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-300"
               />
               <div className="flex gap-2">
-                <select value={newCategory} onChange={e => setNewCategory(e.target.value)} className="flex-1 min-w-0 border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-300">
-                  <option value="">No category</option>
-                  {GOAL_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
+                {customCategory ? (
+                  <input
+                    autoFocus
+                    type="text"
+                    placeholder="Custom category name"
+                    value={newCategoryCustom}
+                    onChange={e => setNewCategoryCustom(e.target.value)}
+                    className="flex-1 min-w-0 border border-indigo-300 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-300"
+                  />
+                ) : (
+                  <select
+                    value={newCategory}
+                    onChange={e => { if (e.target.value === '__custom__') { setCustomCategory(true); return } setNewCategory(e.target.value) }}
+                    className="flex-1 min-w-0 border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-300"
+                  >
+                    <option value="">No category</option>
+                    {allCategories.map(c => <option key={c} value={c}>{c}</option>)}
+                    <option value="__custom__">+ New category…</option>
+                  </select>
+                )}
                 <select value={newPriority} onChange={e => setNewPriority(e.target.value)} className="w-24 shrink-0 border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-300">
                   <option value="">Priority</option>
                   <option value="high">High</option>
@@ -227,14 +257,26 @@ export default function GoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEdit
                     onChange={e => setEditingTitle(e.target.value)}
                     className="text-sm font-medium text-gray-700 border border-indigo-300 rounded px-1.5 py-0.5 w-full focus:outline-none"
                   />
-                  <select
-                    value={editingCategory}
-                    onChange={e => setEditingCategory(e.target.value)}
-                    className="text-xs border border-gray-200 rounded px-1 py-0.5 w-full focus:outline-none"
-                  >
-                    <option value="">No category</option>
-                    {GOAL_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-                  </select>
+                  {editingCustomCategory ? (
+                    <input
+                      autoFocus
+                      type="text"
+                      placeholder="Custom category name"
+                      value={editingCategoryCustom}
+                      onChange={e => setEditingCategoryCustom(e.target.value)}
+                      className="text-xs border border-indigo-300 rounded px-1 py-0.5 w-full focus:outline-none"
+                    />
+                  ) : (
+                    <select
+                      value={editingCategory}
+                      onChange={e => { if (e.target.value === '__custom__') { setEditingCustomCategory(true); return } setEditingCategory(e.target.value) }}
+                      className="text-xs border border-gray-200 rounded px-1 py-0.5 w-full focus:outline-none"
+                    >
+                      <option value="">No category</option>
+                      {allCategories.map(c => <option key={c} value={c}>{c}</option>)}
+                      <option value="__custom__">+ New category…</option>
+                    </select>
+                  )}
                   <select
                     value={editingPriority}
                     onChange={e => setEditingPriority(e.target.value)}
@@ -374,7 +416,7 @@ export default function GoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEdit
         </select>
         <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-300" title="Filter by category">
           <option value="all">All categories</option>
-          {GOAL_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+          {allCategories.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
       </div>
     </div>

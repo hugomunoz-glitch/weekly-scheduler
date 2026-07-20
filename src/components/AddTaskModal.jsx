@@ -18,6 +18,8 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
   const [newGoalTitle, setNewGoalTitle] = useState('')
   const [showGoalDetails, setShowGoalDetails] = useState(false)
   const [newGoalCategory, setNewGoalCategory] = useState('')
+  const [customCategory, setCustomCategory] = useState(false)
+  const [newGoalCategoryCustom, setNewGoalCategoryCustom] = useState('')
   const [newGoalPriority, setNewGoalPriority] = useState('')
   const [smartSpecific, setSmartSpecific] = useState('')
   const [smartMeasurable, setSmartMeasurable] = useState('')
@@ -37,7 +39,7 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
     if (!newGoalTitle.trim()) return
     const colors = ['#6366f1', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#06b6d4']
     const created = await onAddGoal(newGoalTitle.trim(), colors[(goals || []).length % colors.length], {
-      category: newGoalCategory || null,
+      category: (customCategory ? newGoalCategoryCustom.trim() : newGoalCategory) || null,
       priority: newGoalPriority || null,
       smartSpecific: smartSpecific.trim() || null,
       smartMeasurable: smartMeasurable.trim() || null,
@@ -48,6 +50,8 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
     if (created) setGoalId(created.id)
     setNewGoalTitle('')
     setNewGoalCategory('')
+    setCustomCategory(false)
+    setNewGoalCategoryCustom('')
     setNewGoalPriority('')
     setSmartSpecific(''); setSmartMeasurable(''); setSmartAchievable(''); setSmartRelevant(''); setSmartTimebound('')
     setShowGoalDetails(false)
@@ -120,10 +124,26 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
                 />
               </div>
               <div className="flex gap-2">
-                <select value={newGoalCategory} onChange={e => setNewGoalCategory(e.target.value)} className="flex-1 min-w-0 border border-gray-200 rounded-lg px-2 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-300">
-                  <option value="">No category</option>
-                  {GOAL_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
+                {customCategory ? (
+                  <input
+                    autoFocus
+                    type="text"
+                    placeholder="Custom category name"
+                    value={newGoalCategoryCustom}
+                    onChange={e => setNewGoalCategoryCustom(e.target.value)}
+                    className="flex-1 min-w-0 border border-indigo-300 rounded-lg px-2 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                  />
+                ) : (
+                  <select
+                    value={newGoalCategory}
+                    onChange={e => { if (e.target.value === '__custom__') { setCustomCategory(true); return } setNewGoalCategory(e.target.value) }}
+                    className="flex-1 min-w-0 border border-gray-200 rounded-lg px-2 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                  >
+                    <option value="">No category</option>
+                    {GOAL_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                    <option value="__custom__">+ New category…</option>
+                  </select>
+                )}
                 <select value={newGoalPriority} onChange={e => setNewGoalPriority(e.target.value)} className="w-28 shrink-0 border border-gray-200 rounded-lg px-2 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-300">
                   <option value="">No priority</option>
                   <option value="high">High</option>
