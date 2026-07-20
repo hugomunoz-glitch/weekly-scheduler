@@ -23,8 +23,8 @@ const COLORS = ['#6366f1', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#06b6d4'
 const PRIORITY_COLORS = { high: '#ef4444', medium: '#f59e0b', low: '#9ca3af' }
 const PRIORITY_LABELS = { high: 'High', medium: 'Med', low: 'Low' }
 const GOAL_CATEGORIES = [
-  'Career/Professional', 'Family', 'Financial', 'Intellectual',
-  'Physical (Health/Wellness)', 'Relationship (Marriage, Friends & Family)',
+  'Career/Professional', 'Financial', 'Intellectual',
+  'Physical (Health/Wellness)', 'Relationships',
   'Social (Community/Volunteering)', 'Spiritual (Prayer/Church)'
 ]
 

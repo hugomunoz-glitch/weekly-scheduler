@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 
 const GOAL_CATEGORIES = [
-  'Career/Professional', 'Family', 'Financial', 'Intellectual',
-  'Physical (Health/Wellness)', 'Relationship (Marriage, Friends & Family)',
+  'Career/Professional', 'Financial', 'Intellectual',
+  'Physical (Health/Wellness)', 'Relationships',
   'Social (Community/Volunteering)', 'Spiritual (Prayer/Church)'
 ]
 

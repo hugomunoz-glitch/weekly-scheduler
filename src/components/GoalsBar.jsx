@@ -3,8 +3,8 @@ import { useState } from 'react'
 const COLORS = ['#6366f1', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316']
 
 const GOAL_CATEGORIES = [
-  'Career/Professional', 'Family', 'Financial', 'Intellectual',
-  'Physical (Health/Wellness)', 'Relationship (Marriage, Friends & Family)',
+  'Career/Professional', 'Financial', 'Intellectual',
+  'Physical (Health/Wellness)', 'Relationships',
   'Social (Community/Volunteering)', 'Spiritual (Prayer/Church)'
 ]
 
