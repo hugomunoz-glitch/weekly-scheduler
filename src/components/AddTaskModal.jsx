@@ -17,6 +17,7 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
   const [addingGoal, setAddingGoal] = useState(false)
   const [newGoalTitle, setNewGoalTitle] = useState('')
   const [showGoalDetails, setShowGoalDetails] = useState(false)
+  const [newGoalError, setNewGoalError] = useState('')
   const [newGoalCategory, setNewGoalCategory] = useState('')
   const [customCategory, setCustomCategory] = useState(false)
   const [newGoalCategoryCustom, setNewGoalCategoryCustom] = useState('')
@@ -38,24 +39,29 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
   async function handleAddNewGoal() {
     if (!newGoalTitle.trim()) return
     const colors = ['#6366f1', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#06b6d4']
-    const created = await onAddGoal(newGoalTitle.trim(), colors[(goals || []).length % colors.length], {
-      category: (customCategory ? newGoalCategoryCustom.trim() : newGoalCategory) || null,
-      priority: newGoalPriority || null,
-      smartSpecific: smartSpecific.trim() || null,
-      smartMeasurable: smartMeasurable.trim() || null,
-      smartAchievable: smartAchievable.trim() || null,
-      smartRelevant: smartRelevant.trim() || null,
-      smartTimebound: smartTimebound.trim() || null
-    })
-    if (created) setGoalId(created.id)
-    setNewGoalTitle('')
-    setNewGoalCategory('')
-    setCustomCategory(false)
-    setNewGoalCategoryCustom('')
-    setNewGoalPriority('')
-    setSmartSpecific(''); setSmartMeasurable(''); setSmartAchievable(''); setSmartRelevant(''); setSmartTimebound('')
-    setShowGoalDetails(false)
-    setAddingGoal(false)
+    try {
+      const created = await onAddGoal(newGoalTitle.trim(), colors[(goals || []).length % colors.length], {
+        category: (customCategory ? newGoalCategoryCustom.trim() : newGoalCategory) || null,
+        priority: newGoalPriority || null,
+        smartSpecific: smartSpecific.trim() || null,
+        smartMeasurable: smartMeasurable.trim() || null,
+        smartAchievable: smartAchievable.trim() || null,
+        smartRelevant: smartRelevant.trim() || null,
+        smartTimebound: smartTimebound.trim() || null
+      })
+      if (created) setGoalId(created.id)
+      setNewGoalTitle('')
+      setNewGoalCategory('')
+      setCustomCategory(false)
+      setNewGoalCategoryCustom('')
+      setNewGoalPriority('')
+      setSmartSpecific(''); setSmartMeasurable(''); setSmartAchievable(''); setSmartRelevant(''); setSmartTimebound('')
+      setShowGoalDetails(false)
+      setAddingGoal(false)
+      setNewGoalError('')
+    } catch {
+      setNewGoalError('Could not save. Try again.')
+    }
   }
 
   function handleSubmit(e) {
@@ -167,6 +173,7 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
                 <button type="button" onClick={handleAddNewGoal} className="text-sm text-white bg-indigo-600 hover:bg-indigo-700 px-3 py-1.5 rounded-lg">Create goal</button>
                 <button type="button" onClick={() => { setAddingGoal(false); setNewGoalTitle(''); setShowGoalDetails(false) }} className="text-sm text-gray-400 hover:text-gray-600 px-2">Cancel</button>
               </div>
+              {newGoalError && <p className="text-xs text-red-500">{newGoalError}</p>}
             </div>
           )}
           <div>

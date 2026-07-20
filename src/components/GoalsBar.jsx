@@ -90,23 +90,30 @@ export default function GoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEdit
     setNewTaskTitle('')
   }
 
-  function handleAdd(e) {
+  const [addGoalError, setAddGoalError] = useState('')
+
+  async function handleAdd(e) {
     e.preventDefault()
     if (!newTitle.trim()) return
     const color = COLORS[goals.length % COLORS.length]
-    onAddGoal(newTitle.trim(), color, {
-      category: (customCategory ? newCategoryCustom.trim() : newCategory) || null,
-      priority: newPriority || null,
-      smartSpecific: smartSpecific.trim() || null,
-      smartMeasurable: smartMeasurable.trim() || null,
-      smartAchievable: smartAchievable.trim() || null,
-      smartRelevant: smartRelevant.trim() || null,
-      smartTimebound: smartTimebound.trim() || null
-    })
-    setNewTitle(''); setNewCategory(''); setNewPriority(''); setCustomCategory(false); setNewCategoryCustom('')
-    setSmartSpecific(''); setSmartMeasurable(''); setSmartAchievable(''); setSmartRelevant(''); setSmartTimebound('')
-    setShowSmart(false)
-    setAdding(false)
+    try {
+      await onAddGoal(newTitle.trim(), color, {
+        category: (customCategory ? newCategoryCustom.trim() : newCategory) || null,
+        priority: newPriority || null,
+        smartSpecific: smartSpecific.trim() || null,
+        smartMeasurable: smartMeasurable.trim() || null,
+        smartAchievable: smartAchievable.trim() || null,
+        smartRelevant: smartRelevant.trim() || null,
+        smartTimebound: smartTimebound.trim() || null
+      })
+      setNewTitle(''); setNewCategory(''); setNewPriority(''); setCustomCategory(false); setNewCategoryCustom('')
+      setSmartSpecific(''); setSmartMeasurable(''); setSmartAchievable(''); setSmartRelevant(''); setSmartTimebound('')
+      setShowSmart(false)
+      setAdding(false)
+      setAddGoalError('')
+    } catch {
+      setAddGoalError('Could not save. Check the category isn\'t blocked by an old rule, then try again.')
+    }
   }
 
   const [editingCategory, setEditingCategory] = useState('')
@@ -202,6 +209,7 @@ export default function GoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEdit
                 <button type="submit" className="text-sm text-white bg-indigo-600 px-3 py-1.5 rounded-lg hover:bg-indigo-700">Add</button>
                 <button type="button" onClick={() => { setAdding(false); setShowSmart(false) }} className="text-sm text-gray-400 hover:text-gray-600">Cancel</button>
               </div>
+              {addGoalError && <p className="text-xs text-red-500">{addGoalError}</p>}
             </form>
           </div>
         ) : (

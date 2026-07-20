@@ -125,7 +125,9 @@ export default function App() {
       if (extra.smartTimebound) payload.smart_timebound = extra.smartTimebound
     }
     const { data, error } = await supabase.from('goals').insert(payload).select().single()
-    if (!error) { setGoals(prev => [...prev, data]); return data }
+    if (error) { console.error('addGoal failed:', error); throw error }
+    setGoals(prev => [...prev, data])
+    return data
   }
 
   async function editGoal(goalId, title, extra) {

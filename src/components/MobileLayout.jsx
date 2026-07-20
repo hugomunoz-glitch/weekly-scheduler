@@ -121,22 +121,29 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
     setNewTaskTitle('')
   }
 
-  function handleAdd(e) {
+  const [addGoalError, setAddGoalError] = useState('')
+
+  async function handleAdd(e) {
     e.preventDefault()
     if (!newTitle.trim()) return
-    onAddGoal(newTitle.trim(), COLORS[goals.length % COLORS.length], {
-      category: (customCategory ? newCategoryCustom.trim() : newCategory) || null,
-      priority: newPriority || null,
-      smartSpecific: smartSpecific.trim() || null,
-      smartMeasurable: smartMeasurable.trim() || null,
-      smartAchievable: smartAchievable.trim() || null,
-      smartRelevant: smartRelevant.trim() || null,
-      smartTimebound: smartTimebound.trim() || null
-    })
-    setNewTitle(''); setNewCategory(''); setNewPriority(''); setCustomCategory(false); setNewCategoryCustom('')
-    setSmartSpecific(''); setSmartMeasurable(''); setSmartAchievable(''); setSmartRelevant(''); setSmartTimebound('')
-    setShowSmart(false)
-    setAdding(false)
+    try {
+      await onAddGoal(newTitle.trim(), COLORS[goals.length % COLORS.length], {
+        category: (customCategory ? newCategoryCustom.trim() : newCategory) || null,
+        priority: newPriority || null,
+        smartSpecific: smartSpecific.trim() || null,
+        smartMeasurable: smartMeasurable.trim() || null,
+        smartAchievable: smartAchievable.trim() || null,
+        smartRelevant: smartRelevant.trim() || null,
+        smartTimebound: smartTimebound.trim() || null
+      })
+      setNewTitle(''); setNewCategory(''); setNewPriority(''); setCustomCategory(false); setNewCategoryCustom('')
+      setSmartSpecific(''); setSmartMeasurable(''); setSmartAchievable(''); setSmartRelevant(''); setSmartTimebound('')
+      setShowSmart(false)
+      setAdding(false)
+      setAddGoalError('')
+    } catch {
+      setAddGoalError('Could not save. Try again.')
+    }
   }
 
   return (
@@ -191,6 +198,7 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
                 <button type="submit" style={{ background: '#6366f1', color: 'white', border: 'none', borderRadius: '8px', padding: '8px 14px', fontSize: '13px', cursor: 'pointer' }}>Add</button>
                 <button type="button" onClick={() => { setAdding(false); setShowSmart(false) }} style={{ background: 'none', border: 'none', color: '#9ca3af', fontSize: '13px', cursor: 'pointer' }}>Cancel</button>
               </div>
+              {addGoalError && <p style={{ fontSize: '12px', color: '#ef4444', margin: 0 }}>{addGoalError}</p>}
             </form>
           </div>
         ), document.body) : (
