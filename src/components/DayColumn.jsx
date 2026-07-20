@@ -25,7 +25,7 @@ export default function DayColumn({ date, tasks, goalMap, onMarkDone, onReschedu
         <div className="flex items-center justify-between mb-1.5">
           <span className={'text-xs font-medium uppercase tracking-wide ' + (isPast ? 'text-gray-300' : 'text-gray-500')}>{format(date, 'EEE')}</span>
           <div className="flex items-center gap-1.5">
-            <button onClick={() => onAddTaskForDay(date)} className="text-xs text-indigo-400 hover:text-indigo-600 leading-none" title="Add task for this day">+Add</button>
+            <button onClick={() => onAddTaskForDay(date)} className="text-xs text-indigo-400 hover:text-indigo-600 leading-none" title="Add task for this day">+</button>
             <span className={'text-xs font-semibold px-1.5 py-0.5 rounded ' + (today ? 'bg-indigo-600 text-white' : isPast ? 'text-gray-300' : 'text-gray-500')}>{format(date, 'd')}</span>
           </div>
         </div>

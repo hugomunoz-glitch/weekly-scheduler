@@ -227,7 +227,7 @@ export default function Sidebar({ tasks, goalMap, goals, allTasks, onAddTask, on
         {tab === 'inbox' ? (
           <>
             <div className="px-4 py-2 flex justify-end shrink-0">
-              <button onClick={onAddTask} className="text-xs text-indigo-600 hover:text-indigo-800 font-medium">+ Add</button>
+              <button onClick={onAddTask} className="text-xs text-indigo-600 hover:text-indigo-800 font-medium" title="Add task">+</button>
             </div>
             <Inbox tasks={tasks} goalMap={goalMap} onEdit={onEdit} onDelete={onDelete} />
           </>
