@@ -40,7 +40,7 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 p-6">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 p-6 overflow-hidden" onClick={(e) => e.stopPropagation()}>
         <h2 className="text-base font-semibold text-gray-900 mb-4">{editingTask ? 'Edit task' : initialScheduledDate ? 'Add task for ' + initialScheduledDate : 'Add task'}</h2>
         <form onSubmit={handleSubmit} className="space-y-3">
           <input
@@ -58,14 +58,14 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
             rows={2}
             className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 resize-none"
           />
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-3">
             <select
               value={goalId}
               onChange={e => {
                 if (e.target.value === '__new__') { setAddingGoal(true); return }
                 setGoalId(e.target.value)
               }}
-              className="flex-1 border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 text-gray-700"
+              className="flex-1 min-w-0 border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 text-gray-700"
             >
               <option value="">No goal</option>
               {(goals || []).map(g => (
@@ -77,7 +77,7 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
               type="time"
               value={startTime}
               onChange={e => setStartTime(e.target.value)}
-              className="w-32 border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 text-gray-700"
+              className="shrink-0 min-w-[136px] border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 text-gray-700"
             />
           </div>
           {addingGoal && (
