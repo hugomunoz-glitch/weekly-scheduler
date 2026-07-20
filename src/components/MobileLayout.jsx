@@ -27,6 +27,7 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
   const [viewingGoalId, setViewingGoalId] = useState(null)
   const [newTaskTitle, setNewTaskTitle] = useState('')
   const [goalSearch, setGoalSearch] = useState('')
+  const [showGoalSearch, setShowGoalSearch] = useState(false)
 
   const visibleGoals = goalSearch.trim() ? goals.filter(g => g.title.toLowerCase().includes(goalSearch.trim().toLowerCase())) : goals
 
@@ -54,7 +55,7 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
     <div style={{ background: 'white', borderBottom: '1px solid #f3f4f6', padding: '8px 12px', flexShrink: 0 }}>
     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflowX: 'auto' }}>
       <div style={{ position: 'sticky', left: 0, zIndex: 10, background: 'white', alignSelf: 'stretch', display: 'flex', alignItems: 'center', gap: '8px', paddingRight: '6px', flexShrink: 0 }}>
-        <span style={{ fontSize: '10px', fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em', flexShrink: 0 }}>Goals</span>
+        <span style={{ fontSize: '10px', fontWeight: 600, color: '#374151', textTransform: 'uppercase', letterSpacing: '0.05em', flexShrink: 0 }}>Goals</span>
         {adding ? (
           <form onSubmit={handleAdd} style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
             <input autoFocus value={newTitle} onChange={e => setNewTitle(e.target.value)}
@@ -67,6 +68,22 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
           <button onClick={() => setAdding(true)} title="Add goal"
             style={{ flexShrink: 0, border: '1px dashed #c7d2fe', borderRadius: '10px', padding: '6px 10px', fontSize: '11px', color: '#6366f1', background: 'white', cursor: 'pointer', whiteSpace: 'nowrap' }}>
             +
+          </button>
+        )}
+        {showGoalSearch ? (
+          <input
+            autoFocus
+            type="text"
+            value={goalSearch}
+            onChange={e => setGoalSearch(e.target.value)}
+            onBlur={() => { if (!goalSearch.trim()) setShowGoalSearch(false) }}
+            placeholder="Search goals…"
+            style={{ fontSize: '11px', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '6px 8px', width: '110px', flexShrink: 0, outline: 'none' }}
+          />
+        ) : (
+          <button onClick={() => setShowGoalSearch(true)} title="Search goals"
+            style={{ background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', flexShrink: 0, display: 'flex', alignItems: 'center' }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
           </button>
         )}
       </div>
@@ -141,15 +158,6 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
       )
     })}
     </div>
-    <div style={{ marginTop: '8px' }}>
-      <input
-        type="text"
-        value={goalSearch}
-        onChange={e => setGoalSearch(e.target.value)}
-        placeholder="Search goals…"
-        style={{ fontSize: '11px', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '6px 8px', width: '160px', outline: 'none' }}
-      />
-    </div>
     </div>
   )
 }
@@ -168,7 +176,7 @@ function MobileDayView({ date, tasks, goalMap, onMarkDone, onRescheduleToTomorro
         return (
           <div key={bucket.id} style={{ marginBottom: '16px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-              <span style={{ fontSize: '11px', fontWeight: 500, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{bucket.label}</span>
+              <span style={{ fontSize: '11px', fontWeight: 500, color: '#374151', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{bucket.label}</span>
               {bucketTasks.length > 0 && <span style={{ fontSize: '11px', color: '#d1d5db' }}>{bucketTasks.length}</span>}
             </div>
             <Droppable droppableId={droppableId}>
@@ -200,20 +208,10 @@ function MobileDayView({ date, tasks, goalMap, onMarkDone, onRescheduleToTomorro
   )
 }
 
-function MobileInbox({ tasks, goalMap, onAddTask, onEdit, onDelete }) {
-  const [search, setSearch] = useState('')
-  const visibleTasks = search.trim() ? tasks.filter(t => t.title.toLowerCase().includes(search.trim().toLowerCase())) : tasks
+function MobileInbox({ tasks, goalMap, onAddTask, onEdit, onDelete, search }) {
+  const visibleTasks = search && search.trim() ? tasks.filter(t => t.title.toLowerCase().includes(search.trim().toLowerCase())) : tasks
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-      <div style={{ padding: '10px 12px', flexShrink: 0, background: 'white' }}>
-        <input
-          type="text"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          placeholder="Search tasks…"
-          style={{ width: '100%', fontSize: '13px', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '8px 10px', outline: 'none', boxSizing: 'border-box' }}
-        />
-      </div>
       <div style={{ flex: 1, overflowY: 'auto' }}>
       <Droppable droppableId="inbox">
         {(provided, snapshot) => (
@@ -221,7 +219,7 @@ function MobileInbox({ tasks, goalMap, onAddTask, onEdit, onDelete }) {
             style={{ minHeight: '100px', padding: '0 12px 12px', background: snapshot.isDraggingOver ? '#eef2ff' : 'transparent' }}>
             {visibleTasks.length === 0 && !snapshot.isDraggingOver && (
               <div style={{ textAlign: 'center', paddingTop: '40px' }}>
-                {search.trim() ? (
+                {search && search.trim() ? (
                   <p style={{ fontSize: '13px', color: '#9ca3af', margin: 0 }}>No matching tasks.</p>
                 ) : (
                   <>
@@ -419,6 +417,8 @@ export default function MobileLayout({
     return inWeek ? today : weekDays[0]
   })
   const [activeTab, setActiveTab] = useState('day')
+  const [taskSearch, setTaskSearch] = useState('')
+  const [showTaskSearch, setShowTaskSearch] = useState(false)
 
   const tasksForDay = (date) => tasks.filter(t => t.scheduled_date === format(date, 'yyyy-MM-dd'))
   const dayNames = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
@@ -440,7 +440,7 @@ export default function MobileLayout({
           return (
             <button key={i} onClick={() => { setSelectedDay(day); setActiveTab('day') }}
               style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 2px' }}>
-              <span style={{ fontSize: '10px', color: isSelected ? '#6366f1' : '#9ca3af', fontWeight: 500, textTransform: 'uppercase' }}>{dayNames[i]}</span>
+              <span style={{ fontSize: '10px', color: isSelected ? '#6366f1' : '#374151', fontWeight: 500, textTransform: 'uppercase' }}>{dayNames[i]}</span>
               <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: isSelected ? '#6366f1' : today ? '#e0e7ff' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <span style={{ fontSize: '13px', fontWeight: isSelected || today ? 600 : 400, color: isSelected ? 'white' : today ? '#6366f1' : '#374151' }}>{format(day, 'd')}</span>
               </div>
@@ -473,9 +473,27 @@ export default function MobileLayout({
         <>
           <div style={{ padding: '10px 16px 6px', flexShrink: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: '15px', fontWeight: 500, color: '#111827' }}>Task List <span style={{ fontSize: '13px', color: '#9ca3af', fontWeight: 400 }}>{inboxTasks.length}</span></span>
-            <button onClick={onAddTask} style={{ background: '#6366f1', color: 'white', border: 'none', borderRadius: '8px', padding: '6px 12px', fontSize: '12px', cursor: 'pointer' }} title="Add task">+</button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              {showTaskSearch ? (
+                <input
+                  autoFocus
+                  type="text"
+                  value={taskSearch}
+                  onChange={e => setTaskSearch(e.target.value)}
+                  onBlur={() => { if (!taskSearch.trim()) setShowTaskSearch(false) }}
+                  placeholder="Search tasks…"
+                  style={{ fontSize: '13px', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '5px 8px', width: '120px', outline: 'none' }}
+                />
+              ) : (
+                <button onClick={() => setShowTaskSearch(true)} title="Search tasks"
+                  style={{ background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
+                </button>
+              )}
+              <button onClick={onAddTask} style={{ background: '#6366f1', color: 'white', border: 'none', borderRadius: '8px', padding: '6px 12px', fontSize: '12px', cursor: 'pointer' }} title="Add task">+</button>
+            </div>
           </div>
-          <MobileInbox tasks={inboxTasks} goalMap={goalMap} onAddTask={onAddTask} onEdit={onEdit} onDelete={onDelete} />
+          <MobileInbox tasks={inboxTasks} goalMap={goalMap} onAddTask={onAddTask} onEdit={onEdit} onDelete={onDelete} search={taskSearch} />
         </>
       )}
 

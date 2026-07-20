@@ -23,10 +23,10 @@ export default function DayColumn({ date, tasks, goalMap, onMarkDone, onReschedu
     <div className={'flex flex-col rounded-xl border transition-colors ' + (today ? 'border-indigo-200 bg-white' : isPast ? 'border-gray-100 bg-gray-50' : 'border-gray-200 bg-white')}>
       <div className={'px-3 pt-3 pb-2 border-b ' + (today ? 'border-indigo-100' : 'border-gray-100')}>
         <div className="flex items-center justify-between mb-1.5">
-          <span className={'text-xs font-medium uppercase tracking-wide ' + (isPast ? 'text-gray-300' : 'text-gray-500')}>{format(date, 'EEE')}</span>
+          <span className={'text-xs font-medium uppercase tracking-wide ' + (isPast ? 'text-gray-400' : 'text-gray-700')}>{format(date, 'EEE')}</span>
           <div className="flex items-center gap-1.5">
             <button onClick={() => onAddTaskForDay(date)} className="text-xs text-indigo-400 hover:text-indigo-600 leading-none" title="Add task for this day">+</button>
-            <span className={'text-xs font-semibold px-1.5 py-0.5 rounded ' + (today ? 'bg-indigo-600 text-white' : isPast ? 'text-gray-300' : 'text-gray-500')}>{format(date, 'd')}</span>
+            <span className={'text-xs font-semibold px-1.5 py-0.5 rounded ' + (today ? 'bg-indigo-600 text-white' : isPast ? 'text-gray-400' : 'text-gray-700')}>{format(date, 'd')}</span>
           </div>
         </div>
         <div className="h-1 bg-gray-100 rounded-full overflow-hidden">
@@ -34,7 +34,6 @@ export default function DayColumn({ date, tasks, goalMap, onMarkDone, onReschedu
         </div>
         <div className="flex justify-between mt-1">
           <span className={'text-xs ' + (count >= DAILY_CAP ? 'text-red-400 font-medium' : 'text-gray-400')}>{count} {count === 1 ? 'task' : 'tasks'}</span>
-          <span className="text-xs text-gray-300">max {DAILY_CAP}</span>
         </div>
       </div>
       <div className="flex-1 flex flex-col">
@@ -45,7 +44,7 @@ export default function DayColumn({ date, tasks, goalMap, onMarkDone, onReschedu
           return (
             <div key={bucket.id} className="flex-1 flex flex-col border-b border-gray-50 last:border-0">
               <div className="px-3 py-1.5 flex items-center gap-1.5 shrink-0">
-                <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">{bucket.label}</span>
+                <span className="text-xs font-medium text-gray-700 uppercase tracking-wide">{bucket.label}</span>
                 {bucketTasks.length > 0 && <span className="text-xs text-gray-300">{bucketTasks.length}</span>}
               </div>
               <Droppable droppableId={droppableId}>

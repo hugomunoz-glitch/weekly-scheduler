@@ -20,6 +20,7 @@ export default function GoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEdit
   const [viewingGoalId, setViewingGoalId] = useState(null)
   const [newTaskTitle, setNewTaskTitle] = useState('')
   const [goalSearch, setGoalSearch] = useState('')
+  const [showGoalSearch, setShowGoalSearch] = useState(false)
 
   const visibleGoals = goalSearch.trim() ? goals.filter(g => g.title.toLowerCase().includes(goalSearch.trim().toLowerCase())) : goals
 
@@ -60,7 +61,7 @@ export default function GoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEdit
     <div className="bg-white border-b border-gray-100 px-6 py-2 shrink-0">
       <div className="flex items-center gap-3 overflow-x-auto">
       <div className="sticky left-0 z-10 bg-white self-stretch flex items-center gap-3 pr-3 shrink-0">
-        <span className="text-xs font-medium text-gray-400 uppercase tracking-wide shrink-0">Goals</span>
+        <span className="text-xs font-medium text-gray-700 uppercase tracking-wide shrink-0">Goals</span>
         {adding ? (
           <form onSubmit={handleAdd} className="flex items-center gap-2 shrink-0">
             <input
@@ -82,6 +83,25 @@ export default function GoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEdit
             title="Add goal"
           >
             +
+          </button>
+        )}
+        {showGoalSearch ? (
+          <input
+            autoFocus
+            type="text"
+            value={goalSearch}
+            onChange={e => setGoalSearch(e.target.value)}
+            onBlur={() => { if (!goalSearch.trim()) setShowGoalSearch(false) }}
+            placeholder="Search goals…"
+            className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 w-40 shrink-0 focus:outline-none focus:ring-1 focus:ring-indigo-300 focus:border-indigo-400"
+          />
+        ) : (
+          <button
+            onClick={() => setShowGoalSearch(true)}
+            className="text-gray-400 hover:text-indigo-500 shrink-0 transition-colors"
+            title="Search goals"
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
           </button>
         )}
       </div>
@@ -205,15 +225,6 @@ export default function GoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEdit
           </div>
         )
       })}
-      </div>
-      <div className="mt-2">
-        <input
-          type="text"
-          value={goalSearch}
-          onChange={e => setGoalSearch(e.target.value)}
-          placeholder="Search goals…"
-          className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 w-48 focus:outline-none focus:ring-1 focus:ring-indigo-300 focus:border-indigo-400"
-        />
       </div>
     </div>
   )

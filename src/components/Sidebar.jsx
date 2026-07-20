@@ -2,28 +2,18 @@ import { useState } from 'react'
 import { Droppable, Draggable } from '@hello-pangea/dnd'
 import { useAssistantHistory } from '../hooks/useAssistantHistory'
 
-function Inbox({ tasks, goalMap, onEdit, onDelete }) {
+function Inbox({ tasks, goalMap, onEdit, onDelete, search }) {
   const [hoverId, setHoverId] = useState(null)
-  const [search, setSearch] = useState('')
-  const visibleTasks = search.trim() ? tasks.filter(t => t.title.toLowerCase().includes(search.trim().toLowerCase())) : tasks
+  const visibleTasks = search && search.trim() ? tasks.filter(t => t.title.toLowerCase().includes(search.trim().toLowerCase())) : tasks
   return (
     <div className="flex flex-col h-full">
-      <div className="px-3 pt-2">
-        <input
-          type="text"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          placeholder="Search tasks…"
-          className="w-full text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-300 focus:border-indigo-400"
-        />
-      </div>
       <Droppable droppableId="inbox">
         {(provided, snapshot) => (
           <div ref={provided.innerRef} {...provided.droppableProps}
             className={'flex-1 overflow-y-auto p-3 space-y-2 min-h-[60px] transition-colors ' + (snapshot.isDraggingOver ? 'bg-indigo-50' : '')}>
             {visibleTasks.length === 0 && !snapshot.isDraggingOver && (
               <div className="text-center pt-10">
-                <p className="text-xs text-gray-400 leading-relaxed">{search.trim() ? 'No matching tasks.' : <>Nothing waiting.<br />Add a task to get started.</>}</p>
+                <p className="text-xs text-gray-400 leading-relaxed">{search && search.trim() ? 'No matching tasks.' : <>Nothing waiting.<br />Add a task to get started.</>}</p>
               </div>
             )}
             {visibleTasks.map((task, index) => (
@@ -208,6 +198,8 @@ function Assistant({ goals, tasks, onCreateTask, onAddGoal }) {
 
 export default function Sidebar({ tasks, goalMap, goals, allTasks, onAddTask, onCreateTask, onAddGoal, onEdit, onDelete }) {
   const [tab, setTab] = useState('inbox')
+  const [taskSearch, setTaskSearch] = useState('')
+  const [showTaskSearch, setShowTaskSearch] = useState(false)
   return (
     <div className="w-64 border-l border-gray-200 bg-white flex flex-col shrink-0 overflow-hidden">
       <div className="flex border-b border-gray-100 shrink-0">
@@ -223,10 +215,25 @@ export default function Sidebar({ tasks, goalMap, goals, allTasks, onAddTask, on
       <div className="flex-1 overflow-hidden flex flex-col">
         {tab === 'inbox' ? (
           <>
-            <div className="px-4 py-2 flex justify-end shrink-0">
+            <div className="px-4 py-2 flex justify-end items-center gap-2 shrink-0">
+              {showTaskSearch ? (
+                <input
+                  autoFocus
+                  type="text"
+                  value={taskSearch}
+                  onChange={e => setTaskSearch(e.target.value)}
+                  onBlur={() => { if (!taskSearch.trim()) setShowTaskSearch(false) }}
+                  placeholder="Search tasks…"
+                  className="text-xs border border-gray-200 rounded-lg px-2 py-1 w-32 focus:outline-none focus:ring-1 focus:ring-indigo-300 focus:border-indigo-400"
+                />
+              ) : (
+                <button onClick={() => setShowTaskSearch(true)} className="text-gray-400 hover:text-indigo-500 transition-colors" title="Search tasks">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
+                </button>
+              )}
               <button onClick={onAddTask} className="text-xs text-indigo-600 hover:text-indigo-800 font-medium" title="Add task">+</button>
             </div>
-            <Inbox tasks={tasks} goalMap={goalMap} onEdit={onEdit} onDelete={onDelete} />
+            <Inbox tasks={tasks} goalMap={goalMap} onEdit={onEdit} onDelete={onDelete} search={taskSearch} />
           </>
         ) : (
           <Assistant goals={goals} tasks={allTasks} onCreateTask={onCreateTask} onAddGoal={onAddGoal} />
