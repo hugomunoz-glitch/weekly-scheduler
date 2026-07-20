@@ -96,26 +96,32 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
             className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 resize-none"
           />
           <div className="flex flex-wrap gap-3">
-            <select
-              value={goalId}
-              onChange={e => {
-                if (e.target.value === '__new__') { setAddingGoal(true); return }
-                setGoalId(e.target.value)
-              }}
-              className="flex-1 min-w-0 border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 text-gray-700"
-            >
-              <option value="">No goal</option>
-              {(goals || []).map(g => (
-                <option key={g.id} value={g.id}>{g.title}</option>
-              ))}
-              {onAddGoal && <option value="__new__">+ New goal…</option>}
-            </select>
-            <input
-              type="time"
-              value={startTime}
-              onChange={e => setStartTime(e.target.value)}
-              className="shrink-0 min-w-[136px] border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 text-gray-700"
-            />
+            <div className="flex-1 min-w-0">
+              <label className="block text-xs font-medium text-gray-500 mb-1">Goal</label>
+              <select
+                value={goalId}
+                onChange={e => {
+                  if (e.target.value === '__new__') { setAddingGoal(true); return }
+                  setGoalId(e.target.value)
+                }}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 text-gray-700"
+              >
+                <option value="">No goal</option>
+                {(goals || []).map(g => (
+                  <option key={g.id} value={g.id}>{g.title}</option>
+                ))}
+                {onAddGoal && <option value="__new__">+ New goal…</option>}
+              </select>
+            </div>
+            <div className="shrink-0">
+              <label className="block text-xs font-medium text-gray-500 mb-1">Start time</label>
+              <input
+                type="time"
+                value={startTime}
+                onChange={e => setStartTime(e.target.value)}
+                className="min-w-[136px] border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 text-gray-700"
+              />
+            </div>
           </div>
           {addingGoal && (
             <div className="border border-gray-200 rounded-lg p-3 -mt-1 space-y-2 bg-gray-50">

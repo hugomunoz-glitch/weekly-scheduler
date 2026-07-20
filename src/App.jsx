@@ -9,6 +9,15 @@ import AddTaskModal from './components/AddTaskModal'
 import GoalsBar from './components/GoalsBar'
 import MobileLayout from './components/MobileLayout'
 
+// Morning: before 12:00, Afternoon (bucket id 'midday'): 12:00-16:59, Evening (bucket id 'afternoon'): 17:00+
+function bucketFromTime(startTime) {
+  if (!startTime) return 'morning'
+  const hour = parseInt(startTime.split(':')[0], 10)
+  if (hour < 12) return 'morning'
+  if (hour < 17) return 'midday'
+  return 'afternoon'
+}
+
 export default function App() {
   const isMobile = useIsMobile()
   const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }))
@@ -81,7 +90,7 @@ export default function App() {
       title, notes: notes || null, goal_id: goalId || null, start_time: startTime || null, due_date: dueDate || null,
       status: scheduledDate ? 'scheduled' : 'inbox',
       scheduled_date: scheduledDate || null,
-      bucket: scheduledDate ? 'morning' : null,
+      bucket: scheduledDate ? bucketFromTime(startTime) : null,
       priority: priority || null
     }).select().single()
     if (error) { console.error('addTask failed:', error); throw error }
@@ -96,7 +105,11 @@ export default function App() {
     if (scheduledDate) {
       updates.scheduled_date = scheduledDate
       updates.status = existing && existing.status === 'done' ? 'done' : 'scheduled'
-      if (!wasScheduled) updates.bucket = 'morning'
+      if (startTime) {
+        updates.bucket = bucketFromTime(startTime)
+      } else if (!wasScheduled) {
+        updates.bucket = 'morning'
+      }
     } else {
       updates.scheduled_date = null
       updates.bucket = null
