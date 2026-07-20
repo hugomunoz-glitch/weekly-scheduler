@@ -16,7 +16,7 @@ function formatDueDate(d) {
 }
 
 const PRIORITY_COLORS = { high: '#ef4444', medium: '#f59e0b', low: '#9ca3af' }
-const PRIORITY_LABELS = { high: 'High', medium: 'Med', low: 'Low' }
+const PRIORITY_LABELS = { high: 'High', medium: 'Medium', low: 'Low' }
 
 export default function TaskCard({ task, isDone, isDragging, goalColor, onMarkDone, onRescheduleToTomorrow, onMoveToInbox, onDelete, onEdit }) {
   const [showActions, setShowActions] = useState(false)
@@ -85,10 +85,13 @@ export default function TaskCard({ task, isDone, isDragging, goalColor, onMarkDo
         </div>
       )}
       {!isDone && !isDragging && showActions && (
-        <div className="flex flex-wrap gap-1 mt-2 pt-1.5 border-t border-gray-100">
-          <button onClick={() => onEdit(task)} className="text-xs text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 px-1 py-0.5 rounded transition-colors">Edit</button>
-          <button onClick={() => onRescheduleToTomorrow(task.id, task.scheduled_date)} className="text-xs text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 px-1 py-0.5 rounded transition-colors">Tomorrow</button>
-          <button onClick={() => onMoveToInbox(task.id)} className="text-xs text-gray-500 hover:text-orange-600 hover:bg-orange-50 px-1 py-0.5 rounded transition-colors">Task List</button>
+        <div className="flex flex-wrap items-center gap-1 mt-2 pt-1.5 border-t border-gray-100">
+          <button onClick={() => onEdit(task)} className="text-sm text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 px-1.5 py-0.5 rounded transition-colors leading-none" title="Edit">&#9998;</button>
+          <button onClick={() => onRescheduleToTomorrow(task.id, task.scheduled_date)} className="text-sm text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 px-1.5 py-0.5 rounded transition-colors leading-none" title="Move to tomorrow">&#8594;</button>
+          <button onClick={() => onMoveToInbox(task.id)} className="text-xs text-gray-500 hover:text-orange-600 hover:bg-orange-50 px-1.5 py-0.5 rounded transition-colors flex items-center gap-1">
+            <span>&#128221;</span>
+            <span>Task List</span>
+          </button>
           <button onClick={() => onDelete(task.id)} className="md:hidden text-xs text-gray-500 hover:text-red-400 hover:bg-red-50 px-1 py-0.5 rounded transition-colors">Delete</button>
         </div>
       )}

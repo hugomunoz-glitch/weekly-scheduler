@@ -39,8 +39,9 @@ export default function DayColumn({ date, tasks, goalMap, onMarkDone, onReschedu
       <div className="flex-1 flex flex-col">
         {BUCKETS.map(bucket => {
           const bucketTasks = activeTasks.filter(t => (t.bucket || 'morning') === bucket.id).sort((a, b) => (a.position || 0) - (b.position || 0))
-          const bucketDone = doneTasks.filter(t => (t.bucket || 'morning') === bucket.id)
+          const bucketAll = tasks.filter(t => (t.bucket || 'morning') === bucket.id).sort((a, b) => (a.position || 0) - (b.position || 0))
           const droppableId = bucket.id + '-' + dateStr
+          let dragIndex = 0
           return (
             <div key={bucket.id} className="flex-1 flex flex-col border-b border-gray-50 last:border-0">
               <div className="px-3 py-1.5 flex items-center gap-1.5 shrink-0">
@@ -54,21 +55,26 @@ export default function DayColumn({ date, tasks, goalMap, onMarkDone, onReschedu
                     {...provided.droppableProps}
                     className={'flex-1 px-2 pb-2 min-h-[44px] transition-colors ' + (snapshot.isDraggingOver ? 'bg-indigo-50' : '')}
                   >
-                    {bucketTasks.map((task, index) => (
-                      <Draggable key={task.id} draggableId={task.id} index={index}>
-                        {(provided, snapshot) => (
-                          <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps} className="mb-1.5">
-                            <TaskCard task={task} isDragging={snapshot.isDragging} goalColor={goalMap[task.goal_id] ? goalMap[task.goal_id].color : null} onMarkDone={onMarkDone} onRescheduleToTomorrow={onRescheduleToTomorrow} onMoveToInbox={onMoveToInbox} onDelete={onDelete} onEdit={onEdit} />
+                    {bucketAll.map(task => {
+                      if (task.status === 'done') {
+                        return (
+                          <div key={task.id} className="mb-1.5">
+                            <TaskCard task={task} isDone goalColor={goalMap[task.goal_id] ? goalMap[task.goal_id].color : null} onMarkDone={onMarkDone} onRescheduleToTomorrow={onRescheduleToTomorrow} onMoveToInbox={onMoveToInbox} onDelete={onDelete} onEdit={onEdit} />
                           </div>
-                        )}
-                      </Draggable>
-                    ))}
+                        )
+                      }
+                      const index = dragIndex++
+                      return (
+                        <Draggable key={task.id} draggableId={task.id} index={index}>
+                          {(provided, snapshot) => (
+                            <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps} className="mb-1.5">
+                              <TaskCard task={task} isDragging={snapshot.isDragging} goalColor={goalMap[task.goal_id] ? goalMap[task.goal_id].color : null} onMarkDone={onMarkDone} onRescheduleToTomorrow={onRescheduleToTomorrow} onMoveToInbox={onMoveToInbox} onDelete={onDelete} onEdit={onEdit} />
+                            </div>
+                          )}
+                        </Draggable>
+                      )
+                    })}
                     {provided.placeholder}
-                    {bucketDone.map(task => (
-                      <div key={task.id} className="mb-1.5">
-                        <TaskCard task={task} isDone goalColor={goalMap[task.goal_id] ? goalMap[task.goal_id].color : null} onMarkDone={onMarkDone} onRescheduleToTomorrow={onRescheduleToTomorrow} onMoveToInbox={onMoveToInbox} onDelete={onDelete} onEdit={onEdit} />
-                      </div>
-                    ))}
                   </div>
                 )}
               </Droppable>
