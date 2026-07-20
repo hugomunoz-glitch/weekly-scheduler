@@ -261,11 +261,19 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
         const pct = linked.length > 0 ? Math.round((done.length / linked.length) * 100) : 0
       return (
         <div key={goal.id} onClick={() => setViewingGoalId(goal.id)} style={{ flexShrink: 0, border: '1px solid #e5e7eb', borderRadius: '10px', padding: '6px 10px', minWidth: '130px', background: 'white', position: 'relative', cursor: 'pointer' }}>
+          {longPressGoalId === goal.id && (
+            <span
+              onClick={(e) => { e.stopPropagation(); onDeleteGoal(goal.id); setLongPressGoalId(null) }}
+              style={{ position: 'absolute', top: '-8px', right: '-8px', width: '22px', height: '22px', borderRadius: '50%', background: '#ef4444', color: 'white', fontSize: '13px', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 4px rgba(0,0,0,0.25)', zIndex: 5 }}
+            >
+              &#10005;
+            </span>
+          )}
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
             <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: goal.color, flexShrink: 0 }} />
             <span
               style={{ fontSize: "12px", fontWeight: 500, color: "#374151", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "110px", cursor: "pointer" }}
-              {...longPressHandlers(pressTimerRef, pressFiredRef, () => { if (window.confirm(`Delete goal "${goal.title}"?`)) onDeleteGoal(goal.id) })}
+              {...longPressHandlers(pressTimerRef, pressFiredRef, () => setLongPressGoalId(goal.id))}
               onClick={(e) => {
                 if (pressFiredRef.current) { pressFiredRef.current = false; return }
                 e.stopPropagation()
