@@ -53,7 +53,7 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
   return (
     <div style={{ background: 'white', borderBottom: '1px solid #f3f4f6', padding: '8px 12px', flexShrink: 0 }}>
     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflowX: 'auto' }}>
-      <div style={{ position: 'sticky', left: 0, zIndex: 10, background: 'white', display: 'flex', alignItems: 'center', gap: '8px', paddingRight: '6px', flexShrink: 0 }}>
+      <div style={{ position: 'sticky', left: 0, zIndex: 10, background: 'white', alignSelf: 'stretch', display: 'flex', alignItems: 'center', gap: '8px', paddingRight: '6px', flexShrink: 0 }}>
         <span style={{ fontSize: '10px', fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em', flexShrink: 0 }}>Goals</span>
         {adding ? (
           <form onSubmit={handleAdd} style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>

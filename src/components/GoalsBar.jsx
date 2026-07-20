@@ -59,7 +59,7 @@ export default function GoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEdit
   return (
     <div className="bg-white border-b border-gray-100 px-6 py-2 shrink-0">
       <div className="flex items-center gap-3 overflow-x-auto">
-      <div className="sticky left-0 z-10 bg-white flex items-center gap-3 pr-3 shrink-0">
+      <div className="sticky left-0 z-10 bg-white self-stretch flex items-center gap-3 pr-3 shrink-0">
         <span className="text-xs font-medium text-gray-400 uppercase tracking-wide shrink-0">Goals</span>
         {adding ? (
           <form onSubmit={handleAdd} className="flex items-center gap-2 shrink-0">
