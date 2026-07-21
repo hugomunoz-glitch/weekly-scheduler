@@ -23,7 +23,7 @@ export default function TaskCard({ task, isDone, isDragging, goalColor, onMarkDo
 
   return (
     <div
-      className={'relative group rounded-lg border px-2.5 py-2 text-base transition-colors ' + (isDragging ? 'border-indigo-300 bg-white shadow-lg rotate-1' : isDone ? 'border-gray-100 bg-gray-50 opacity-60' : 'border-gray-200 bg-white hover:border-gray-300')}
+      className={'relative group rounded-lg border px-2.5 py-2 text-base transition-colors ' + (isDragging ? 'border-indigo-300 bg-white shadow-lg' : isDone ? 'border-gray-100 bg-gray-50 opacity-60' : 'border-gray-200 bg-white hover:border-gray-300')}
       onMouseEnter={() => setShowActions(true)}
       onMouseLeave={() => setShowActions(false)}
     >

@@ -296,12 +296,10 @@ export default function App() {
             <GoalsBar goals={goals} goalTasks={goalTasks} allTasks={tasks} onAddGoal={addGoal} onEditGoal={editGoal} onDeleteGoal={deleteGoal} onMarkDone={markDone} onDelete={deleteTask} onCreateTask={addTask} onEditTask={setEditingTask} />
           </div>
           <div className="flex flex-1 overflow-hidden gap-3 p-3">
-            <main className="flex-1 overflow-x-auto rounded-xl border border-gray-200 shadow-sm bg-white">
-              <div className="overflow-y-auto h-full p-4">
-                {loading ? <div className="flex items-center justify-center h-full text-sm text-gray-400">Loading</div> : (
-                  <WeekGrid days={weekDays} tasksForDay={tasksForDay} goalMap={goalMap} onMarkDone={markDone} onRescheduleToTomorrow={rescheduleToTomorrow} onMoveToInbox={moveToInbox} onDelete={deleteTask} onEdit={setEditingTask} onAddTaskForDay={openAddForDay} onAddTaskForBucket={openAddForBucket} />
-                )}
-              </div>
+            <main className="flex-1 overflow-x-auto overflow-y-auto rounded-xl border border-gray-200 shadow-sm bg-white p-4">
+              {loading ? <div className="flex items-center justify-center h-full text-sm text-gray-400">Loading</div> : (
+                <WeekGrid days={weekDays} tasksForDay={tasksForDay} goalMap={goalMap} onMarkDone={markDone} onRescheduleToTomorrow={rescheduleToTomorrow} onMoveToInbox={moveToInbox} onDelete={deleteTask} onEdit={setEditingTask} onAddTaskForDay={openAddForDay} onAddTaskForBucket={openAddForBucket} />
+              )}
             </main>
             <div className="rounded-xl border border-gray-200 shadow-sm overflow-hidden shrink-0">
               <Sidebar tasks={inboxTasks} goalMap={goalMap} goals={goals} allTasks={tasks} onAddTask={() => setShowAdd(true)} onCreateTask={addTask} onAddGoal={addGoal} onEdit={setEditingTask} onDelete={deleteTask} />
