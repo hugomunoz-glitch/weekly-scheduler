@@ -6,11 +6,11 @@ const GOAL_CATEGORIES = [
   'Social (Community/Volunteering)', 'Spiritual (Prayer/Church)'
 ]
 
-export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTask, onAddGoal, initialScheduledDate }) {
+export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTask, onAddGoal, initialScheduledDate, initialStartTime }) {
   const [title, setTitle] = useState(editingTask ? editingTask.title : '')
   const [notes, setNotes] = useState(editingTask ? (editingTask.notes || '') : '')
   const [goalId, setGoalId] = useState(editingTask ? (editingTask.goal_id || '') : '')
-  const [startTime, setStartTime] = useState(editingTask ? (editingTask.start_time || '') : '')
+  const [startTime, setStartTime] = useState(editingTask ? (editingTask.start_time || '') : (initialStartTime || ''))
   const [dueDate, setDueDate] = useState(editingTask ? (editingTask.due_date || '') : '')
   const [scheduledDate, setScheduledDate] = useState(editingTask ? (editingTask.scheduled_date || '') : (initialScheduledDate || ''))
   const [priority, setPriority] = useState(editingTask ? (editingTask.priority || '') : '')

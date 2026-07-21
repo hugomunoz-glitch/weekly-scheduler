@@ -402,7 +402,7 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
   )
 }
 
-function MobileDayView({ date, tasks, goalMap, onMarkDone, onRescheduleToTomorrow, onMoveToInbox, onDelete, onEdit, onAddTaskForDay }) {
+function MobileDayView({ date, tasks, goalMap, onMarkDone, onRescheduleToTomorrow, onMoveToInbox, onDelete, onEdit, onAddTaskForBucket }) {
   const activeTasks = tasks.filter(t => t.status !== 'done')
   const doneTasks = tasks.filter(t => t.status === 'done')
   const dateStr = format(date, 'yyyy-MM-dd')
@@ -419,6 +419,7 @@ function MobileDayView({ date, tasks, goalMap, onMarkDone, onRescheduleToTomorro
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
               <span style={{ fontSize: '11px', fontWeight: 500, color: '#374151', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{bucket.label}</span>
               {bucketTasks.length > 0 && <span style={{ fontSize: '11px', color: '#d1d5db' }}>{bucketTasks.length}</span>}
+              <button onClick={() => onAddTaskForBucket(date, bucket.id)} style={{ background: 'none', border: 'none', color: '#d1d5db', fontSize: '13px', cursor: 'pointer', marginLeft: 'auto', padding: '2px 6px' }} title={'Add task to ' + bucket.label}>+</button>
             </div>
             <Droppable droppableId={droppableId}>
               {(provided, snapshot) => (
@@ -508,7 +509,7 @@ function MobileInbox({ tasks, goalMap, onAddTask, onEdit, onDelete, search, sort
                     {!snapshot.isDragging && (
                       <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
                         <button onClick={() => onEdit(task)} style={{ fontSize: '12px', color: '#6366f1', background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>Edit</button>
-                        <button onClick={() => onDelete(task.id)} style={{ fontSize: '12px', color: '#d1d5db', background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>Delete</button>
+                        <button onClick={() => onDelete(task.id)} style={{ fontSize: '12px', color: '#ef4444', background: 'none', border: 'none', padding: 0, cursor: 'pointer', marginLeft: 'auto' }}>Delete</button>
                       </div>
                     )}
                   </div>
@@ -672,7 +673,7 @@ function MobileAssistant({ goals, tasks, onCreateTask, onAddGoal }) {
 export default function MobileLayout({
   weekStart, weekDays, tasks, goals, goalMap, goalTasks, inboxTasks,
   overdueTasks, onPrevWeek, onNextWeek, onMarkDone,
-  onRescheduleToTomorrow, onMoveToInbox, onDelete, onEdit, onAddTask, onAddTaskForDay, onCreateTask,
+  onRescheduleToTomorrow, onMoveToInbox, onDelete, onEdit, onAddTask, onAddTaskForBucket, onCreateTask,
   onRollover, onAddGoal, onEditGoal, onDeleteGoal
 }) {
   const [selectedDay, setSelectedDay] = useState(() => {
@@ -728,9 +729,8 @@ export default function MobileLayout({
         <>
           <div style={{ padding: '10px 16px 6px', flexShrink: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: '15px', fontWeight: 500, color: '#111827' }}>{format(selectedDay, 'EEEE, MMM d')}</span>
-            <button onClick={() => onAddTaskForDay(selectedDay)} style={{ background: '#6366f1', color: 'white', border: 'none', borderRadius: '8px', padding: '6px 12px', fontSize: '12px', cursor: 'pointer' }} title="Add task for this day">+</button>
           </div>
-          <MobileDayView date={selectedDay} tasks={tasksForDay(selectedDay)} goalMap={goalMap} onMarkDone={onMarkDone} onRescheduleToTomorrow={onRescheduleToTomorrow} onMoveToInbox={onMoveToInbox} onDelete={onDelete} onEdit={onEdit} onAddTaskForDay={onAddTaskForDay} />
+          <MobileDayView date={selectedDay} tasks={tasksForDay(selectedDay)} goalMap={goalMap} onMarkDone={onMarkDone} onRescheduleToTomorrow={onRescheduleToTomorrow} onMoveToInbox={onMoveToInbox} onDelete={onDelete} onEdit={onEdit} onAddTaskForBucket={onAddTaskForBucket} />
         </>
       )}
 

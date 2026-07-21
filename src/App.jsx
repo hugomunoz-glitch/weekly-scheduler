@@ -27,6 +27,7 @@ export default function App() {
   const [loading, setLoading] = useState(true)
   const [showAdd, setShowAdd] = useState(false)
   const [addForDate, setAddForDate] = useState(null)
+  const [addForTime, setAddForTime] = useState(null)
   const [editingTask, setEditingTask] = useState(null)
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i))
 
@@ -248,13 +249,19 @@ export default function App() {
 
   const inboxTasks = tasks.filter(t => t.status === 'inbox')
   const tasksForDay = (date) => tasks.filter(t => t.scheduled_date === format(date, 'yyyy-MM-dd'))
-  const openAddForDay = (date) => { setAddForDate(format(date, 'yyyy-MM-dd')); setShowAdd(true) }
+  const openAddForDay = (date) => { setAddForDate(format(date, 'yyyy-MM-dd')); setAddForTime(null); setShowAdd(true) }
+  const BUCKET_DEFAULT_TIME = { morning: '09:00', midday: '13:00', afternoon: '18:00' }
+  const openAddForBucket = (date, bucketId) => {
+    setAddForDate(format(date, 'yyyy-MM-dd'))
+    setAddForTime(BUCKET_DEFAULT_TIME[bucketId] || '09:00')
+    setShowAdd(true)
+  }
 
   const sharedProps = {
     weekStart, weekDays, tasks, goals, goalMap, goalTasks, inboxTasks,
     overdueTasks, onMarkDone: markDone, onRescheduleToTomorrow: rescheduleToTomorrow,
     onMoveToInbox: moveToInbox, onDelete: deleteTask, onEdit: setEditingTask,
-    onAddTask: () => setShowAdd(true), onAddTaskForDay: openAddForDay, onCreateTask: addTask, onRollover: rolloverOverdue,
+    onAddTask: () => setShowAdd(true), onAddTaskForDay: openAddForDay, onAddTaskForBucket: openAddForBucket, onCreateTask: addTask, onRollover: rolloverOverdue,
     onAddGoal: addGoal, onEditGoal: editGoal, onDeleteGoal: deleteGoal,
     onPrevWeek: () => setWeekStart(w => subWeeks(w, 1)),
     onNextWeek: () => setWeekStart(w => addWeeks(w, 1)),
@@ -288,7 +295,7 @@ export default function App() {
           <div className="flex flex-1 overflow-hidden gap-3 p-3">
             <main className="flex-1 overflow-x-auto overflow-y-auto rounded-xl border border-gray-200 shadow-sm bg-white p-4">
               {loading ? <div className="flex items-center justify-center h-full text-sm text-gray-400">Loading</div> : (
-                <WeekGrid days={weekDays} tasksForDay={tasksForDay} goalMap={goalMap} onMarkDone={markDone} onRescheduleToTomorrow={rescheduleToTomorrow} onMoveToInbox={moveToInbox} onDelete={deleteTask} onEdit={setEditingTask} onAddTaskForDay={openAddForDay} />
+                <WeekGrid days={weekDays} tasksForDay={tasksForDay} goalMap={goalMap} onMarkDone={markDone} onRescheduleToTomorrow={rescheduleToTomorrow} onMoveToInbox={moveToInbox} onDelete={deleteTask} onEdit={setEditingTask} onAddTaskForDay={openAddForDay} onAddTaskForBucket={openAddForBucket} />
               )}
             </main>
             <div className="rounded-xl border border-gray-200 shadow-sm overflow-hidden shrink-0">
@@ -297,7 +304,7 @@ export default function App() {
           </div>
         </div>
       )}
-      {showAdd && <AddTaskModal onAdd={addTask} onClose={() => { setShowAdd(false); setAddForDate(null) }} goals={goals} onAddGoal={addGoal} initialScheduledDate={addForDate} />}
+      {showAdd && <AddTaskModal onAdd={addTask} onClose={() => { setShowAdd(false); setAddForDate(null); setAddForTime(null) }} goals={goals} onAddGoal={addGoal} initialScheduledDate={addForDate} initialStartTime={addForTime} />}
       {editingTask && <AddTaskModal editingTask={editingTask} onEdit={editTask} onClose={() => setEditingTask(null)} goals={goals} onAddGoal={addGoal} />}
       {undoQueue.length > 0 && (
         <div className={'fixed left-1/2 -translate-x-1/2 z-[2000] flex flex-col gap-2 items-center ' + (isMobile ? 'bottom-20' : 'bottom-4')}>
