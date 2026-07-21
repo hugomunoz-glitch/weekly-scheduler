@@ -277,8 +277,8 @@ export default function Sidebar({ tasks, goalMap, goals, allTasks, onAddTask, on
                 <option value="alpha">Sort: A-Z</option>
                 <option value="created">Sort: Date Created</option>
               </select>
-              <select value={taskCategoryFilter} onChange={e => setTaskCategoryFilter(e.target.value)} style={{ width: '90px' }} className="shrink-0 overflow-hidden text-ellipsis whitespace-nowrap text-xs border border-gray-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-indigo-300" title="Filter by category">
-                <option value="all">All</option>
+              <select value={taskCategoryFilter} onChange={e => setTaskCategoryFilter(e.target.value)} style={{ width: '105px' }} className="shrink-0 overflow-hidden text-ellipsis whitespace-nowrap text-xs border border-gray-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-indigo-300" title="Filter by category">
+                <option value="all">All Categories</option>
                 {taskCategories.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
