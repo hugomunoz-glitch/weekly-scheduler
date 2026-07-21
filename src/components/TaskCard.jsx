@@ -81,7 +81,7 @@ export default function TaskCard({ task, isDone, isDragging, goalColor, onMarkDo
       </div>
       {isDone && showActions && (
         <div className="flex justify-end gap-2 mt-1">
-          <button onClick={() => onDelete(task.id)} className="md:hidden text-xs text-gray-300 hover:text-red-400 transition-colors px-1">Delete</button>
+          <button onClick={() => onDelete(task.id)} className="md:hidden text-xs text-red-500 hover:text-red-700 transition-colors px-1">Delete</button>
         </div>
       )}
       {!isDone && !isDragging && showActions && (
@@ -89,7 +89,7 @@ export default function TaskCard({ task, isDone, isDragging, goalColor, onMarkDo
           <button onClick={() => onEdit(task)} className="text-lg text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 px-1.5 py-0.5 rounded transition-colors leading-none" title="Edit">&#9998;</button>
           <button onClick={() => onRescheduleToTomorrow(task.id, task.scheduled_date)} className="text-lg text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 px-1.5 py-0.5 rounded transition-colors leading-none" title="Move to tomorrow">&#8594;</button>
           <button onClick={() => onMoveToInbox(task.id)} className="text-lg text-gray-500 hover:text-orange-600 hover:bg-orange-50 px-1.5 py-0.5 rounded transition-colors leading-none" title="Move to Task List">&#128221;</button>
-          <button onClick={() => onDelete(task.id)} className="md:hidden text-xs text-gray-500 hover:text-red-400 hover:bg-red-50 px-1 py-0.5 rounded transition-colors">Delete</button>
+          <button onClick={() => onDelete(task.id)} className="md:hidden text-xs text-red-500 hover:text-red-700 px-1 py-0.5 rounded transition-colors ml-auto">Delete</button>
         </div>
       )}
     </div>
