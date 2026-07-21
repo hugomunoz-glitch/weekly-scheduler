@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { useAssistantHistory } from '../hooks/useAssistantHistory'
 import { format, isToday } from 'date-fns'
@@ -690,6 +690,28 @@ export default function MobileLayout({
 
   const tasksForDay = (date) => tasks.filter(t => t.scheduled_date === format(date, 'yyyy-MM-dd'))
   const dayNames = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
+
+  // Warm-up: the drag library attaches its own touch listeners after mount. If a user's
+  // very first drag attempt of the session lands before that's done, the browser's native
+  // scroll gesture can win that one time instead. Silently firing a synthetic tap on a
+  // draggable shortly after mount primes those listeners before any real interaction happens.
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      try {
+        const el = document.querySelector('[data-rbd-drag-handle-draggable-id]')
+        if (!el || typeof Touch === 'undefined') return
+        const touch = new Touch({ identifier: Date.now(), target: el, clientX: 0, clientY: 0 })
+        const opts = { touches: [touch], targetTouches: [touch], changedTouches: [touch], bubbles: true, cancelable: true }
+        el.dispatchEvent(new TouchEvent('touchstart', opts))
+        setTimeout(() => {
+          el.dispatchEvent(new TouchEvent('touchend', { touches: [], targetTouches: [], changedTouches: [touch], bubbles: true, cancelable: true }))
+        }, 30)
+      } catch {
+        // Best-effort only; safe to ignore if the browser doesn't support synthetic Touch events.
+      }
+    }, 600)
+    return () => clearTimeout(timer)
+  }, [])
 
   return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: '#f9fafb', overflow: 'hidden' }}>
