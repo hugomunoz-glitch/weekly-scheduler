@@ -20,12 +20,13 @@ const PRIORITY_LABELS = { high: 'High', medium: 'Medium', low: 'Low' }
 
 export default function TaskCard({ task, isDone, isDragging, goalColor, onMarkDone, onRescheduleToTomorrow, onMoveToInbox, onDelete, onEdit }) {
   const [showActions, setShowActions] = useState(false)
+  const canHover = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(hover: hover)').matches
 
   return (
     <div
       className={'relative group rounded-lg border px-2.5 py-2 text-base transition-colors ' + (isDragging ? 'border-indigo-300 bg-white shadow-lg' : isDone ? 'border-gray-100 bg-gray-50 opacity-60' : 'border-gray-200 bg-white hover:border-gray-300')}
-      onMouseEnter={() => setShowActions(true)}
-      onMouseLeave={() => setShowActions(false)}
+      onMouseEnter={canHover ? () => setShowActions(true) : undefined}
+      onMouseLeave={canHover ? () => setShowActions(false) : undefined}
     >
       {!isDragging && (
         <button
