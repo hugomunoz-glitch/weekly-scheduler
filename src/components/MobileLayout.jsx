@@ -75,7 +75,6 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
   const [editingCategoryCustom, setEditingCategoryCustom] = useState('')
   const [editingPriority, setEditingPriority] = useState('')
   const [editGoalError, setEditGoalError] = useState('')
-  const [pressedPopupTaskId, setPressedPopupTaskId] = useState(null)
   const allCategories = [...new Set([...GOAL_CATEGORIES, ...goals.map(g => g.category).filter(Boolean)])].sort()
   const [longPressGoalId, setLongPressGoalId] = useState(null)
   const [longPressTaskId, setLongPressTaskId] = useState(null)
@@ -367,21 +366,16 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: '160px', overflowY: 'auto' }}>
                       {sortedLinked.map(t => (
-                        <div key={t.id} onClick={() => setPressedPopupTaskId(pressedPopupTaskId === t.id ? null : t.id)} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '20px', color: '#4b5563', padding: '6px 2px', minWidth: 0 }}>
-                          <span onClick={(e) => { e.stopPropagation(); onMarkDone(t.id) }} style={{ color: t.status === 'done' ? '#10b981' : '#d1d5db', fontSize: '22px', cursor: 'pointer', flexShrink: 0 }}>{t.status === 'done' ? '✓' : '○'}</span>
-                          <span onClick={(e) => { e.stopPropagation(); onMarkDone(t.id) }} style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'pointer', textDecoration: t.status === 'done' ? 'line-through' : 'none', color: t.status === 'done' ? '#9ca3af' : '#4b5563' }}>{t.title}</span>
+                        <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '20px', color: '#4b5563', padding: '6px 2px', minWidth: 0 }}>
+                          <span onClick={() => onMarkDone(t.id)} style={{ color: t.status === 'done' ? '#10b981' : '#d1d5db', fontSize: '22px', cursor: 'pointer', flexShrink: 0 }}>{t.status === 'done' ? '✓' : '○'}</span>
+                          <span onClick={() => handleEditTask(t.id)} style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'pointer', textDecoration: t.status === 'done' ? 'line-through' : 'none', color: t.status === 'done' ? '#9ca3af' : '#4b5563' }}>{t.title}</span>
                           {t.priority && PRIORITY_COLORS[t.priority] && (
                             <span style={{ fontSize: '11px', fontWeight: 500, padding: '1px 5px', borderRadius: '4px', flexShrink: 0, color: PRIORITY_COLORS[t.priority], background: PRIORITY_COLORS[t.priority] + '1a' }}>{PRIORITY_LABELS[t.priority]}</span>
                           )}
                           {t.start_time && (
                             <span style={{ fontSize: '13px', color: '#a5b4fc', flexShrink: 0, whiteSpace: 'nowrap' }}>{formatTime(t.start_time)}</span>
                           )}
-                          {pressedPopupTaskId === t.id && (
-                            <>
-                              <span onClick={(e) => { e.stopPropagation(); handleEditTask(t.id) }} style={{ color: '#c7d2fe', fontSize: '27px', cursor: 'pointer', padding: '2px 4px', flexShrink: 0 }}>&#9998;</span>
-                              <span onClick={(e) => { e.stopPropagation(); onDelete(t.id) }} style={{ color: '#ef4444', fontSize: '17px', fontWeight: 500, cursor: 'pointer', padding: '2px 4px', flexShrink: 0, lineHeight: 1 }}>&#10005;</span>
-                            </>
-                          )}
+                          <span onClick={(e) => { e.stopPropagation(); onDelete(t.id) }} style={{ color: '#ef4444', fontSize: '17px', fontWeight: 500, cursor: 'pointer', padding: '2px 4px', flexShrink: 0, lineHeight: 1 }}>&#10005;</span>
                         </div>
                       ))}
                     </div>
