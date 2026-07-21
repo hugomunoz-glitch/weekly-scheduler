@@ -36,6 +36,15 @@ export default function TaskCard({ task, isDone, isDragging, goalColor, onMarkDo
           &#10005;
         </button>
       )}
+      {!isDragging && (
+        <button
+          onClick={(e) => { e.stopPropagation(); setShowActions(v => !v) }}
+          className="md:hidden absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 border border-gray-200 text-gray-500 flex items-center justify-center shadow-sm z-10 leading-none"
+          title="More actions"
+        >
+          &#8942;
+        </button>
+      )}
       <div className="flex items-start gap-2">
         <button
           onClick={() => onMarkDone(task.id)}
@@ -71,15 +80,6 @@ export default function TaskCard({ task, isDone, isDragging, goalColor, onMarkDo
         </div>
         {goalColor && (
           <div className="w-2 h-2 rounded-full shrink-0 mt-1" style={{ background: goalColor }} />
-        )}
-        {!isDragging && (
-          <button
-            onClick={(e) => { e.stopPropagation(); setShowActions(v => !v) }}
-            className="md:hidden shrink-0 text-gray-300 hover:text-gray-500 px-1 -mr-1 leading-none"
-            title="More actions"
-          >
-            &#8942;
-          </button>
         )}
       </div>
       {isDone && showActions && (
