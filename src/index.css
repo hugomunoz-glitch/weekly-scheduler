@@ -10,3 +10,10 @@ html, body {
   overscroll-behavior: none;
   height: 100%;
 }
+
+/* Set touch-action via a real stylesheet rule (not a JS-computed inline style) so it's
+   active from the very first paint. WebKit can be unreliable about respecting touch-action
+   set via inline style on the very first touch of a freshly-inserted element. */
+[data-rbd-drag-handle-draggable-id] {
+  touch-action: manipulation;
+}
