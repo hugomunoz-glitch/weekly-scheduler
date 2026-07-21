@@ -84,32 +84,25 @@ export default function App() {
   const overdueTasks = tasks.filter(t => t.scheduled_date && t.status === 'scheduled' && isBefore(parseISO(t.scheduled_date), today))
 
   async function onDragEnd(result) {
-    console.log('onDragEnd result:', JSON.stringify(result))
     const { draggableId: taskId, destination, source } = result
     if (!destination) return
     if (destination.droppableId === source.droppableId && destination.index === source.index) return
     if (destination.droppableId.startsWith('goalpopup-')) return
     try {
       if (destination.droppableId === source.droppableId && destination.droppableId === 'inbox') {
-        console.log('onDragEnd: entered inbox reorder branch')
         const inboxOnly = tasks.filter(t => t.status === 'inbox').sort((a, b) => (a.position || 0) - (b.position || 0))
-        console.log('onDragEnd: inboxOnly ids in order:', inboxOnly.map(t => t.id + ':' + t.title))
         const reordered = Array.from(inboxOnly)
         const [moved] = reordered.splice(source.index, 1)
-        console.log('onDragEnd: moved task:', moved && (moved.id + ':' + moved.title))
-        if (!moved) { console.error('onDragEnd: no task at source.index', source.index, 'in inbox', inboxOnly.map(t => t.id)); fetchTasks(); return }
+        if (!moved) { fetchTasks(); return }
         reordered.splice(destination.index, 0, moved)
         const updatedPositions = Object.fromEntries(reordered.filter(Boolean).map((t, i) => [t.id, i]))
-        console.log('onDragEnd: updatedPositions:', updatedPositions)
         requestAnimationFrame(() => setTasks(prev => prev.map(t => updatedPositions[t.id] !== undefined ? { ...t, position: updatedPositions[t.id] } : t)))
         const results = await Promise.all(reordered.filter(Boolean).map((t, i) => supabase.from('tasks').update({ position: i }).eq('id', t.id).select()))
-        console.log('onDragEnd: supabase results:', JSON.stringify(results.map(r => ({ error: r.error, dataLen: r.data && r.data.length }))))
         const failed = results.find(r => r.error)
         const zeroRow = results.find(r => !r.error && (!r.data || r.data.length === 0))
-        if (failed) { console.error('onDragEnd: inbox reorder save failed:', failed.error) }
-        if (zeroRow) { console.error('onDragEnd: inbox reorder update matched 0 rows (likely RLS silently blocking the write):', zeroRow) }
+        if (failed) console.error('onDragEnd: inbox reorder save failed:', failed.error)
+        if (zeroRow) console.error('onDragEnd: inbox reorder update matched 0 rows (RLS likely blocking the write):', zeroRow)
         if (failed || zeroRow) fetchTasks()
-        console.log('onDragEnd: inbox reorder branch complete')
       } else if (destination.droppableId === source.droppableId) {
         const parts = destination.droppableId.split('-')
         const bucket = parts[0]
@@ -117,7 +110,7 @@ export default function App() {
         const bucketTasks = tasks.filter(t => t.scheduled_date === dateStr && (t.bucket || 'morning') === bucket).sort((a, b) => (a.position || 0) - (b.position || 0))
         const reordered = Array.from(bucketTasks)
         const [moved] = reordered.splice(source.index, 1)
-        if (!moved) { console.error('onDragEnd: no task at source.index', source.index, 'in', bucketTasks.map(t => t.id)); fetchTasks(); return }
+        if (!moved) { fetchTasks(); return }
         reordered.splice(destination.index, 0, moved)
         const updatedPositions = Object.fromEntries(reordered.filter(Boolean).map((t, i) => [t.id, i]))
         requestAnimationFrame(() => setTasks(prev => prev.map(t => updatedPositions[t.id] !== undefined ? { ...t, position: updatedPositions[t.id] } : t)))
