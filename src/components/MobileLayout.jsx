@@ -508,7 +508,7 @@ function MobileInbox({ tasks, goalMap, onAddTask, onEdit, onDelete, search, sort
                     {task.notes && <p style={{ fontSize: '12px', color: '#9ca3af', margin: '4px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{task.notes}</p>}
                     {!snapshot.isDragging && (
                       <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
-                        <button onClick={() => onEdit(task)} style={{ fontSize: '12px', color: '#6366f1', background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>Edit</button>
+                        <button onClick={() => onEdit(task)} style={{ fontSize: '18px', color: '#6366f1', background: 'none', border: 'none', padding: 0, cursor: 'pointer', lineHeight: 1 }} title="Edit">&#9998;</button>
                         <button onClick={() => onDelete(task.id)} style={{ fontSize: '12px', color: '#ef4444', background: 'none', border: 'none', padding: 0, cursor: 'pointer', marginLeft: 'auto' }}>Delete</button>
                       </div>
                     )}
