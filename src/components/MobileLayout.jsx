@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { useAssistantHistory } from '../hooks/useAssistantHistory'
 import { format, isToday } from 'date-fns'
@@ -671,7 +671,7 @@ function MobileAssistant({ goals, tasks, onCreateTask, onAddGoal }) {
 }
 
 export default function MobileLayout({
-  weekStart, weekDays, tasks, goals, goalMap, goalTasks, inboxTasks,
+  weekStart, weekDays, tasks, goals, goalMap, goalTasks, inboxTasks, loading,
   overdueTasks, onPrevWeek, onNextWeek, onMarkDone,
   onRescheduleToTomorrow, onMoveToInbox, onDelete, onEdit, onAddTask, onAddTaskForBucket, onCreateTask,
   onRollover, onAddGoal, onEditGoal, onDeleteGoal
@@ -690,28 +690,6 @@ export default function MobileLayout({
 
   const tasksForDay = (date) => tasks.filter(t => t.scheduled_date === format(date, 'yyyy-MM-dd'))
   const dayNames = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
-
-  // Warm-up: the drag library attaches its own touch listeners after mount. If a user's
-  // very first drag attempt of the session lands before that's done, the browser's native
-  // scroll gesture can win that one time instead. Silently firing a synthetic tap on a
-  // draggable shortly after mount primes those listeners before any real interaction happens.
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      try {
-        const el = document.querySelector('[data-rbd-drag-handle-draggable-id]')
-        if (!el || typeof Touch === 'undefined') return
-        const touch = new Touch({ identifier: Date.now(), target: el, clientX: 0, clientY: 0 })
-        const opts = { touches: [touch], targetTouches: [touch], changedTouches: [touch], bubbles: true, cancelable: true }
-        el.dispatchEvent(new TouchEvent('touchstart', opts))
-        setTimeout(() => {
-          el.dispatchEvent(new TouchEvent('touchend', { touches: [], targetTouches: [], changedTouches: [touch], bubbles: true, cancelable: true }))
-        }, 30)
-      } catch {
-        // Best-effort only; safe to ignore if the browser doesn't support synthetic Touch events.
-      }
-    }, 600)
-    return () => clearTimeout(timer)
-  }, [])
 
   return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: '#f9fafb', overflow: 'hidden' }}>
@@ -752,7 +730,11 @@ export default function MobileLayout({
           <div style={{ padding: '10px 16px 6px', flexShrink: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: '15px', fontWeight: 500, color: '#111827' }}>{format(selectedDay, 'EEEE, MMM d')}</span>
           </div>
-          <MobileDayView date={selectedDay} tasks={tasksForDay(selectedDay)} goalMap={goalMap} onMarkDone={onMarkDone} onRescheduleToTomorrow={onRescheduleToTomorrow} onMoveToInbox={onMoveToInbox} onDelete={onDelete} onEdit={onEdit} onAddTaskForBucket={onAddTaskForBucket} />
+          {loading ? (
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af', fontSize: '13px' }}>Loading</div>
+          ) : (
+            <MobileDayView date={selectedDay} tasks={tasksForDay(selectedDay)} goalMap={goalMap} onMarkDone={onMarkDone} onRescheduleToTomorrow={onRescheduleToTomorrow} onMoveToInbox={onMoveToInbox} onDelete={onDelete} onEdit={onEdit} onAddTaskForBucket={onAddTaskForBucket} />
+          )}
         </>
       )}
 
@@ -795,7 +777,7 @@ export default function MobileLayout({
               {taskCategories.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
-          <MobileInbox tasks={inboxTasks} goalMap={goalMap} onAddTask={onAddTask} onEdit={onEdit} onDelete={onDelete} search={taskSearch} sortMode={taskSort} categoryFilter={taskCategoryFilter} />
+          <MobileInbox tasks={loading ? [] : inboxTasks} goalMap={goalMap} onAddTask={onAddTask} onEdit={onEdit} onDelete={onDelete} search={taskSearch} sortMode={taskSort} categoryFilter={taskCategoryFilter} />
         </>
       )}
 

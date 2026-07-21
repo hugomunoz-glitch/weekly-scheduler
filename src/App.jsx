@@ -261,7 +261,7 @@ export default function App() {
   }
 
   const sharedProps = {
-    weekStart, weekDays, tasks, goals, goalMap, goalTasks, inboxTasks,
+    weekStart, weekDays, tasks, goals, goalMap, goalTasks, inboxTasks, loading,
     overdueTasks, onMarkDone: markDone, onRescheduleToTomorrow: rescheduleToTomorrow,
     onMoveToInbox: moveToInbox, onDelete: deleteTask, onEdit: setEditingTask,
     onAddTask: () => setShowAdd(true), onAddTaskForDay: openAddForDay, onAddTaskForBucket: openAddForBucket, onCreateTask: addTask, onRollover: rolloverOverdue,
