@@ -70,11 +70,11 @@ export default function App() {
       const [moved] = reordered.splice(source.index, 1)
       reordered.splice(destination.index, 0, moved)
       const updatedPositions = Object.fromEntries(reordered.map((t, i) => [t.id, i]))
-      requestAnimationFrame(() => setTasks(prev => prev.map(t => updatedPositions[t.id] !== undefined ? { ...t, position: updatedPositions[t.id] } : t)))
+      setTasks(prev => prev.map(t => updatedPositions[t.id] !== undefined ? { ...t, position: updatedPositions[t.id] } : t))
       const results = await Promise.all(reordered.map((t, i) => supabase.from('tasks').update({ position: i }).eq('id', t.id)))
       if (results.some(r => r.error)) fetchTasks()
     } else if (destination.droppableId === 'inbox') {
-      requestAnimationFrame(() => setTasks(prev => prev.map(t => t.id === taskId ? { ...t, scheduled_date: null, status: 'inbox', bucket: null } : t)))
+      setTasks(prev => prev.map(t => t.id === taskId ? { ...t, scheduled_date: null, status: 'inbox', bucket: null } : t))
       const { error } = await supabase.from('tasks').update({ scheduled_date: null, status: 'inbox', bucket: null }).eq('id', taskId)
       if (error) fetchTasks()
     } else {
@@ -82,7 +82,7 @@ export default function App() {
       const bucket = parts[0]
       const dateStr = parts.slice(1).join('-')
       const newPosition = destination.index
-      requestAnimationFrame(() => setTasks(prev => prev.map(t => t.id === taskId ? { ...t, scheduled_date: dateStr, status: 'scheduled', bucket, position: newPosition } : t)))
+      setTasks(prev => prev.map(t => t.id === taskId ? { ...t, scheduled_date: dateStr, status: 'scheduled', bucket, position: newPosition } : t))
       const { error } = await supabase.from('tasks').update({ scheduled_date: dateStr, status: 'scheduled', bucket, position: newPosition }).eq('id', taskId)
       if (error) fetchTasks()
     }
