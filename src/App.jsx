@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { startOfWeek, addWeeks, subWeeks, addDays, format, parseISO, isBefore, startOfDay } from 'date-fns'
 import { DragDropContext } from '@hello-pangea/dnd'
 import { supabase } from './lib/supabase'
@@ -8,6 +8,30 @@ import Sidebar from './components/Sidebar'
 import AddTaskModal from './components/AddTaskModal'
 import GoalsBar from './components/GoalsBar'
 import MobileLayout from './components/MobileLayout'
+
+// Mobile Safari runs the drag library's internal tracking code unoptimized on its very
+// first execution, causing a brief stall on the first drag of a session. This sensor uses
+// the library's own official Sensor API to genuinely run through a real lift+cancel once,
+// shortly after mount, so that code is already JIT-warmed before the user's first real drag.
+// This is not a synthetic touch event - it calls the library's actual programmatic API.
+function useWarmupSensor(api) {
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      try {
+        const el = document.querySelector('[data-rbd-draggable-id]')
+        const id = el && el.getAttribute('data-rbd-draggable-id')
+        if (!id) return
+        const preDrag = api.tryGetLock(id, () => {})
+        if (!preDrag) return
+        const actions = preDrag.fluidLift({ x: 0, y: 0 })
+        actions.cancel()
+      } catch (e) {
+        // Best-effort only; the API surface can vary by version, so fail silently.
+      }
+    }, 800)
+    return () => clearTimeout(timer)
+  }, [api])
+}
 
 // Morning: before 12:00, Afternoon (bucket id 'midday'): 12:00-16:59, Evening (bucket id 'afternoon'): 17:00+
 function bucketFromTime(startTime) {
@@ -271,8 +295,10 @@ export default function App() {
     onThisWeek: () => setWeekStart(startOfWeek(new Date(), { weekStartsOn: 1 }))
   }
 
+  const dndSensors = useMemo(() => (isMobile ? [useWarmupSensor] : []), [isMobile])
+
   return (
-    <DragDropContext onDragEnd={onDragEnd}>
+    <DragDropContext onDragEnd={onDragEnd} sensors={dndSensors}>
       {isMobile ? (
         <MobileLayout {...sharedProps} />
       ) : (
