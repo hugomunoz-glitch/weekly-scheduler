@@ -326,7 +326,7 @@ export default function App() {
     onThisWeek: () => setWeekStart(startOfWeek(new Date(), { weekStartsOn: 1 }))
   }
 
-  const dndSensors = useMemo(() => (isMobile ? [useWarmupSensor] : []), [isMobile])
+  const dndSensors = useMemo(() => [useWarmupSensor], [])
 
   return (
     <DragDropContext onDragEnd={onDragEnd} sensors={dndSensors}>
