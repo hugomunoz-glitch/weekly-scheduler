@@ -40,11 +40,11 @@ export default function DayColumn({ date, tasks, goalMap, onMarkDone, onReschedu
           const droppableId = bucket.id + '-' + dateStr
           let dragIndex = 0
           return (
-            <div key={bucket.id} className="flex-1 flex flex-col border-b border-gray-50 last:border-0">
+            <div key={bucket.id} className="group flex-1 flex flex-col border-b border-gray-50 last:border-0">
               <div className="px-3 py-1.5 flex items-center gap-1.5 shrink-0">
                 <span className="text-sm font-medium text-gray-700 uppercase tracking-wide">{bucket.label}</span>
                 {bucketTasks.length > 0 && <span className="text-xs text-gray-300">{bucketTasks.length}</span>}
-                <button onClick={() => onAddTaskForBucket(date, bucket.id)} className="text-xs text-gray-300 hover:text-indigo-500 leading-none ml-auto" title={'Add task to ' + bucket.label}>+</button>
+                <button onClick={() => onAddTaskForBucket(date, bucket.id)} className="text-xs text-gray-300 hover:text-indigo-500 leading-none ml-auto opacity-0 group-hover:opacity-100 transition-opacity" title={'Add task to ' + bucket.label}>+</button>
               </div>
               <Droppable droppableId={droppableId}>
                 {(provided, snapshot) => (
