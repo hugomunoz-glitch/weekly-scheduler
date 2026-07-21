@@ -1,5 +1,6 @@
 import { format, isToday, isBefore, startOfDay } from 'date-fns'
 import { Droppable, Draggable } from '@hello-pangea/dnd'
+import { createPortal } from 'react-dom'
 import TaskCard from './TaskCard'
 
 const DAILY_CAP = 5
@@ -60,11 +61,14 @@ export default function DayColumn({ date, tasks, goalMap, onMarkDone, onReschedu
                   >
                     {bucketAll.map((task, index) => (
                       <Draggable key={task.id} draggableId={task.id} index={index} isDragDisabled={task.status === 'done'}>
-                        {(provided, snapshot) => (
-                          <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps} className="mb-1.5">
-                            <TaskCard task={task} isDone={task.status === 'done'} isDragging={snapshot.isDragging} goalColor={goalMap[task.goal_id] ? goalMap[task.goal_id].color : null} onMarkDone={onMarkDone} onRescheduleToTomorrow={onRescheduleToTomorrow} onMoveToInbox={onMoveToInbox} onDelete={onDelete} onEdit={onEdit} />
-                          </div>
-                        )}
+                        {(provided, snapshot) => {
+                          const card = (
+                            <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps} className="mb-1.5" style={provided.draggableProps.style}>
+                              <TaskCard task={task} isDone={task.status === 'done'} isDragging={snapshot.isDragging} goalColor={goalMap[task.goal_id] ? goalMap[task.goal_id].color : null} onMarkDone={onMarkDone} onRescheduleToTomorrow={onRescheduleToTomorrow} onMoveToInbox={onMoveToInbox} onDelete={onDelete} onEdit={onEdit} />
+                            </div>
+                          )
+                          return snapshot.isDragging ? createPortal(card, document.body) : card
+                        }}
                       </Draggable>
                     ))}
                     {provided.placeholder}

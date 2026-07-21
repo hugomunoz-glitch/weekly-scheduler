@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Droppable, Draggable } from '@hello-pangea/dnd'
 import { useAssistantHistory } from '../hooks/useAssistantHistory'
 
@@ -36,9 +37,10 @@ function Inbox({ tasks, goalMap, onEdit, onDelete, search, sortMode, categoryFil
             )}
             {visibleTasks.map((task, index) => (
               <Draggable key={task.id} draggableId={task.id} index={index}>
-                {(provided, snapshot) => (
+                {(provided, snapshot) => {
+                  const row = (
                   <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}
-                    className={'relative group border rounded-lg px-3 py-2.5 bg-white transition-all ' + (snapshot.isDragging ? 'border-indigo-300 shadow-lg rotate-1' : 'border-gray-200 hover:border-gray-300')}
+                    className={'relative group border rounded-lg px-3 py-2.5 bg-white transition-colors ' + (snapshot.isDragging ? 'border-indigo-300 shadow-lg' : 'border-gray-200 hover:border-gray-300')}
                     onMouseEnter={() => setHoverId(task.id)} onMouseLeave={() => setHoverId(null)}>
                     {!snapshot.isDragging && (
                       <button
@@ -67,7 +69,9 @@ function Inbox({ tasks, goalMap, onEdit, onDelete, search, sortMode, categoryFil
                       </div>
                     )}
                   </div>
-                )}
+                  )
+                  return snapshot.isDragging ? createPortal(row, document.body) : row
+                }}
               </Draggable>
             ))}
             {provided.placeholder}
