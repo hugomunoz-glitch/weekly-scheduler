@@ -487,16 +487,7 @@ function MobileInbox({ tasks, goalMap, onAddTask, onEdit, onDelete, search, sort
                 {(provided, snapshot) => {
                   const row = (
                   <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}
-                    style={{ ...provided.draggableProps.style, position: 'relative', border: '1px solid ' + (snapshot.isDragging ? '#a5b4fc' : '#e5e7eb'), borderRadius: '10px', padding: '10px 12px', background: 'white', marginBottom: '8px', WebkitTouchCallout: 'none', WebkitUserSelect: 'none', userSelect: 'none', touchAction: 'manipulation' }}>
-                    {!snapshot.isDragging && (
-                      <button
-                        onClick={(e) => { e.stopPropagation(); setPressedTaskId(pressedTaskId === task.id ? null : task.id) }}
-                        style={{ position: 'absolute', top: '-6px', right: '-6px', width: '24px', height: '24px', borderRadius: '50%', background: '#f3f4f6', border: '1px solid #e5e7eb', color: '#6b7280', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', zIndex: 10, lineHeight: 1 }}
-                        title="More actions"
-                      >
-                        &#8942;
-                      </button>
-                    )}
+                    style={{ ...provided.draggableProps.style, border: '1px solid ' + (snapshot.isDragging ? '#a5b4fc' : '#e5e7eb'), borderRadius: '10px', padding: '10px 12px', background: 'white', marginBottom: '8px', WebkitTouchCallout: 'none', WebkitUserSelect: 'none', userSelect: 'none', touchAction: 'manipulation' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
                       <p style={{ fontSize: '14px', color: '#1f2937', flex: 1, margin: 0 }}>
                         {task.title}
@@ -509,6 +500,15 @@ function MobileInbox({ tasks, goalMap, onAddTask, onEdit, onDelete, search, sort
                       </p>
                       {task.goal_id && goalMap[task.goal_id] && (
                         <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: goalMap[task.goal_id].color, flexShrink: 0, marginTop: '4px' }} />
+                      )}
+                      {!snapshot.isDragging && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setPressedTaskId(pressedTaskId === task.id ? null : task.id) }}
+                          style={{ background: 'none', border: 'none', color: '#6b7280', flexShrink: 0, padding: '0 0 0 4px', lineHeight: 1, fontSize: '16px' }}
+                          title="More actions"
+                        >
+                          &#8942;
+                        </button>
                       )}
                     </div>
                     {task.notes && <p style={{ fontSize: '12px', color: '#9ca3af', margin: '4px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{task.notes}</p>}
