@@ -451,6 +451,7 @@ function MobileInbox({ tasks, goalMap, onAddTask, onEdit, onDelete, search, sort
   const searched = search && search.trim() ? tasks.filter(t => t.title.toLowerCase().includes(search.trim().toLowerCase())) : tasks
   const filteredTasks = categoryFilter && categoryFilter !== 'all' ? searched.filter(t => t.category === categoryFilter) : searched
   const visibleTasks = [...filteredTasks].sort((a, b) => {
+    if (sortMode === 'manual') return (a.position || 0) - (b.position || 0)
     if (sortMode === 'alpha') return a.title.localeCompare(b.title)
     if (sortMode === 'priority') {
       const aRank = a.priority in PRIORITY_RANK ? PRIORITY_RANK[a.priority] : 3
@@ -692,7 +693,7 @@ export default function MobileLayout({
   const [activeTab, setActiveTab] = useState('day')
   const [taskSearch, setTaskSearch] = useState('')
   const [showTaskSearch, setShowTaskSearch] = useState(false)
-  const [taskSort, setTaskSort] = useState('deadline')
+  const [taskSort, setTaskSort] = useState('manual')
   const [taskCategoryFilter, setTaskCategoryFilter] = useState('all')
   const taskCategories = [...new Set(tasks.map(t => t.category).filter(Boolean))].sort()
 
@@ -777,6 +778,7 @@ export default function MobileLayout({
           </div>
           <div style={{ padding: '0 16px 8px', display: 'flex', justifyContent: 'flex-end', gap: '8px', flexShrink: 0 }}>
             <select value={taskSort} onChange={e => setTaskSort(e.target.value)} style={{ fontSize: '11px', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '5px 8px', outline: 'none' }}>
+              <option value="manual">Sort: Manual</option>
               <option value="deadline">Sort: Deadline</option>
               <option value="priority">Sort: Priority</option>
               <option value="alpha">Sort: A-Z</option>

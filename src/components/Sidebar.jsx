@@ -12,6 +12,7 @@ function Inbox({ tasks, goalMap, onEdit, onDelete, search, sortMode, categoryFil
   const searched = search && search.trim() ? tasks.filter(t => t.title.toLowerCase().includes(search.trim().toLowerCase())) : tasks
   const filteredTasks = categoryFilter && categoryFilter !== 'all' ? searched.filter(t => t.category === categoryFilter) : searched
   const visibleTasks = [...filteredTasks].sort((a, b) => {
+    if (sortMode === 'manual') return (a.position || 0) - (b.position || 0)
     if (sortMode === 'alpha') return a.title.localeCompare(b.title)
     if (sortMode === 'priority') {
       const aRank = a.priority in PRIORITY_RANK ? PRIORITY_RANK[a.priority] : 3
@@ -235,7 +236,7 @@ export default function Sidebar({ tasks, goalMap, goals, allTasks, onAddTask, on
   const [tab, setTab] = useState('inbox')
   const [taskSearch, setTaskSearch] = useState('')
   const [showTaskSearch, setShowTaskSearch] = useState(false)
-  const [taskSort, setTaskSort] = useState('deadline')
+  const [taskSort, setTaskSort] = useState('manual')
   const [taskCategoryFilter, setTaskCategoryFilter] = useState('all')
   const taskCategories = [...new Set(allTasks.map(t => t.category).filter(Boolean))].sort()
   return (
@@ -273,6 +274,7 @@ export default function Sidebar({ tasks, goalMap, goals, allTasks, onAddTask, on
             </div>
             <div className="px-4 pb-2 flex justify-end gap-2 shrink-0">
               <select value={taskSort} onChange={e => setTaskSort(e.target.value)} className="text-xs border border-gray-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-indigo-300" title="Sort tasks">
+                <option value="manual">Sort: Manual</option>
                 <option value="deadline">Sort: Deadline</option>
                 <option value="priority">Sort: Priority</option>
                 <option value="alpha">Sort: A-Z</option>
