@@ -249,7 +249,7 @@ export default function App() {
     await supabase.from('tasks').update({ scheduled_date: todayStr }).in('id', ids)
   }
 
-  const inboxTasks = tasks.filter(t => t.status !== 'done')
+  const inboxTasks = tasks.filter(t => t.status === 'inbox')
   const taskCategories = [...new Set(tasks.map(t => t.category).filter(Boolean))].sort()
   const tasksForDay = (date) => tasks.filter(t => t.scheduled_date === format(date, 'yyyy-MM-dd'))
   const openAddForDay = (date) => { setAddForDate(format(date, 'yyyy-MM-dd')); setAddForTime(null); setShowAdd(true) }
