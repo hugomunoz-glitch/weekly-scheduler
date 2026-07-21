@@ -87,6 +87,7 @@ export default function App() {
   const overdueTasks = tasks.filter(t => t.scheduled_date && t.status === 'scheduled' && isBefore(parseISO(t.scheduled_date), today))
 
   async function onDragEnd(result) {
+    console.log('onDragEnd result:', JSON.stringify(result))
     const { draggableId: taskId, destination, source } = result
     if (!destination) return
     if (destination.droppableId === source.droppableId && destination.index === source.index) return
