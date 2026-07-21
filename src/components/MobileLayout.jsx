@@ -460,9 +460,10 @@ function MobileDayView({ date, tasks, goalMap, onMarkDone, onRescheduleToTomorro
   )
 }
 
-function MobileInbox({ tasks, goalMap, onAddTask, onEdit, onDelete, search, sortMode }) {
+function MobileInbox({ tasks, goalMap, onAddTask, onEdit, onDelete, search, sortMode, categoryFilter }) {
   const [pressedTaskId, setPressedTaskId] = useState(null)
-  const filteredTasks = search && search.trim() ? tasks.filter(t => t.title.toLowerCase().includes(search.trim().toLowerCase())) : tasks
+  const searched = search && search.trim() ? tasks.filter(t => t.title.toLowerCase().includes(search.trim().toLowerCase())) : tasks
+  const filteredTasks = categoryFilter && categoryFilter !== 'all' ? searched.filter(t => t.category === categoryFilter) : searched
   const visibleTasks = [...filteredTasks].sort((a, b) => {
     if (sortMode === 'alpha') return a.title.localeCompare(b.title)
     if (sortMode === 'priority') {
@@ -506,6 +507,9 @@ function MobileInbox({ tasks, goalMap, onAddTask, onEdit, onDelete, search, sort
                         {task.title}
                         {task.priority && PRIORITY_COLORS[task.priority] && (
                           <span style={{ fontSize: '10px', fontWeight: 500, padding: '1px 6px', borderRadius: '4px', marginLeft: '6px', color: PRIORITY_COLORS[task.priority], background: PRIORITY_COLORS[task.priority] + '1a' }}>{PRIORITY_LABELS[task.priority]}</span>
+                        )}
+                        {task.category && (
+                          <span style={{ fontSize: '10px', color: '#9ca3af', marginLeft: '6px' }}>{task.category}</span>
                         )}
                       </p>
                       {task.goal_id && goalMap[task.goal_id] && (
@@ -692,6 +696,8 @@ export default function MobileLayout({
   const [taskSearch, setTaskSearch] = useState('')
   const [showTaskSearch, setShowTaskSearch] = useState(false)
   const [taskSort, setTaskSort] = useState('deadline')
+  const [taskCategoryFilter, setTaskCategoryFilter] = useState('all')
+  const taskCategories = [...new Set(tasks.map(t => t.category).filter(Boolean))].sort()
 
   const tasksForDay = (date) => tasks.filter(t => t.scheduled_date === format(date, 'yyyy-MM-dd'))
   const dayNames = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
@@ -767,14 +773,18 @@ export default function MobileLayout({
               <button onClick={onAddTask} style={{ background: '#6366f1', color: 'white', border: 'none', borderRadius: '8px', padding: '6px 12px', fontSize: '12px', cursor: 'pointer' }} title="Add task">+</button>
             </div>
           </div>
-          <div style={{ padding: '0 16px 8px', display: 'flex', justifyContent: 'flex-end', flexShrink: 0 }}>
+          <div style={{ padding: '0 16px 8px', display: 'flex', justifyContent: 'flex-end', gap: '8px', flexShrink: 0 }}>
             <select value={taskSort} onChange={e => setTaskSort(e.target.value)} style={{ fontSize: '11px', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '5px 8px', outline: 'none' }}>
               <option value="deadline">Sort: Deadline</option>
               <option value="priority">Sort: Priority</option>
               <option value="alpha">Sort: A-Z</option>
             </select>
+            <select value={taskCategoryFilter} onChange={e => setTaskCategoryFilter(e.target.value)} style={{ fontSize: '11px', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '5px 8px', outline: 'none', maxWidth: '130px' }}>
+              <option value="all">All categories</option>
+              {taskCategories.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
           </div>
-          <MobileInbox tasks={inboxTasks} goalMap={goalMap} onAddTask={onAddTask} onEdit={onEdit} onDelete={onDelete} search={taskSearch} sortMode={taskSort} />
+          <MobileInbox tasks={inboxTasks} goalMap={goalMap} onAddTask={onAddTask} onEdit={onEdit} onDelete={onDelete} search={taskSearch} sortMode={taskSort} categoryFilter={taskCategoryFilter} />
         </>
       )}
 
@@ -796,7 +806,17 @@ export default function MobileLayout({
         ].map(tab => (
           <button key={tab.id} onClick={() => setActiveTab(tab.id)}
             style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0', position: 'relative' }}>
-            <span style={{ fontSize: '22px' }} dangerouslySetInnerHTML={{ __html: tab.emoji }} />
+            {tab.id === 'day' ? (
+              <svg width="22" height="22" viewBox="0 0 34 32">
+                <line x1="10" y1="0" x2="10" y2="7" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" />
+                <line x1="24" y1="0" x2="24" y2="7" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" />
+                <rect x="0" y="4" width="34" height="26" rx="4" fill="white" stroke="#9ca3af" strokeWidth="1" />
+                <rect x="0" y="4" width="34" height="9" fill={activeTab === 'day' ? '#6366f1' : '#9ca3af'} />
+                <text x="17" y="24" textAnchor="middle" fill={activeTab === 'day' ? '#4338ca' : '#374151'} fontSize="13" fontWeight="600">{new Date().getDate()}</text>
+              </svg>
+            ) : (
+              <span style={{ fontSize: '22px' }} dangerouslySetInnerHTML={{ __html: tab.emoji }} />
+            )}
             <span style={{ fontSize: '10px', color: activeTab === tab.id ? '#6366f1' : '#9ca3af', fontWeight: activeTab === tab.id ? 500 : 400 }}>{tab.label}</span>
             {tab.badge > 0 && (
               <div style={{ position: 'absolute', top: '2px', right: '22%', background: '#6366f1', color: 'white', borderRadius: '10px', padding: '1px 5px', fontSize: '10px', fontWeight: 500 }}>{tab.badge}</div>

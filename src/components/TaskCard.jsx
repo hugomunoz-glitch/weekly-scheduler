@@ -52,6 +52,9 @@ export default function TaskCard({ task, isDone, isDragging, goalColor, onMarkDo
               {PRIORITY_LABELS[task.priority]}
             </span>
           )}
+          {task.category && (
+            <span className="text-[10px] text-gray-400 ml-1.5">{task.category}</span>
+          )}
           {task.start_time && (
             <p className={'text-xs mt-0.5 ' + (isDone ? 'text-gray-300' : 'text-indigo-400 font-medium')}>
               {formatTime(task.start_time)}

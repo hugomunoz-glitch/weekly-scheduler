@@ -6,7 +6,7 @@ const GOAL_CATEGORIES = [
   'Social (Community/Volunteering)', 'Spiritual (Prayer/Church)'
 ]
 
-export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTask, onAddGoal, initialScheduledDate, initialStartTime }) {
+export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTask, onAddGoal, initialScheduledDate, initialStartTime, existingTaskCategories }) {
   const [title, setTitle] = useState(editingTask ? editingTask.title : '')
   const [notes, setNotes] = useState(editingTask ? (editingTask.notes || '') : '')
   const [goalId, setGoalId] = useState(editingTask ? (editingTask.goal_id || '') : '')
@@ -14,6 +14,10 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
   const [dueDate, setDueDate] = useState(editingTask ? (editingTask.due_date || '') : '')
   const [scheduledDate, setScheduledDate] = useState(editingTask ? (editingTask.scheduled_date || '') : (initialScheduledDate || ''))
   const [priority, setPriority] = useState(editingTask ? (editingTask.priority || '') : '')
+  const allTaskCategories = [...new Set([...GOAL_CATEGORIES, ...(existingTaskCategories || [])])].sort()
+  const [taskCategory, setTaskCategory] = useState(editingTask && editingTask.category && !allTaskCategories.includes(editingTask.category) ? '' : (editingTask ? (editingTask.category || '') : ''))
+  const [customTaskCategory, setCustomTaskCategory] = useState(editingTask && editingTask.category && !allTaskCategories.includes(editingTask.category))
+  const [taskCategoryCustom, setTaskCategoryCustom] = useState(editingTask && editingTask.category && !allTaskCategories.includes(editingTask.category) ? editingTask.category : '')
   const [addingGoal, setAddingGoal] = useState(false)
   const [newGoalTitle, setNewGoalTitle] = useState('')
   const [showGoalDetails, setShowGoalDetails] = useState(false)
@@ -67,10 +71,11 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
   function handleSubmit(e) {
     e.preventDefault()
     if (!title.trim()) return
+    const category = (customTaskCategory ? taskCategoryCustom.trim() : taskCategory) || null
     if (editingTask) {
-      onEdit(editingTask.id, title.trim(), notes.trim(), goalId || null, startTime || null, dueDate || null, scheduledDate || null, priority || null)
+      onEdit(editingTask.id, title.trim(), notes.trim(), goalId || null, startTime || null, dueDate || null, scheduledDate || null, priority || null, category)
     } else {
-      onAdd(title.trim(), notes.trim(), goalId || null, startTime || null, dueDate || null, scheduledDate || null, priority || null)
+      onAdd(title.trim(), notes.trim(), goalId || null, startTime || null, dueDate || null, scheduledDate || null, priority || null, category)
     }
     onClose()
   }
@@ -216,6 +221,29 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
               <option value="medium">Medium</option>
               <option value="low">Low</option>
             </select>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1">Category (optional)</label>
+            {customTaskCategory ? (
+              <input
+                autoFocus
+                type="text"
+                placeholder="Custom category name"
+                value={taskCategoryCustom}
+                onChange={e => setTaskCategoryCustom(e.target.value)}
+                className="w-full border border-indigo-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
+              />
+            ) : (
+              <select
+                value={taskCategory}
+                onChange={e => { if (e.target.value === '__custom__') { setCustomTaskCategory(true); return } setTaskCategory(e.target.value) }}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 text-gray-700"
+              >
+                <option value="">No category</option>
+                {allTaskCategories.map(c => <option key={c} value={c}>{c}</option>)}
+                <option value="__custom__">+ New category…</option>
+              </select>
+            )}
           </div>
           <div className="flex gap-2 pt-1">
             <button type="button" onClick={onClose} className="flex-1 py-2 text-sm text-gray-500 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">Cancel</button>

@@ -87,23 +87,24 @@ export default function App() {
     }
   }
 
-  async function addTask(title, notes, goalId, startTime, dueDate, scheduledDate, priority) {
+  async function addTask(title, notes, goalId, startTime, dueDate, scheduledDate, priority, category) {
     const { data, error } = await supabase.from('tasks').insert({
       title, notes: notes || null, goal_id: goalId || null, start_time: startTime || null, due_date: dueDate || null,
       status: scheduledDate ? 'scheduled' : 'inbox',
       scheduled_date: scheduledDate || null,
       bucket: scheduledDate ? bucketFromTime(startTime) : null,
-      priority: priority || null
+      priority: priority || null,
+      category: category || null
     }).select().single()
     if (error) { console.error('addTask failed:', error); throw error }
     setTasks(prev => [data, ...prev])
     if (data.goal_id) setGoalTasks(prev => [...prev, { id: data.id, title: data.title, goal_id: data.goal_id, status: data.status, due_date: data.due_date, start_time: data.start_time, priority: data.priority }])
   }
 
-  async function editTask(taskId, title, notes, goalId, startTime, dueDate, scheduledDate, priority) {
+  async function editTask(taskId, title, notes, goalId, startTime, dueDate, scheduledDate, priority, category) {
     const existing = tasks.find(t => t.id === taskId)
     const wasScheduled = existing && existing.scheduled_date
-    const updates = { title, notes: notes || null, goal_id: goalId || null, start_time: startTime || null, due_date: dueDate || null, priority: priority || null }
+    const updates = { title, notes: notes || null, goal_id: goalId || null, start_time: startTime || null, due_date: dueDate || null, priority: priority || null, category: category || null }
     if (scheduledDate) {
       updates.scheduled_date = scheduledDate
       updates.status = existing && existing.status === 'done' ? 'done' : 'scheduled'
@@ -248,6 +249,7 @@ export default function App() {
   }
 
   const inboxTasks = tasks.filter(t => t.status !== 'done')
+  const taskCategories = [...new Set(tasks.map(t => t.category).filter(Boolean))].sort()
   const tasksForDay = (date) => tasks.filter(t => t.scheduled_date === format(date, 'yyyy-MM-dd'))
   const openAddForDay = (date) => { setAddForDate(format(date, 'yyyy-MM-dd')); setAddForTime(null); setShowAdd(true) }
   const BUCKET_DEFAULT_TIME = { morning: '09:00', midday: '13:00', afternoon: '18:00' }
@@ -304,8 +306,8 @@ export default function App() {
           </div>
         </div>
       )}
-      {showAdd && <AddTaskModal onAdd={addTask} onClose={() => { setShowAdd(false); setAddForDate(null); setAddForTime(null) }} goals={goals} onAddGoal={addGoal} initialScheduledDate={addForDate} initialStartTime={addForTime} />}
-      {editingTask && <AddTaskModal editingTask={editingTask} onEdit={editTask} onClose={() => setEditingTask(null)} goals={goals} onAddGoal={addGoal} />}
+      {showAdd && <AddTaskModal onAdd={addTask} onClose={() => { setShowAdd(false); setAddForDate(null); setAddForTime(null) }} goals={goals} onAddGoal={addGoal} initialScheduledDate={addForDate} initialStartTime={addForTime} existingTaskCategories={taskCategories} />}
+      {editingTask && <AddTaskModal editingTask={editingTask} onEdit={editTask} onClose={() => setEditingTask(null)} goals={goals} onAddGoal={addGoal} existingTaskCategories={taskCategories} />}
       {undoQueue.length > 0 && (
         <div className={'fixed left-1/2 -translate-x-1/2 z-[2000] flex flex-col gap-2 items-center ' + (isMobile ? 'bottom-20' : 'bottom-4')}>
           {undoQueue.map(u => (
