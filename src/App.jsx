@@ -12,11 +12,12 @@ import MobileLayout from './components/MobileLayout'
 // Mobile Safari runs the drag library's internal tracking code unoptimized on its very
 // first execution, causing a brief stall on the first drag of a session. This sensor uses
 // the library's own official Sensor API to genuinely run through a real lift+cancel once,
-// shortly after mount, so that code is already JIT-warmed before the user's first real drag.
+// triggered by the user's actual first touch (not a blind timer), so it runs during the
+// natural pause of that first long-press itself, right before the real drag threshold hits.
 // This is not a synthetic touch event - it calls the library's actual programmatic API.
 function useWarmupSensor(api) {
   useEffect(() => {
-    const timer = setTimeout(() => {
+    function warmUp() {
       try {
         const el = document.querySelector('[data-rbd-draggable-id]')
         const id = el && el.getAttribute('data-rbd-draggable-id')
@@ -28,8 +29,13 @@ function useWarmupSensor(api) {
       } catch (e) {
         // Best-effort only; the API surface can vary by version, so fail silently.
       }
-    }, 800)
-    return () => clearTimeout(timer)
+    }
+    function onFirstTouch() {
+      warmUp()
+      document.removeEventListener('touchstart', onFirstTouch, true)
+    }
+    document.addEventListener('touchstart', onFirstTouch, true)
+    return () => document.removeEventListener('touchstart', onFirstTouch, true)
   }, [api])
 }
 
