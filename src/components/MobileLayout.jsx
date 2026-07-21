@@ -261,13 +261,6 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
         const pct = linked.length > 0 ? Math.round((done.length / linked.length) * 100) : 0
       return (
         <div key={goal.id} onClick={() => setViewingGoalId(goal.id)} style={{ flexShrink: 0, border: '1px solid #e5e7eb', borderRadius: '10px', padding: '6px 10px', minWidth: '130px', background: 'white', position: 'relative', cursor: 'pointer' }}>
-          <span
-            onClick={(e) => { e.stopPropagation(); onDeleteGoal(goal.id) }}
-            style={{ position: 'absolute', top: '2px', right: '2px', width: '13px', height: '13px', borderRadius: '50%', background: '#ef4444', color: 'white', fontSize: '7px', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.2)', zIndex: 5 }}
-            title="Delete goal"
-          >
-            &#10005;
-          </span>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
             <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: goal.color, flexShrink: 0 }} />
             <span
@@ -322,9 +315,10 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
                   <option value="medium">Medium</option>
                   <option value="low">Low</option>
                 </select>
-                <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                <div style={{ display: 'flex', gap: '8px', marginTop: '4px', alignItems: 'center' }}>
                   <button type="submit" style={{ background: '#6366f1', color: 'white', border: 'none', borderRadius: '8px', padding: '8px 14px', fontSize: '13px', cursor: 'pointer' }}>Save</button>
                   <button type="button" onClick={() => setEditingGoalId(null)} style={{ background: 'none', border: 'none', color: '#9ca3af', fontSize: '13px', cursor: 'pointer' }}>Cancel</button>
+                  <button type="button" onClick={() => { onDeleteGoal(editingGoalId); setEditingGoalId(null) }} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '13px', cursor: 'pointer', marginLeft: 'auto' }}>Delete</button>
                 </div>
                 {editGoalError && <p style={{ fontSize: '12px', color: '#ef4444', margin: 0 }}>{editGoalError}</p>}
               </form>
