@@ -202,7 +202,7 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
           <option value="created">Sort: Date Created</option>
         </select>
         <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} style={{ fontSize: '11px', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '5px 8px', outline: 'none', maxWidth: '140px' }}>
-          <option value="all">All categories</option>
+          <option value="all">All Categories</option>
           {allCategories.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
       </div>

@@ -467,7 +467,7 @@ export default function GoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEdit
           <option value="created">Sort: Date Created</option>
         </select>
         <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-300" title="Filter by category">
-          <option value="all">All categories</option>
+          <option value="all">All Categories</option>
           {allCategories.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
       </div>
