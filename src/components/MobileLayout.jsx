@@ -329,7 +329,7 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
                 <div style={{ display: 'flex', gap: '8px', marginTop: '4px', alignItems: 'center' }}>
                   <button type="submit" style={{ background: '#6366f1', color: 'white', border: 'none', borderRadius: '8px', padding: '8px 14px', fontSize: '13px', cursor: 'pointer' }}>Save</button>
                   <button type="button" onClick={() => setEditingGoalId(null)} style={{ background: 'none', border: 'none', color: '#9ca3af', fontSize: '13px', cursor: 'pointer' }}>Cancel</button>
-                  <button type="button" onClick={() => { onDeleteGoal(editingGoalId); setEditingGoalId(null) }} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '13px', cursor: 'pointer', marginLeft: 'auto' }}>Delete</button>
+                  <button type="button" onClick={() => { onDeleteGoal(editingGoalId); setEditingGoalId(null) }} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '18px', cursor: 'pointer', marginLeft: 'auto', lineHeight: 1 }} title="Delete goal">&#128465;</button>
                 </div>
                 {editGoalError && <p style={{ fontSize: '12px', color: '#ef4444', margin: 0 }}>{editGoalError}</p>}
               </form>
@@ -419,7 +419,7 @@ function MobileDayView({ date, tasks, goalMap, onMarkDone, onRescheduleToTomorro
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
               <span style={{ fontSize: '11px', fontWeight: 500, color: '#374151', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{bucket.label}</span>
               {bucketTasks.length > 0 && <span style={{ fontSize: '11px', color: '#d1d5db' }}>{bucketTasks.length}</span>}
-              <button onClick={() => onAddTaskForBucket(date, bucket.id)} style={{ background: 'none', border: 'none', color: '#d1d5db', fontSize: '13px', cursor: 'pointer', marginLeft: 'auto', padding: '2px 6px' }} title={'Add task to ' + bucket.label}>+</button>
+              <button onClick={() => onAddTaskForBucket(date, bucket.id)} style={{ background: '#6366f1', color: 'white', border: 'none', borderRadius: '50%', width: '20px', height: '20px', fontSize: '13px', cursor: 'pointer', marginLeft: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1 }} title={'Add task to ' + bucket.label}>+</button>
             </div>
             <Droppable droppableId={droppableId}>
               {(provided, snapshot) => (
@@ -509,7 +509,7 @@ function MobileInbox({ tasks, goalMap, onAddTask, onEdit, onDelete, search, sort
                     {!snapshot.isDragging && (
                       <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
                         <button onClick={() => onEdit(task)} style={{ fontSize: '18px', color: '#6366f1', background: 'none', border: 'none', padding: 0, cursor: 'pointer', lineHeight: 1 }} title="Edit">&#9998;</button>
-                        <button onClick={() => onDelete(task.id)} style={{ fontSize: '12px', color: '#ef4444', background: 'none', border: 'none', padding: 0, cursor: 'pointer', marginLeft: 'auto' }}>Delete</button>
+                        <button onClick={() => onDelete(task.id)} style={{ fontSize: '17px', color: '#ef4444', background: 'none', border: 'none', padding: 0, cursor: 'pointer', marginLeft: 'auto', lineHeight: 1 }} title="Delete">&#128465;</button>
                       </div>
                     )}
                   </div>

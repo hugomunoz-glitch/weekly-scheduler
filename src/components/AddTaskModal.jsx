@@ -114,13 +114,20 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
               </select>
             </div>
             <div className="shrink-0">
-              <label className="block text-xs font-medium text-gray-500 mb-1">Start time</label>
-              <input
-                type="time"
-                value={startTime}
-                onChange={e => setStartTime(e.target.value)}
-                className="min-w-[136px] border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 text-gray-700"
-              />
+              <label className="block text-xs font-medium text-gray-500 mb-1">Start time (optional)</label>
+              <div className="flex items-center gap-1">
+                <input
+                  type="time"
+                  value={startTime}
+                  onChange={e => setStartTime(e.target.value)}
+                  className="min-w-[136px] border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 text-gray-700"
+                />
+                {startTime && (
+                  <button type="button" onClick={() => setStartTime('')} className="text-gray-400 hover:text-gray-600 text-xs px-1" title="Clear time">
+                    &#10005;
+                  </button>
+                )}
+              </div>
             </div>
           </div>
           {addingGoal && (

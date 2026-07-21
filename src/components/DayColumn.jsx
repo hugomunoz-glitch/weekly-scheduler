@@ -47,7 +47,7 @@ export default function DayColumn({ date, tasks, goalMap, onMarkDone, onReschedu
               </div>
               <button
                 onClick={() => onAddTaskForBucket(date, bucket.id)}
-                className="absolute inset-0 m-auto w-11 h-11 rounded-full bg-indigo-50 hover:bg-indigo-100 text-indigo-400 hover:text-indigo-600 text-2xl font-light flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none group-hover:pointer-events-auto z-10 shadow-sm"
+                className="absolute inset-0 m-auto w-11 h-11 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white text-2xl font-light flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none group-hover:pointer-events-auto z-10 shadow-sm"
                 title={'Add task to ' + bucket.label}
               >
                 +
