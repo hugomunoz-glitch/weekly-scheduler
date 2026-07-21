@@ -436,7 +436,7 @@ function MobileDayView({ date, tasks, goalMap, onMarkDone, onRescheduleToTomorro
                     return (
                       <Draggable key={task.id} draggableId={task.id} index={index}>
                         {(provided, snapshot) => (
-                          <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps} style={{ marginBottom: '6px', WebkitTouchCallout: 'none', WebkitUserSelect: 'none', userSelect: 'none', touchAction: 'none' }}>
+                          <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps} style={{ marginBottom: '6px', WebkitTouchCallout: 'none', WebkitUserSelect: 'none', userSelect: 'none', touchAction: 'manipulation' }}>
                             <TaskCard task={task} isDragging={snapshot.isDragging} goalColor={goalMap[task.goal_id] ? goalMap[task.goal_id].color : null} onMarkDone={onMarkDone} onRescheduleToTomorrow={onRescheduleToTomorrow} onMoveToInbox={onMoveToInbox} onDelete={onDelete} onEdit={onEdit} />
                           </div>
                         )}
@@ -495,7 +495,7 @@ function MobileInbox({ tasks, goalMap, onAddTask, onEdit, onDelete, search, sort
                 {(provided, snapshot) => (
                   <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}
                     onClick={() => setPressedTaskId(pressedTaskId === task.id ? null : task.id)}
-                    style={{ border: '1px solid ' + (snapshot.isDragging ? '#a5b4fc' : '#e5e7eb'), borderRadius: '10px', padding: '10px 12px', background: 'white', marginBottom: '8px', WebkitTouchCallout: 'none', WebkitUserSelect: 'none', userSelect: 'none', touchAction: 'none' }}>
+                    style={{ border: '1px solid ' + (snapshot.isDragging ? '#a5b4fc' : '#e5e7eb'), borderRadius: '10px', padding: '10px 12px', background: 'white', marginBottom: '8px', WebkitTouchCallout: 'none', WebkitUserSelect: 'none', userSelect: 'none', touchAction: 'manipulation' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
                       <p style={{ fontSize: '14px', color: '#1f2937', flex: 1, margin: 0 }}>
                         {task.title}
