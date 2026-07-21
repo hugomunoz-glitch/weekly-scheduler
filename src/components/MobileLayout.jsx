@@ -412,7 +412,6 @@ function MobileDayView({ date, tasks, goalMap, onMarkDone, onRescheduleToTomorro
         const bucketTasks = activeTasks.filter(t => (t.bucket || 'morning') === bucket.id).sort((a, b) => (a.position || 0) - (b.position || 0))
         const bucketAll = tasks.filter(t => (t.bucket || 'morning') === bucket.id).sort((a, b) => (a.position || 0) - (b.position || 0))
         const droppableId = bucket.id + '-' + dateStr
-        let dragIndex = 0
         return (
           <div key={bucket.id} style={{ marginBottom: '16px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
@@ -424,25 +423,15 @@ function MobileDayView({ date, tasks, goalMap, onMarkDone, onRescheduleToTomorro
               {(provided, snapshot) => (
                 <div ref={provided.innerRef} {...provided.droppableProps}
                   style={{ minHeight: '44px', background: snapshot.isDraggingOver ? '#eef2ff' : 'transparent', borderRadius: '8px', padding: '2px', transition: 'background 0.15s' }}>
-                  {bucketAll.map(task => {
-                    if (task.status === 'done') {
-                      return (
-                        <div key={task.id} style={{ marginBottom: '6px' }}>
-                          <TaskCard task={task} isDone goalColor={goalMap[task.goal_id] ? goalMap[task.goal_id].color : null} onMarkDone={onMarkDone} onRescheduleToTomorrow={onRescheduleToTomorrow} onMoveToInbox={onMoveToInbox} onDelete={onDelete} onEdit={onEdit} />
+                  {bucketAll.map((task, index) => (
+                    <Draggable key={task.id} draggableId={task.id} index={index} isDragDisabled={task.status === 'done'}>
+                      {(provided, snapshot) => (
+                        <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps} style={{ marginBottom: '6px', WebkitTouchCallout: 'none', WebkitUserSelect: 'none', userSelect: 'none', touchAction: 'manipulation' }}>
+                          <TaskCard task={task} isDone={task.status === 'done'} isDragging={snapshot.isDragging} goalColor={goalMap[task.goal_id] ? goalMap[task.goal_id].color : null} onMarkDone={onMarkDone} onRescheduleToTomorrow={onRescheduleToTomorrow} onMoveToInbox={onMoveToInbox} onDelete={onDelete} onEdit={onEdit} />
                         </div>
-                      )
-                    }
-                    const index = dragIndex++
-                    return (
-                      <Draggable key={task.id} draggableId={task.id} index={index}>
-                        {(provided, snapshot) => (
-                          <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps} style={{ marginBottom: '6px', WebkitTouchCallout: 'none', WebkitUserSelect: 'none', userSelect: 'none', touchAction: 'manipulation' }}>
-                            <TaskCard task={task} isDragging={snapshot.isDragging} goalColor={goalMap[task.goal_id] ? goalMap[task.goal_id].color : null} onMarkDone={onMarkDone} onRescheduleToTomorrow={onRescheduleToTomorrow} onMoveToInbox={onMoveToInbox} onDelete={onDelete} onEdit={onEdit} />
-                          </div>
-                        )}
-                      </Draggable>
-                    )
-                  })}
+                      )}
+                    </Draggable>
+                  ))}
                   {provided.placeholder}
                 </div>
               )}

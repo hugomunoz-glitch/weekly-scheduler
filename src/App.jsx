@@ -65,7 +65,7 @@ export default function App() {
       const parts = destination.droppableId.split('-')
       const bucket = parts[0]
       const dateStr = parts.slice(1).join('-')
-      const bucketTasks = tasks.filter(t => t.scheduled_date === dateStr && (t.bucket || 'morning') === bucket && t.status !== 'done').sort((a, b) => (a.position || 0) - (b.position || 0))
+      const bucketTasks = tasks.filter(t => t.scheduled_date === dateStr && (t.bucket || 'morning') === bucket).sort((a, b) => (a.position || 0) - (b.position || 0))
       const reordered = Array.from(bucketTasks)
       const [moved] = reordered.splice(source.index, 1)
       reordered.splice(destination.index, 0, moved)
