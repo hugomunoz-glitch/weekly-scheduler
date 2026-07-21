@@ -110,7 +110,7 @@ export default function GoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEdit
 
   function handleEditTask(taskId) {
     const full = (allTasks || []).find(t => t.id === taskId)
-    if (full) onEditTask(full)
+    if (full) { setViewingGoalId(null); onEditTask(full) }
   }
 
   function handleAddTaskToGoal(e, goalId) {

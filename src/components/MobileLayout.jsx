@@ -134,7 +134,7 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
 
   function handleEditTask(taskId) {
     const full = (allTasks || []).find(t => t.id === taskId)
-    if (full) onEditTask(full)
+    if (full) { setViewingGoalId(null); onEditTask(full) }
   }
 
   function handleAddTaskToGoal(e, goalId) {
@@ -170,84 +170,95 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
   }
 
   return (
-    <div style={{ background: 'white', borderBottom: '1px solid #f3f4f6', padding: '8px 12px', flexShrink: 0 }}>
-    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflowX: 'auto' }}>
-      <div style={{ position: 'sticky', left: 0, zIndex: 10, background: 'white', alignSelf: 'stretch', display: 'flex', alignItems: 'center', gap: '8px', paddingRight: '6px', flexShrink: 0 }}>
-        <span style={{ fontSize: '11px', fontWeight: 600, color: '#374151', textTransform: 'uppercase', letterSpacing: '0.05em', flexShrink: 0 }}>Goals</span>
-        {adding ? createPortal((
-          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setAdding(false)}>
-            <form onSubmit={handleAdd} onClick={e => e.stopPropagation()} style={{ background: 'white', borderRadius: '12px', padding: '16px', width: '85vw', maxWidth: '320px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <input autoFocus value={newTitle} onChange={e => setNewTitle(e.target.value)}
-                style={{ border: '1px solid #6366f1', borderRadius: '8px', padding: '8px', fontSize: '14px', outline: 'none' }}
-                placeholder="Goal name" />
-              {customCategory ? (
-                <input
-                  autoFocus
-                  type="text"
-                  placeholder="Custom category name"
-                  value={newCategoryCustom}
-                  onChange={e => setNewCategoryCustom(e.target.value)}
-                  style={{ border: '1px solid #6366f1', borderRadius: '8px', padding: '8px', fontSize: '12px', outline: 'none' }}
-                />
-              ) : (
-                <select
-                  value={newCategory}
-                  onChange={e => { if (e.target.value === '__custom__') { setCustomCategory(true); return } setNewCategory(e.target.value) }}
-                  style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '8px', fontSize: '12px', outline: 'none' }}
-                >
-                  <option value="">No category</option>
-                  {allCategories.map(c => <option key={c} value={c}>{c}</option>)}
-                  <option value="__custom__">+ New category…</option>
-                </select>
-              )}
-              <select value={newPriority} onChange={e => setNewPriority(e.target.value)} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '8px', fontSize: '12px', outline: 'none' }}>
-                <option value="">No priority</option>
-                <option value="high">High</option>
-                <option value="medium">Medium</option>
-                <option value="low">Low</option>
-              </select>
-              {!showSmart ? (
-                <button type="button" onClick={() => setShowSmart(true)} style={{ background: 'none', border: 'none', color: '#6366f1', fontSize: '12px', textAlign: 'left', cursor: 'pointer', padding: 0 }}>+ Make it a SMART goal (optional)</button>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', borderTop: '1px solid #f3f4f6', paddingTop: '6px' }}>
-                  <input type="text" placeholder="Specific: what & why?" value={smartSpecific} onChange={e => setSmartSpecific(e.target.value)} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '7px 8px', fontSize: '12px', outline: 'none' }} />
-                  <input type="text" placeholder="Measurable: how will you know?" value={smartMeasurable} onChange={e => setSmartMeasurable(e.target.value)} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '7px 8px', fontSize: '12px', outline: 'none' }} />
-                  <input type="text" placeholder="Achievable: realistic?" value={smartAchievable} onChange={e => setSmartAchievable(e.target.value)} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '7px 8px', fontSize: '12px', outline: 'none' }} />
-                  <input type="text" placeholder="Relevant: why does it matter?" value={smartRelevant} onChange={e => setSmartRelevant(e.target.value)} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '7px 8px', fontSize: '12px', outline: 'none' }} />
-                  <input type="text" placeholder="Time-bound: target deadline?" value={smartTimebound} onChange={e => setSmartTimebound(e.target.value)} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '7px 8px', fontSize: '12px', outline: 'none' }} />
-                </div>
-              )}
-              <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
-                <button type="submit" style={{ background: '#6366f1', color: 'white', border: 'none', borderRadius: '8px', padding: '8px 14px', fontSize: '13px', cursor: 'pointer' }}>Add</button>
-                <button type="button" onClick={() => { setAdding(false); setShowSmart(false) }} style={{ background: 'none', border: 'none', color: '#9ca3af', fontSize: '13px', cursor: 'pointer' }}>Cancel</button>
-              </div>
-              {addGoalError && <p style={{ fontSize: '12px', color: '#ef4444', margin: 0 }}>{addGoalError}</p>}
-            </form>
-          </div>
-        ), document.body) : (
-          <button onClick={() => setAdding(true)} title="Add goal"
-            style={{ flexShrink: 0, border: 'none', borderRadius: '10px', padding: '6px 10px', fontSize: '12px', color: 'white', background: '#6366f1', cursor: 'pointer', whiteSpace: 'nowrap', fontWeight: 500 }}>
-            +
-          </button>
-        )}
-        {showGoalSearch ? (
-          <input
-            autoFocus
-            type="text"
-            value={goalSearch}
-            onChange={e => setGoalSearch(e.target.value)}
-            onBlur={() => { if (!goalSearch.trim()) setShowGoalSearch(false) }}
-            placeholder="Search goals…"
-            style={{ fontSize: '12px', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '6px 8px', width: '110px', flexShrink: 0, outline: 'none' }}
-          />
-        ) : (
-          <button onClick={() => setShowGoalSearch(true)} title="Search goals"
-            style={{ background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', flexShrink: 0, display: 'flex', alignItems: 'center' }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
-          </button>
-        )}
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+      <div style={{ padding: '10px 16px 6px', flexShrink: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span style={{ fontSize: '15px', fontWeight: 500, color: '#111827' }}>&#127919; Goals <span style={{ fontSize: '13px', color: '#9ca3af', fontWeight: 400 }}>{goals.length}</span></span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          {showGoalSearch ? (
+            <input
+              autoFocus
+              type="text"
+              value={goalSearch}
+              onChange={e => setGoalSearch(e.target.value)}
+              onBlur={() => { if (!goalSearch.trim()) setShowGoalSearch(false) }}
+              placeholder="Search goals…"
+              style={{ fontSize: '13px', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '5px 8px', width: '120px', outline: 'none' }}
+            />
+          ) : (
+            <button onClick={() => setShowGoalSearch(true)} title="Search goals"
+              style={{ background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
+            </button>
+          )}
+          <button onClick={() => setAdding(true)} style={{ background: '#6366f1', color: 'white', border: 'none', borderRadius: '8px', padding: '6px 12px', fontSize: '12px', cursor: 'pointer' }} title="Add goal">+</button>
+        </div>
       </div>
-      {visibleGoals.map(goal => {
+      <div style={{ padding: '0 16px 8px', display: 'flex', justifyContent: 'flex-end', gap: '8px', flexShrink: 0 }}>
+        <select value={sortMode} onChange={e => setSortMode(e.target.value)} style={{ fontSize: '11px', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '5px 8px', outline: 'none' }}>
+          <option value="deadline">Sort: Deadline</option>
+          <option value="priority">Sort: Priority</option>
+          <option value="alpha">Sort: A-Z</option>
+        </select>
+        <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} style={{ fontSize: '11px', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '5px 8px', outline: 'none', maxWidth: '140px' }}>
+          <option value="all">All categories</option>
+          {allCategories.map(c => <option key={c} value={c}>{c}</option>)}
+        </select>
+      </div>
+      {adding && createPortal((
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setAdding(false)}>
+          <form onSubmit={handleAdd} onClick={e => e.stopPropagation()} style={{ background: 'white', borderRadius: '12px', padding: '16px', width: '85vw', maxWidth: '320px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <input autoFocus value={newTitle} onChange={e => setNewTitle(e.target.value)}
+              style={{ border: '1px solid #6366f1', borderRadius: '8px', padding: '8px', fontSize: '14px', outline: 'none' }}
+              placeholder="Goal name" />
+            {customCategory ? (
+              <input
+                autoFocus
+                type="text"
+                placeholder="Custom category name"
+                value={newCategoryCustom}
+                onChange={e => setNewCategoryCustom(e.target.value)}
+                style={{ border: '1px solid #6366f1', borderRadius: '8px', padding: '8px', fontSize: '12px', outline: 'none' }}
+              />
+            ) : (
+              <select
+                value={newCategory}
+                onChange={e => { if (e.target.value === '__custom__') { setCustomCategory(true); return } setNewCategory(e.target.value) }}
+                style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '8px', fontSize: '12px', outline: 'none' }}
+              >
+                <option value="">No category</option>
+                {allCategories.map(c => <option key={c} value={c}>{c}</option>)}
+                <option value="__custom__">+ New category…</option>
+              </select>
+            )}
+            <select value={newPriority} onChange={e => setNewPriority(e.target.value)} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '8px', fontSize: '12px', outline: 'none' }}>
+              <option value="">No priority</option>
+              <option value="high">High</option>
+              <option value="medium">Medium</option>
+              <option value="low">Low</option>
+            </select>
+            {!showSmart ? (
+              <button type="button" onClick={() => setShowSmart(true)} style={{ background: 'none', border: 'none', color: '#6366f1', fontSize: '12px', textAlign: 'left', cursor: 'pointer', padding: 0 }}>+ Make it a SMART goal (optional)</button>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', borderTop: '1px solid #f3f4f6', paddingTop: '6px' }}>
+                <input type="text" placeholder="Specific: what & why?" value={smartSpecific} onChange={e => setSmartSpecific(e.target.value)} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '7px 8px', fontSize: '12px', outline: 'none' }} />
+                <input type="text" placeholder="Measurable: how will you know?" value={smartMeasurable} onChange={e => setSmartMeasurable(e.target.value)} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '7px 8px', fontSize: '12px', outline: 'none' }} />
+                <input type="text" placeholder="Achievable: realistic?" value={smartAchievable} onChange={e => setSmartAchievable(e.target.value)} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '7px 8px', fontSize: '12px', outline: 'none' }} />
+                <input type="text" placeholder="Relevant: why does it matter?" value={smartRelevant} onChange={e => setSmartRelevant(e.target.value)} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '7px 8px', fontSize: '12px', outline: 'none' }} />
+                <input type="text" placeholder="Time-bound: target deadline?" value={smartTimebound} onChange={e => setSmartTimebound(e.target.value)} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '7px 8px', fontSize: '12px', outline: 'none' }} />
+              </div>
+            )}
+            <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+              <button type="submit" style={{ background: '#6366f1', color: 'white', border: 'none', borderRadius: '8px', padding: '8px 14px', fontSize: '13px', cursor: 'pointer' }}>Add</button>
+              <button type="button" onClick={() => { setAdding(false); setShowSmart(false) }} style={{ background: 'none', border: 'none', color: '#9ca3af', fontSize: '13px', cursor: 'pointer' }}>Cancel</button>
+            </div>
+            {addGoalError && <p style={{ fontSize: '12px', color: '#ef4444', margin: 0 }}>{addGoalError}</p>}
+          </form>
+        </div>
+      ), document.body)}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '0 16px 16px' }}>
+      {visibleGoals.length === 0 ? (
+        <p style={{ fontSize: '13px', color: '#9ca3af', textAlign: 'center', paddingTop: '40px' }}>No goals yet.</p>
+      ) : visibleGoals.map(goal => {
         const linked = goalTasks.filter(t => t.goal_id === goal.id)
         const sortedLinked = [...linked].sort((a, b) => {
           const aDone = a.status === 'done', bDone = b.status === 'done'
@@ -260,29 +271,29 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
         const done = linked.filter(t => t.status === 'done')
         const pct = linked.length > 0 ? Math.round((done.length / linked.length) * 100) : 0
       return (
-        <div key={goal.id} onClick={() => setViewingGoalId(goal.id)} style={{ flexShrink: 0, border: '1px solid #e5e7eb', borderRadius: '10px', padding: '6px 10px', minWidth: '130px', background: 'white', position: 'relative', cursor: 'pointer' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
-            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: goal.color, flexShrink: 0 }} />
+        <div key={goal.id} onClick={() => setViewingGoalId(goal.id)} style={{ border: '1px solid #e5e7eb', borderRadius: '10px', padding: '10px 12px', marginBottom: '8px', background: 'white', position: 'relative', cursor: 'pointer' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+            <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: goal.color, flexShrink: 0 }} />
             <span
-              style={{ fontSize: "12px", fontWeight: 500, color: "#374151", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "110px", cursor: "pointer" }}
+              style={{ fontSize: "15px", fontWeight: 600, color: "#1f2937", flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: "pointer" }}
               onClick={(e) => { e.stopPropagation(); startEditGoal(goal) }}
               title="Tap to edit"
             >{goal.title}</span>
           </div>
           {(goal.priority || goal.category) && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '4px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px', paddingLeft: '18px' }}>
               {goal.priority && PRIORITY_COLORS[goal.priority] && (
-                <span style={{ fontSize: '9px', fontWeight: 500, padding: '1px 5px', borderRadius: '4px', color: PRIORITY_COLORS[goal.priority], background: PRIORITY_COLORS[goal.priority] + '1a' }}>{PRIORITY_LABELS[goal.priority]}</span>
+                <span style={{ fontSize: '10px', fontWeight: 500, padding: '1px 6px', borderRadius: '4px', color: PRIORITY_COLORS[goal.priority], background: PRIORITY_COLORS[goal.priority] + '1a' }}>{PRIORITY_LABELS[goal.priority]}</span>
               )}
-              {goal.category && <span style={{ fontSize: '9px', color: '#9ca3af', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '90px' }}>{goal.category}</span>}
+              {goal.category && <span style={{ fontSize: '11px', color: '#9ca3af' }}>{goal.category}</span>}
             </div>
           )}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <div style={{ flex: 1, height: '3px', background: '#f3f4f6', borderRadius: '2px', overflow: 'hidden' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingLeft: '18px' }}>
+            <div style={{ flex: 1, height: '4px', background: '#f3f4f6', borderRadius: '2px', overflow: 'hidden' }}>
               <div style={{ height: '100%', width: pct + '%', background: goal.color, borderRadius: '2px' }} />
             </div>
-            <span style={{ fontSize: "10px", color: "#9ca3af", flexShrink: 0 }}>{pct}%</span>
-            <span style={{ fontSize: "10px", color: "#9ca3af", flexShrink: 0 }}>{done.length}/{linked.length}</span>
+            <span style={{ fontSize: "11px", color: "#9ca3af", flexShrink: 0 }}>{pct}%</span>
+            <span style={{ fontSize: "11px", color: "#9ca3af", flexShrink: 0 }}>{done.length}/{linked.length}</span>
           </div>
           {editingGoalId === goal.id && (
             <div onClick={(e) => { e.stopPropagation(); setEditingGoalId(null) }} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -386,18 +397,7 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
         </div>
       )
     })}
-    </div>
-    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px' }}>
-      <select value={sortMode} onChange={e => setSortMode(e.target.value)} style={{ fontSize: '11px', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '6px 8px', outline: 'none' }}>
-        <option value="deadline">Sort: Deadline</option>
-        <option value="priority">Sort: Priority</option>
-        <option value="alpha">Sort: A-Z</option>
-      </select>
-      <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} style={{ fontSize: '11px', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '6px 8px', outline: 'none', maxWidth: '140px' }}>
-        <option value="all">All categories</option>
-        {allCategories.map(c => <option key={c} value={c}>{c}</option>)}
-      </select>
-    </div>
+      </div>
     </div>
   )
 }
@@ -716,8 +716,6 @@ export default function MobileLayout({
         })}
       </div>
 
-      <MobileGoalsBar goals={goals} goalTasks={goalTasks} allTasks={tasks} onAddGoal={onAddGoal} onEditGoal={onEditGoal} onDeleteGoal={onDeleteGoal} onMarkDone={onMarkDone} onDelete={onDelete} onCreateTask={onCreateTask} onEditTask={onEdit} />
-
       {overdueTasks.length > 0 && activeTab === 'day' && (
         <div style={{ background: '#fffbeb', borderBottom: '1px solid #fde68a', padding: '8px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
           <span style={{ fontSize: '12px', color: '#92400e' }}>{overdueTasks.length} overdue</span>
@@ -732,6 +730,10 @@ export default function MobileLayout({
           </div>
           <MobileDayView date={selectedDay} tasks={tasksForDay(selectedDay)} goalMap={goalMap} onMarkDone={onMarkDone} onRescheduleToTomorrow={onRescheduleToTomorrow} onMoveToInbox={onMoveToInbox} onDelete={onDelete} onEdit={onEdit} onAddTaskForBucket={onAddTaskForBucket} />
         </>
+      )}
+
+      {activeTab === 'goals' && (
+        <MobileGoalsBar goals={goals} goalTasks={goalTasks} allTasks={tasks} onAddGoal={onAddGoal} onEditGoal={onEditGoal} onDeleteGoal={onDeleteGoal} onMarkDone={onMarkDone} onDelete={onDelete} onCreateTask={onCreateTask} onEditTask={onEdit} />
       )}
 
       {activeTab === 'inbox' && (
@@ -781,6 +783,7 @@ export default function MobileLayout({
       <div style={{ background: 'white', borderTop: '1px solid #e5e7eb', padding: '6px 0 8px', display: 'flex', flexShrink: 0 }}>
         {[
           { id: 'day', label: 'Today', emoji: '&#128197;' },
+          { id: 'goals', label: 'Goals', emoji: '&#127919;' },
           { id: 'inbox', label: 'Task List', emoji: '&#128221;', badge: inboxTasks.length },
           { id: 'assistant', label: 'Assistant', emoji: '&#129302;' }
         ].map(tab => (
