@@ -419,14 +419,11 @@ export default function GoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEdit
                                       <span className="cursor-pointer shrink-0" onClick={() => onMarkDone(t.id)}>
                                         <span className={t.status === 'done' ? 'text-green-500' : 'text-gray-300'}>{t.status === 'done' ? '✓' : '○'}</span>
                                       </span>
-                                      <span className={'flex-1 truncate cursor-pointer ' + (t.status === 'done' ? 'line-through text-gray-400' : '')} onClick={() => onMarkDone(t.id)}>{t.title}</span>
+                                      <span className={'flex-1 truncate cursor-pointer ' + (t.status === 'done' ? 'line-through text-gray-400' : '')} onClick={() => handleEditTask(t.id)}>{t.title}</span>
                                       <PriorityBadge priority={t.priority} />
                                       {t.start_time && (
                                         <span className="text-sm text-indigo-400 shrink-0 whitespace-nowrap">{formatTime(t.start_time)}</span>
                                       )}
-                                      <button onClick={() => handleEditTask(t.id)} className="text-gray-300 hover:text-indigo-500 opacity-0 group-hover:opacity-100 transition-colors shrink-0" title="Edit task">
-                                        <span className="text-[24px]">&#9998;</span>
-                                      </button>
                                       <button
                                         onClick={(e) => { e.stopPropagation(); onDelete(t.id) }}
                                         className="w-5 h-5 rounded-full bg-red-500 hover:bg-red-600 text-white text-[11px] font-semibold flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
