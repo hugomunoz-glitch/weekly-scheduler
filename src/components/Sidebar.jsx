@@ -269,7 +269,7 @@ export default function Sidebar({ tasks, goalMap, goals, allTasks, onAddTask, on
               )}
               <button onClick={onAddTask} className="text-xs text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg px-2.5 py-1 font-medium" title="Add task">+</button>
             </div>
-            <div className="px-4 pb-2 flex justify-end gap-2 shrink-0 overflow-x-auto">
+            <div className="px-4 pb-2 flex gap-2 shrink-0 overflow-x-auto">
               <select value={taskSort} onChange={e => setTaskSort(e.target.value)} className="shrink-0 text-xs border border-gray-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-indigo-300" title="Sort tasks">
                 <option value="manual">Sort: Manual</option>
                 <option value="deadline">Sort: Deadline</option>
