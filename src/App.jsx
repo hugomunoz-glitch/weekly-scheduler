@@ -9,12 +9,6 @@ import AddTaskModal from './components/AddTaskModal'
 import GoalsBar from './components/GoalsBar'
 import MobileLayout from './components/MobileLayout'
 
-// Mobile Safari runs the drag library's internal tracking code unoptimized on its very
-// first execution, causing a brief stall on the first drag of a session. This sensor uses
-// the library's own official Sensor API to genuinely run through a real lift+cancel once,
-// triggered by the user's actual first touch (not a blind timer), so it runs during the
-// natural pause of that first long-press itself, right before the real drag threshold hits.
-// This is not a synthetic touch event - it calls the library's actual programmatic API.
 function useWarmupSensor(api) {
   useEffect(() => {
     function warmUp() {
@@ -26,9 +20,7 @@ function useWarmupSensor(api) {
         if (!preDrag) return
         const actions = preDrag.fluidLift({ x: 0, y: 0 })
         actions.cancel()
-      } catch (e) {
-        // Best-effort only; the API surface can vary by version, so fail silently.
-      }
+      } catch (e) {}
     }
     function onFirstTouch() {
       warmUp()
@@ -39,7 +31,6 @@ function useWarmupSensor(api) {
   }, [api])
 }
 
-// Morning: before 12:00, Afternoon (bucket id 'midday'): 12:00-16:59, Evening (bucket id 'afternoon'): 17:00+
 function bucketFromTime(startTime) {
   if (!startTime) return 'morning'
   const hour = parseInt(startTime.split(':')[0], 10)
@@ -50,6 +41,12 @@ function bucketFromTime(startTime) {
 
 export default function App() {
   const isMobile = useIsMobile()
+
+  useEffect(() => {
+    window.scrollTo(0, 1)
+    requestAnimationFrame(() => window.scrollTo(0, 0))
+  }, [])
+
   const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }))
   const [tasks, setTasks] = useState([])
   const [goals, setGoals] = useState([])
@@ -92,30 +89,57 @@ export default function App() {
     if (!destination) return
     if (destination.droppableId === source.droppableId && destination.index === source.index) return
     if (destination.droppableId.startsWith('goalpopup-')) return
-    if (destination.droppableId === source.droppableId) {
-      const parts = destination.droppableId.split('-')
-      const bucket = parts[0]
-      const dateStr = parts.slice(1).join('-')
-      const bucketTasks = tasks.filter(t => t.scheduled_date === dateStr && (t.bucket || 'morning') === bucket).sort((a, b) => (a.position || 0) - (b.position || 0))
-      const reordered = Array.from(bucketTasks)
-      const [moved] = reordered.splice(source.index, 1)
-      reordered.splice(destination.index, 0, moved)
-      const updatedPositions = Object.fromEntries(reordered.map((t, i) => [t.id, i]))
-      requestAnimationFrame(() => setTasks(prev => prev.map(t => updatedPositions[t.id] !== undefined ? { ...t, position: updatedPositions[t.id] } : t)))
-      const results = await Promise.all(reordered.map((t, i) => supabase.from('tasks').update({ position: i }).eq('id', t.id)))
-      if (results.some(r => r.error)) fetchTasks()
-    } else if (destination.droppableId === 'inbox') {
-      requestAnimationFrame(() => setTasks(prev => prev.map(t => t.id === taskId ? { ...t, scheduled_date: null, status: 'inbox', bucket: null } : t)))
-      const { error } = await supabase.from('tasks').update({ scheduled_date: null, status: 'inbox', bucket: null }).eq('id', taskId)
-      if (error) fetchTasks()
-    } else {
-      const parts = destination.droppableId.split('-')
-      const bucket = parts[0]
-      const dateStr = parts.slice(1).join('-')
-      const newPosition = destination.index
-      requestAnimationFrame(() => setTasks(prev => prev.map(t => t.id === taskId ? { ...t, scheduled_date: dateStr, status: 'scheduled', bucket, position: newPosition } : t)))
-      const { error } = await supabase.from('tasks').update({ scheduled_date: dateStr, status: 'scheduled', bucket, position: newPosition }).eq('id', taskId)
-      if (error) fetchTasks()
+    try {
+      if (destination.droppableId === source.droppableId && destination.droppableId === 'inbox') {
+        console.log('onDragEnd: entered inbox reorder branch')
+        const inboxOnly = tasks.filter(t => t.status === 'inbox').sort((a, b) => (a.position || 0) - (b.position || 0))
+        console.log('onDragEnd: inboxOnly ids in order:', inboxOnly.map(t => t.id + ':' + t.title))
+        const reordered = Array.from(inboxOnly)
+        const [moved] = reordered.splice(source.index, 1)
+        console.log('onDragEnd: moved task:', moved && (moved.id + ':' + moved.title))
+        if (!moved) { console.error('onDragEnd: no task at source.index', source.index, 'in inbox', inboxOnly.map(t => t.id)); fetchTasks(); return }
+        reordered.splice(destination.index, 0, moved)
+        const updatedPositions = Object.fromEntries(reordered.filter(Boolean).map((t, i) => [t.id, i]))
+        console.log('onDragEnd: updatedPositions:', updatedPositions)
+        requestAnimationFrame(() => setTasks(prev => prev.map(t => updatedPositions[t.id] !== undefined ? { ...t, position: updatedPositions[t.id] } : t)))
+        const results = await Promise.all(reordered.filter(Boolean).map((t, i) => supabase.from('tasks').update({ position: i }).eq('id', t.id).select()))
+        console.log('onDragEnd: supabase results:', JSON.stringify(results.map(r => ({ error: r.error, dataLen: r.data && r.data.length }))))
+        const failed = results.find(r => r.error)
+        const zeroRow = results.find(r => !r.error && (!r.data || r.data.length === 0))
+        if (failed) { console.error('onDragEnd: inbox reorder save failed:', failed.error) }
+        if (zeroRow) { console.error('onDragEnd: inbox reorder update matched 0 rows (likely RLS silently blocking the write):', zeroRow) }
+        if (failed || zeroRow) fetchTasks()
+        console.log('onDragEnd: inbox reorder branch complete')
+      } else if (destination.droppableId === source.droppableId) {
+        const parts = destination.droppableId.split('-')
+        const bucket = parts[0]
+        const dateStr = parts.slice(1).join('-')
+        const bucketTasks = tasks.filter(t => t.scheduled_date === dateStr && (t.bucket || 'morning') === bucket).sort((a, b) => (a.position || 0) - (b.position || 0))
+        const reordered = Array.from(bucketTasks)
+        const [moved] = reordered.splice(source.index, 1)
+        if (!moved) { console.error('onDragEnd: no task at source.index', source.index, 'in', bucketTasks.map(t => t.id)); fetchTasks(); return }
+        reordered.splice(destination.index, 0, moved)
+        const updatedPositions = Object.fromEntries(reordered.filter(Boolean).map((t, i) => [t.id, i]))
+        requestAnimationFrame(() => setTasks(prev => prev.map(t => updatedPositions[t.id] !== undefined ? { ...t, position: updatedPositions[t.id] } : t)))
+        const results = await Promise.all(reordered.filter(Boolean).map((t, i) => supabase.from('tasks').update({ position: i }).eq('id', t.id)))
+        const failedBucket = results.find(r => r.error)
+        if (failedBucket) { console.error('onDragEnd: bucket reorder save failed:', failedBucket.error); fetchTasks() }
+      } else if (destination.droppableId === 'inbox') {
+        requestAnimationFrame(() => setTasks(prev => prev.map(t => t.id === taskId ? { ...t, scheduled_date: null, status: 'inbox', bucket: null } : t)))
+        const { error } = await supabase.from('tasks').update({ scheduled_date: null, status: 'inbox', bucket: null }).eq('id', taskId)
+        if (error) fetchTasks()
+      } else {
+        const parts = destination.droppableId.split('-')
+        const bucket = parts[0]
+        const dateStr = parts.slice(1).join('-')
+        const newPosition = destination.index
+        requestAnimationFrame(() => setTasks(prev => prev.map(t => t.id === taskId ? { ...t, scheduled_date: dateStr, status: 'scheduled', bucket, position: newPosition } : t)))
+        const { error } = await supabase.from('tasks').update({ scheduled_date: dateStr, status: 'scheduled', bucket, position: newPosition }).eq('id', taskId)
+        if (error) fetchTasks()
+      }
+    } catch (e) {
+      console.error('onDragEnd failed, resyncing from server:', e)
+      fetchTasks()
     }
   }
 
@@ -194,7 +218,7 @@ export default function App() {
     setGoals(prev => prev.map(g => g.id === goalId ? data : g))
   }
 
-  const [undoQueue, setUndoQueue] = useState([]) // [{ id, type, label, timerId }]
+  const [undoQueue, setUndoQueue] = useState([])
   const UNDO_MS = 6000
 
   async function performDeleteGoal(goalId) {
