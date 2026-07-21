@@ -118,6 +118,7 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
   let visibleGoals = goalSearch.trim() ? goals.filter(g => g.title.toLowerCase().includes(goalSearch.trim().toLowerCase())) : goals
   if (categoryFilter !== 'all') visibleGoals = visibleGoals.filter(g => g.category === categoryFilter)
   visibleGoals = [...visibleGoals].sort((a, b) => {
+    if (sortMode === 'created') return new Date(b.created_at || 0) - new Date(a.created_at || 0)
     if (sortMode === 'alpha') return a.title.localeCompare(b.title)
     if (sortMode === 'priority') {
       const aRank = a.priority in PRIORITY_RANK ? PRIORITY_RANK[a.priority] : 3
@@ -198,6 +199,7 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
           <option value="deadline">Sort: Deadline</option>
           <option value="priority">Sort: Priority</option>
           <option value="alpha">Sort: A-Z</option>
+          <option value="created">Sort: Date Created</option>
         </select>
         <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} style={{ fontSize: '11px', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '5px 8px', outline: 'none', maxWidth: '140px' }}>
           <option value="all">All categories</option>
@@ -452,6 +454,7 @@ function MobileInbox({ tasks, goalMap, onAddTask, onEdit, onDelete, search, sort
   const filteredTasks = categoryFilter && categoryFilter !== 'all' ? searched.filter(t => t.category === categoryFilter) : searched
   const visibleTasks = [...filteredTasks].sort((a, b) => {
     if (sortMode === 'manual') return (a.position || 0) - (b.position || 0)
+    if (sortMode === 'created') return new Date(b.created_at || 0) - new Date(a.created_at || 0)
     if (sortMode === 'alpha') return a.title.localeCompare(b.title)
     if (sortMode === 'priority') {
       const aRank = a.priority in PRIORITY_RANK ? PRIORITY_RANK[a.priority] : 3
@@ -782,6 +785,7 @@ export default function MobileLayout({
               <option value="deadline">Sort: Deadline</option>
               <option value="priority">Sort: Priority</option>
               <option value="alpha">Sort: A-Z</option>
+              <option value="created">Sort: Date Created</option>
             </select>
             <select value={taskCategoryFilter} onChange={e => setTaskCategoryFilter(e.target.value)} style={{ fontSize: '11px', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '5px 8px', outline: 'none', maxWidth: '130px' }}>
               <option value="all">All categories</option>
@@ -810,17 +814,19 @@ export default function MobileLayout({
         ].map(tab => (
           <button key={tab.id} onClick={() => setActiveTab(tab.id)}
             style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0', position: 'relative' }}>
-            {tab.id === 'day' ? (
-              <svg width="22" height="22" viewBox="0 0 34 32">
-                <line x1="10" y1="0" x2="10" y2="7" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" />
-                <line x1="24" y1="0" x2="24" y2="7" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" />
-                <rect x="0" y="4" width="34" height="26" rx="4" fill="white" stroke="#9ca3af" strokeWidth="1" />
-                <rect x="0" y="4" width="34" height="9" fill={activeTab === 'day' ? '#6366f1' : '#9ca3af'} />
-                <text x="17" y="24" textAnchor="middle" fill={activeTab === 'day' ? '#4338ca' : '#374151'} fontSize="13" fontWeight="600">{new Date().getDate()}</text>
-              </svg>
-            ) : (
-              <span style={{ fontSize: '22px' }} dangerouslySetInnerHTML={{ __html: tab.emoji }} />
-            )}
+            <div style={{ width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              {tab.id === 'day' ? (
+                <svg width="22" height="20.7" viewBox="0 0 34 32">
+                  <line x1="10" y1="0" x2="10" y2="7" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" />
+                  <line x1="24" y1="0" x2="24" y2="7" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" />
+                  <rect x="0" y="4" width="34" height="26" rx="4" fill="white" stroke="#9ca3af" strokeWidth="1" />
+                  <rect x="0" y="4" width="34" height="9" fill={activeTab === 'day' ? '#6366f1' : '#9ca3af'} />
+                  <text x="17" y="24" textAnchor="middle" fill={activeTab === 'day' ? '#4338ca' : '#374151'} fontSize="13" fontWeight="600">{new Date().getDate()}</text>
+                </svg>
+              ) : (
+                <span style={{ fontSize: '22px', lineHeight: 1 }} dangerouslySetInnerHTML={{ __html: tab.emoji }} />
+              )}
+            </div>
             <span style={{ fontSize: '10px', color: activeTab === tab.id ? '#6366f1' : '#9ca3af', fontWeight: activeTab === tab.id ? 500 : 400 }}>{tab.label}</span>
             {tab.badge > 0 && (
               <div style={{ position: 'absolute', top: '2px', right: '22%', background: '#6366f1', color: 'white', borderRadius: '10px', padding: '1px 5px', fontSize: '10px', fontWeight: 500 }}>{tab.badge}</div>

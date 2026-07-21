@@ -13,6 +13,7 @@ function Inbox({ tasks, goalMap, onEdit, onDelete, search, sortMode, categoryFil
   const filteredTasks = categoryFilter && categoryFilter !== 'all' ? searched.filter(t => t.category === categoryFilter) : searched
   const visibleTasks = [...filteredTasks].sort((a, b) => {
     if (sortMode === 'manual') return (a.position || 0) - (b.position || 0)
+    if (sortMode === 'created') return new Date(b.created_at || 0) - new Date(a.created_at || 0)
     if (sortMode === 'alpha') return a.title.localeCompare(b.title)
     if (sortMode === 'priority') {
       const aRank = a.priority in PRIORITY_RANK ? PRIORITY_RANK[a.priority] : 3
@@ -278,6 +279,7 @@ export default function Sidebar({ tasks, goalMap, goals, allTasks, onAddTask, on
                 <option value="deadline">Sort: Deadline</option>
                 <option value="priority">Sort: Priority</option>
                 <option value="alpha">Sort: A-Z</option>
+                <option value="created">Sort: Date Created</option>
               </select>
               <select value={taskCategoryFilter} onChange={e => setTaskCategoryFilter(e.target.value)} className="text-xs border border-gray-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-indigo-300" title="Filter by category">
                 <option value="all">All categories</option>

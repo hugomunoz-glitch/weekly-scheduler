@@ -94,6 +94,7 @@ export default function GoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEdit
   if (categoryFilter !== 'all') visibleGoals = visibleGoals.filter(g => g.category === categoryFilter)
 
   visibleGoals = [...visibleGoals].sort((a, b) => {
+    if (sortMode === 'created') return new Date(b.created_at || 0) - new Date(a.created_at || 0)
     if (sortMode === 'alpha') return a.title.localeCompare(b.title)
     if (sortMode === 'priority') {
       const aRank = a.priority in PRIORITY_RANK ? PRIORITY_RANK[a.priority] : 3
@@ -463,6 +464,7 @@ export default function GoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEdit
           <option value="deadline">Sort: Deadline</option>
           <option value="priority">Sort: Priority</option>
           <option value="alpha">Sort: A-Z</option>
+          <option value="created">Sort: Date Created</option>
         </select>
         <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-300" title="Filter by category">
           <option value="all">All categories</option>
