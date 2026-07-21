@@ -425,11 +425,14 @@ function MobileDayView({ date, tasks, goalMap, onMarkDone, onRescheduleToTomorro
                   style={{ minHeight: '44px', background: snapshot.isDraggingOver ? '#eef2ff' : 'transparent', borderRadius: '8px', padding: '2px', transition: 'background 0.15s' }}>
                   {bucketAll.map((task, index) => (
                     <Draggable key={task.id} draggableId={task.id} index={index} isDragDisabled={task.status === 'done'}>
-                      {(provided, snapshot) => (
-                        <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps} style={{ marginBottom: '6px', WebkitTouchCallout: 'none', WebkitUserSelect: 'none', userSelect: 'none', touchAction: 'manipulation' }}>
-                          <TaskCard task={task} isDone={task.status === 'done'} isDragging={snapshot.isDragging} goalColor={goalMap[task.goal_id] ? goalMap[task.goal_id].color : null} onMarkDone={onMarkDone} onRescheduleToTomorrow={onRescheduleToTomorrow} onMoveToInbox={onMoveToInbox} onDelete={onDelete} onEdit={onEdit} />
-                        </div>
-                      )}
+                      {(provided, snapshot) => {
+                        const card = (
+                          <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps} style={{ marginBottom: '6px', WebkitTouchCallout: 'none', WebkitUserSelect: 'none', userSelect: 'none', touchAction: 'manipulation' }}>
+                            <TaskCard task={task} isDone={task.status === 'done'} isDragging={snapshot.isDragging} goalColor={goalMap[task.goal_id] ? goalMap[task.goal_id].color : null} onMarkDone={onMarkDone} onRescheduleToTomorrow={onRescheduleToTomorrow} onMoveToInbox={onMoveToInbox} onDelete={onDelete} onEdit={onEdit} />
+                          </div>
+                        )
+                        return snapshot.isDragging ? createPortal(card, document.body) : card
+                      }}
                     </Draggable>
                   ))}
                   {provided.placeholder}
@@ -481,7 +484,8 @@ function MobileInbox({ tasks, goalMap, onAddTask, onEdit, onDelete, search, sort
             )}
             {visibleTasks.map((task, index) => (
               <Draggable key={task.id} draggableId={task.id} index={index}>
-                {(provided, snapshot) => (
+                {(provided, snapshot) => {
+                  const row = (
                   <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}
                     onClick={() => setPressedTaskId(pressedTaskId === task.id ? null : task.id)}
                     style={{ border: '1px solid ' + (snapshot.isDragging ? '#a5b4fc' : '#e5e7eb'), borderRadius: '10px', padding: '10px 12px', background: 'white', marginBottom: '8px', WebkitTouchCallout: 'none', WebkitUserSelect: 'none', userSelect: 'none', touchAction: 'manipulation' }}>
@@ -507,7 +511,9 @@ function MobileInbox({ tasks, goalMap, onAddTask, onEdit, onDelete, search, sort
                       </div>
                     )}
                   </div>
-                )}
+                  )
+                  return snapshot.isDragging ? createPortal(row, document.body) : row
+                }}
               </Draggable>
             ))}
             {provided.placeholder}
