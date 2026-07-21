@@ -425,7 +425,7 @@ export default function GoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEdit
                                         <span className="text-sm text-indigo-400 shrink-0 whitespace-nowrap">{formatTime(t.start_time)}</span>
                                       )}
                                       <button onClick={() => handleEditTask(t.id)} className="text-gray-300 hover:text-indigo-500 opacity-0 group-hover:opacity-100 transition-colors shrink-0" title="Edit task">
-                                        <span className="text-base">&#9998;</span>
+                                        <span className="text-[24px]">&#9998;</span>
                                       </button>
                                       <button
                                         onClick={(e) => { e.stopPropagation(); onDelete(t.id) }}

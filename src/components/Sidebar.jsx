@@ -62,7 +62,7 @@ function Inbox({ tasks, goalMap, onEdit, onDelete, search, sortMode }) {
                     {task.notes && <p className="text-xs text-gray-400 mt-1 truncate">{task.notes}</p>}
                     {!snapshot.isDragging && hoverId === task.id && (
                       <div className="flex gap-2 mt-1.5">
-                        <button onClick={() => onEdit(task)} className="text-lg text-indigo-400 hover:text-indigo-600 leading-none" title="Edit">&#9998;</button>
+                        <button onClick={() => onEdit(task)} className="text-[27px] text-indigo-400 hover:text-indigo-600 leading-none" title="Edit">&#9998;</button>
                       </div>
                     )}
                   </div>

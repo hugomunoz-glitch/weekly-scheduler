@@ -86,8 +86,17 @@ export default function TaskCard({ task, isDone, isDragging, goalColor, onMarkDo
       )}
       {!isDone && !isDragging && showActions && (
         <div className="flex flex-wrap items-center gap-2 mt-2 pt-1.5 border-t border-gray-100">
-          <button onClick={() => onEdit(task)} className="text-lg text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 px-1.5 py-0.5 rounded transition-colors leading-none" title="Edit">&#9998;</button>
-          <button onClick={() => onRescheduleToTomorrow(task.id, task.scheduled_date)} className="text-lg text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 px-1.5 py-0.5 rounded transition-colors leading-none" title="Move to tomorrow">&#128198;</button>
+          <button onClick={() => onEdit(task)} className="text-[27px] text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 px-1.5 py-0.5 rounded transition-colors leading-none" title="Edit">&#9998;</button>
+          <button onClick={() => onRescheduleToTomorrow(task.id, task.scheduled_date)} className="hover:bg-indigo-50 px-1.5 py-0.5 rounded transition-colors leading-none flex items-center" title="Move to tomorrow">
+            <svg width="20" height="20" viewBox="0 0 34 32" fill="none">
+              <line x1="10" y1="0" x2="10" y2="7" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" />
+              <line x1="24" y1="0" x2="24" y2="7" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" />
+              <rect x="0" y="4" width="34" height="26" rx="4" fill="white" stroke="#9ca3af" strokeWidth="1" />
+              <rect x="0" y="4" width="34" height="8" fill="#9ca3af" />
+              <circle cx="26" cy="24" r="9" fill="#4f46e5" />
+              <text x="26" y="27.5" textAnchor="middle" fill="white" fontSize="9" fontWeight="600">+1</text>
+            </svg>
+          </button>
           <button onClick={() => onDelete(task.id)} className="md:hidden text-base text-red-500 hover:text-red-700 px-1 py-0.5 rounded transition-colors ml-auto" title="Delete">&#128465;</button>
         </div>
       )}

@@ -75,6 +75,7 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
   const [editingCategoryCustom, setEditingCategoryCustom] = useState('')
   const [editingPriority, setEditingPriority] = useState('')
   const [editGoalError, setEditGoalError] = useState('')
+  const [pressedPopupTaskId, setPressedPopupTaskId] = useState(null)
   const allCategories = [...new Set([...GOAL_CATEGORIES, ...goals.map(g => g.category).filter(Boolean)])].sort()
   const [longPressGoalId, setLongPressGoalId] = useState(null)
   const [longPressTaskId, setLongPressTaskId] = useState(null)
@@ -366,17 +367,21 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: '160px', overflowY: 'auto' }}>
                       {sortedLinked.map(t => (
-                        <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '20px', color: '#4b5563', padding: '6px 2px', minWidth: 0 }}>
-                          <span onClick={() => onMarkDone(t.id)} style={{ color: t.status === 'done' ? '#10b981' : '#d1d5db', fontSize: '22px', cursor: 'pointer', flexShrink: 0 }}>{t.status === 'done' ? '✓' : '○'}</span>
-                          <span onClick={() => onMarkDone(t.id)} style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'pointer', textDecoration: t.status === 'done' ? 'line-through' : 'none', color: t.status === 'done' ? '#9ca3af' : '#4b5563' }}>{t.title}</span>
+                        <div key={t.id} onClick={() => setPressedPopupTaskId(pressedPopupTaskId === t.id ? null : t.id)} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '20px', color: '#4b5563', padding: '6px 2px', minWidth: 0 }}>
+                          <span onClick={(e) => { e.stopPropagation(); onMarkDone(t.id) }} style={{ color: t.status === 'done' ? '#10b981' : '#d1d5db', fontSize: '22px', cursor: 'pointer', flexShrink: 0 }}>{t.status === 'done' ? '✓' : '○'}</span>
+                          <span onClick={(e) => { e.stopPropagation(); onMarkDone(t.id) }} style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'pointer', textDecoration: t.status === 'done' ? 'line-through' : 'none', color: t.status === 'done' ? '#9ca3af' : '#4b5563' }}>{t.title}</span>
                           {t.priority && PRIORITY_COLORS[t.priority] && (
                             <span style={{ fontSize: '11px', fontWeight: 500, padding: '1px 5px', borderRadius: '4px', flexShrink: 0, color: PRIORITY_COLORS[t.priority], background: PRIORITY_COLORS[t.priority] + '1a' }}>{PRIORITY_LABELS[t.priority]}</span>
                           )}
                           {t.start_time && (
                             <span style={{ fontSize: '13px', color: '#a5b4fc', flexShrink: 0, whiteSpace: 'nowrap' }}>{formatTime(t.start_time)}</span>
                           )}
-                          <span onClick={() => handleEditTask(t.id)} style={{ color: '#c7d2fe', fontSize: '18px', cursor: 'pointer', padding: '2px 4px', flexShrink: 0 }}>&#9998;</span>
-                          <span onClick={(e) => { e.stopPropagation(); onDelete(t.id) }} style={{ color: '#ef4444', fontSize: '17px', fontWeight: 500, cursor: 'pointer', padding: '2px 4px', flexShrink: 0, lineHeight: 1 }}>&#10005;</span>
+                          {pressedPopupTaskId === t.id && (
+                            <>
+                              <span onClick={(e) => { e.stopPropagation(); handleEditTask(t.id) }} style={{ color: '#c7d2fe', fontSize: '27px', cursor: 'pointer', padding: '2px 4px', flexShrink: 0 }}>&#9998;</span>
+                              <span onClick={(e) => { e.stopPropagation(); onDelete(t.id) }} style={{ color: '#ef4444', fontSize: '17px', fontWeight: 500, cursor: 'pointer', padding: '2px 4px', flexShrink: 0, lineHeight: 1 }}>&#10005;</span>
+                            </>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -456,6 +461,7 @@ function MobileDayView({ date, tasks, goalMap, onMarkDone, onRescheduleToTomorro
 }
 
 function MobileInbox({ tasks, goalMap, onAddTask, onEdit, onDelete, search, sortMode }) {
+  const [pressedTaskId, setPressedTaskId] = useState(null)
   const filteredTasks = search && search.trim() ? tasks.filter(t => t.title.toLowerCase().includes(search.trim().toLowerCase())) : tasks
   const visibleTasks = [...filteredTasks].sort((a, b) => {
     if (sortMode === 'alpha') return a.title.localeCompare(b.title)
@@ -493,6 +499,7 @@ function MobileInbox({ tasks, goalMap, onAddTask, onEdit, onDelete, search, sort
               <Draggable key={task.id} draggableId={task.id} index={index}>
                 {(provided, snapshot) => (
                   <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}
+                    onClick={() => setPressedTaskId(pressedTaskId === task.id ? null : task.id)}
                     style={{ border: '1px solid ' + (snapshot.isDragging ? '#a5b4fc' : '#e5e7eb'), borderRadius: '10px', padding: '10px 12px', background: 'white', marginBottom: '8px', WebkitTouchCallout: 'none', WebkitUserSelect: 'none', userSelect: 'none', touchAction: 'manipulation' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
                       <p style={{ fontSize: '14px', color: '#1f2937', flex: 1, margin: 0 }}>
@@ -506,10 +513,10 @@ function MobileInbox({ tasks, goalMap, onAddTask, onEdit, onDelete, search, sort
                       )}
                     </div>
                     {task.notes && <p style={{ fontSize: '12px', color: '#9ca3af', margin: '4px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{task.notes}</p>}
-                    {!snapshot.isDragging && (
+                    {!snapshot.isDragging && pressedTaskId === task.id && (
                       <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
-                        <button onClick={() => onEdit(task)} style={{ fontSize: '18px', color: '#6366f1', background: 'none', border: 'none', padding: 0, cursor: 'pointer', lineHeight: 1 }} title="Edit">&#9998;</button>
-                        <button onClick={() => onDelete(task.id)} style={{ fontSize: '17px', color: '#ef4444', background: 'none', border: 'none', padding: 0, cursor: 'pointer', marginLeft: 'auto', lineHeight: 1 }} title="Delete">&#128465;</button>
+                        <button onClick={(e) => { e.stopPropagation(); onEdit(task) }} style={{ fontSize: '27px', color: '#6366f1', background: 'none', border: 'none', padding: 0, cursor: 'pointer', lineHeight: 1 }} title="Edit">&#9998;</button>
+                        <button onClick={(e) => { e.stopPropagation(); onDelete(task.id) }} style={{ fontSize: '17px', color: '#ef4444', background: 'none', border: 'none', padding: 0, cursor: 'pointer', marginLeft: 'auto', lineHeight: 1 }} title="Delete">&#128465;</button>
                       </div>
                     )}
                   </div>
