@@ -149,6 +149,11 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
     return goalTasks.filter(t => t.goal_id === goalId && t.status === 'done').length
   }
 
+  const completedGoalsCount = goals.filter(g => {
+    const linked = goalTasks.filter(t => t.goal_id === g.id)
+    return linked.length > 0 && linked.every(t => t.status === 'done')
+  }).length
+
   let visibleGoals = goalSearch.trim() ? goals.filter(g => g.title.toLowerCase().includes(goalSearch.trim().toLowerCase())) : goals
   if (categoryFilter !== 'all') visibleGoals = visibleGoals.filter(g => g.category === categoryFilter)
   visibleGoals = [...visibleGoals].sort((a, b) => {
@@ -235,7 +240,10 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
           <button onClick={() => setAdding(true)} style={{ background: '#6366f1', color: 'white', border: 'none', borderRadius: '8px', padding: '6px 12px', fontSize: '12px', cursor: 'pointer' }} title="Add goal">+</button>
         </div>
       </div>
-      <div style={{ padding: '0 16px 8px', display: 'flex', justifyContent: 'flex-end', alignItems: 'flex-end', gap: '8px', flexShrink: 0 }}>
+      <div style={{ padding: '0 16px', flexShrink: 0 }}>
+        <span style={{ fontSize: '11px', color: '#9ca3af' }}>{completedGoalsCount} of {goals.length} done</span>
+      </div>
+      <div style={{ padding: '4px 16px 8px', display: 'flex', justifyContent: 'flex-end', alignItems: 'flex-end', gap: '8px', flexShrink: 0 }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
           <span style={{ fontSize: '9px', color: '#9ca3af', fontWeight: 500, lineHeight: 1 }}>Sort by</span>
           <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -931,10 +939,7 @@ export default function MobileLayout({
 
       {activeTab === 'inbox' && (
         <>
-          <div style={{ padding: '10px 16px 0', flexShrink: 0 }}>
-            <span style={{ fontSize: '11px', color: '#9ca3af' }}>{inboxTasks.filter(t => t.status === 'done').length} of {inboxTasks.length} done</span>
-          </div>
-          <div style={{ padding: '4px 16px 6px', flexShrink: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ padding: '10px 16px 0', flexShrink: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: '15px', fontWeight: 500, color: '#111827' }}>&#128221; Task List <span style={{ fontSize: '13px', color: '#9ca3af', fontWeight: 400 }}>{inboxTasks.filter(t => t.status !== 'done').length}</span></span>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               {showTaskSearch ? (
@@ -955,6 +960,9 @@ export default function MobileLayout({
               )}
               <button onClick={onAddTask} style={{ background: '#6366f1', color: 'white', border: 'none', borderRadius: '8px', padding: '6px 12px', fontSize: '12px', cursor: 'pointer' }} title="Add task">+</button>
             </div>
+          </div>
+          <div style={{ padding: '2px 16px 0', flexShrink: 0 }}>
+            <span style={{ fontSize: '11px', color: '#9ca3af' }}>{inboxTasks.filter(t => t.status === 'done').length} of {inboxTasks.length} done</span>
           </div>
           <div style={{ padding: '0 16px 8px', display: 'flex', justifyContent: 'flex-end', alignItems: 'flex-end', gap: '8px', flexShrink: 0 }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
