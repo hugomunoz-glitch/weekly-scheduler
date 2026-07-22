@@ -114,7 +114,11 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
 
   visibleGoals = [...visibleGoals].sort((a, b) => {
     let result
-    if (sortMode === 'created') result = new Date(b.created_at || 0) - new Date(a.created_at || 0)
+    if (sortMode === 'completed') {
+      const aDone = pctCompleted(a.id) === 1, bDone = pctCompleted(b.id) === 1
+      result = aDone === bDone ? 0 : aDone ? -1 : 1
+    }
+    else if (sortMode === 'created') result = new Date(b.created_at || 0) - new Date(a.created_at || 0)
     else if (sortMode === 'alpha') result = a.title.localeCompare(b.title)
     else if (sortMode === 'percentage') result = pctCompleted(b.id) - pctCompleted(a.id)
     else if (sortMode === 'taskCount') result = completedCount(b.id) - completedCount(a.id)
@@ -531,6 +535,7 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
               <option value="created">Date Created</option>
               <option value="percentage">% Completed</option>
               <option value="taskCount"># of Tasks Completed</option>
+              <option value="completed">Completed</option>
             </select>
             <button
               onClick={() => setSortDir(d => d * -1)}

@@ -14,6 +14,7 @@ function Inbox({ tasks, goalMap, collabMap, collabMembersMap, onAssignTask, onMa
   const filteredTasks = categoryFilter && categoryFilter !== 'all' ? searched.filter(t => t.category === categoryFilter) : searched
   const visibleTasks = [...filteredTasks].sort((a, b) => {
     const aDone = a.status === 'done', bDone = b.status === 'done'
+    if (sortMode === 'completed') return (aDone === bDone ? 0 : aDone ? -1 : 1) * sortDir
     if (aDone !== bDone) return aDone ? 1 : -1
     let result
     if (sortMode === 'manual') result = (a.position || 0) - (b.position || 0)
@@ -324,6 +325,7 @@ export default function Sidebar({ tasks, goalMap, collabMap, collabMembersMap, o
                     <option value="priority">Priority</option>
                     <option value="alpha">A-Z</option>
                     <option value="created">Date Created</option>
+                    <option value="completed">Completed</option>
                   </select>
                   <button
                     onClick={() => setTaskSortDir(d => d * -1)}

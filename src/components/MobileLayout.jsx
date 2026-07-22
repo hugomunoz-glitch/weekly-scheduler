@@ -158,7 +158,11 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
   if (categoryFilter !== 'all') visibleGoals = visibleGoals.filter(g => g.category === categoryFilter)
   visibleGoals = [...visibleGoals].sort((a, b) => {
     let result
-    if (sortMode === 'created') result = new Date(b.created_at || 0) - new Date(a.created_at || 0)
+    if (sortMode === 'completed') {
+      const aDone = pctCompleted(a.id) === 1, bDone = pctCompleted(b.id) === 1
+      result = aDone === bDone ? 0 : aDone ? -1 : 1
+    }
+    else if (sortMode === 'created') result = new Date(b.created_at || 0) - new Date(a.created_at || 0)
     else if (sortMode === 'alpha') result = a.title.localeCompare(b.title)
     else if (sortMode === 'percentage') result = pctCompleted(b.id) - pctCompleted(a.id)
     else if (sortMode === 'taskCount') result = completedCount(b.id) - completedCount(a.id)
@@ -254,6 +258,7 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
               <option value="created">Date Created</option>
               <option value="percentage">% Completed</option>
               <option value="taskCount"># of Tasks Completed</option>
+              <option value="completed">Completed</option>
             </select>
             <button
               onClick={() => setSortDir(d => d * -1)}
@@ -558,6 +563,7 @@ function MobileInbox({ tasks, goalMap, collabMap, collabMembersMap, onAssignTask
   const filteredTasks = categoryFilter && categoryFilter !== 'all' ? searched.filter(t => t.category === categoryFilter) : searched
   const visibleTasks = [...filteredTasks].sort((a, b) => {
     const aDone = a.status === 'done', bDone = b.status === 'done'
+    if (sortMode === 'completed') return (aDone === bDone ? 0 : aDone ? -1 : 1) * sortDir
     if (aDone !== bDone) return aDone ? 1 : -1
     let result
     if (sortMode === 'manual') result = (a.position || 0) - (b.position || 0)
@@ -990,6 +996,7 @@ export default function MobileLayout({
                   <option value="priority">Priority</option>
                   <option value="alpha">A-Z</option>
                   <option value="created">Date Created</option>
+                  <option value="completed">Completed</option>
                 </select>
                 <button
                   onClick={() => setTaskSortDir(d => d * -1)}
