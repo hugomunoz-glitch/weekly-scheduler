@@ -37,9 +37,10 @@ function useWarmupSensor(api) {
 
 function bucketFromTime(startTime) {
   if (!startTime) return 'morning'
-  const hour = parseInt(startTime.split(':')[0], 10)
-  if (hour < 12) return 'morning'
-  if (hour < 17) return 'midday'
+  const [h, m] = startTime.split(':').map(Number)
+  const totalMin = h * 60 + (m || 0)
+  if (totalMin <= 720) return 'morning'
+  if (totalMin <= 1019) return 'midday'
   return 'afternoon'
 }
 

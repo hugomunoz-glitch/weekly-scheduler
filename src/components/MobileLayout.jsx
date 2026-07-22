@@ -25,6 +25,7 @@ const BUCKETS = [
 
 const COLORS = ['#6366f1', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316']
 const PRIORITY_COLORS = { high: '#ef4444', medium: '#f59e0b', low: '#9ca3af' }
+const PRIORITY_BORDER = { high: '#ef4444', medium: '#f59e0b', low: '#22c55e' }
 const PRIORITY_RANK = { high: 0, medium: 1, low: 2 }
 const PRIORITY_LABELS = { high: 'High', medium: 'Medium', low: 'Low' }
 const GOAL_CATEGORIES = [
@@ -487,7 +488,12 @@ function MobileDayView({ date, tasks, goalMap, collabMap, onMarkDone, onReschedu
     <div style={{ flex: 1, overflowY: 'auto', padding: '12px' }}>
       {BUCKETS.map(bucket => {
         const bucketTasks = activeTasks.filter(t => (t.bucket || 'morning') === bucket.id).sort((a, b) => (a.position || 0) - (b.position || 0))
-        const bucketAll = tasks.filter(t => (t.bucket || 'morning') === bucket.id).sort((a, b) => (a.position || 0) - (b.position || 0))
+        const bucketAll = tasks.filter(t => (t.bucket || 'morning') === bucket.id).sort((a, b) => {
+          if (a.start_time && b.start_time) return a.start_time < b.start_time ? -1 : a.start_time > b.start_time ? 1 : 0
+          if (a.start_time && !b.start_time) return -1
+          if (!a.start_time && b.start_time) return 1
+          return (a.position || 0) - (b.position || 0)
+        })
         const droppableId = bucket.id + '-' + dateStr
         return (
           <div key={bucket.id} style={{ marginBottom: '16px' }}>
@@ -568,13 +574,10 @@ function MobileInbox({ tasks, goalMap, collabMap, collabMembersMap, onAssignTask
                 {(provided, snapshot) => {
                   const row = (
                   <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}
-                    style={{ ...provided.draggableProps.style, border: '1px solid ' + (snapshot.isDragging ? '#a5b4fc' : '#e5e7eb'), borderRadius: '10px', padding: '10px 12px', background: 'white', marginBottom: '8px', WebkitTouchCallout: 'none', WebkitUserSelect: 'none', userSelect: 'none', touchAction: 'manipulation' }}>
+                    style={{ ...provided.draggableProps.style, border: '1px solid ' + (snapshot.isDragging ? '#a5b4fc' : '#e5e7eb'), borderLeft: task.priority && PRIORITY_BORDER[task.priority] ? '4px solid ' + PRIORITY_BORDER[task.priority] : undefined, borderRadius: '10px', padding: '10px 12px', background: 'white', marginBottom: '8px', WebkitTouchCallout: 'none', WebkitUserSelect: 'none', userSelect: 'none', touchAction: 'manipulation' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
                       <p style={{ fontSize: '14px', color: '#1f2937', flex: 1, margin: 0 }}>
                         {task.title}
-                        {task.priority && PRIORITY_COLORS[task.priority] && (
-                          <span style={{ fontSize: '10px', fontWeight: 500, padding: '1px 6px', borderRadius: '4px', marginLeft: '6px', color: PRIORITY_COLORS[task.priority], background: PRIORITY_COLORS[task.priority] + '1a' }}>{PRIORITY_LABELS[task.priority]}</span>
-                        )}
                         {task.category && (
                           <span style={{ fontSize: '10px', color: '#9ca3af', marginLeft: '6px' }}>{task.category}</span>
                         )}

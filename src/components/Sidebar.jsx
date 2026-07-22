@@ -5,6 +5,7 @@ import { useAssistantHistory } from '../hooks/useAssistantHistory'
 const PRIORITY_RANK = { high: 0, medium: 1, low: 2 }
 const PRIORITY_COLORS = { high: '#ef4444', medium: '#f59e0b', low: '#9ca3af' }
 const PRIORITY_LABELS = { high: 'High', medium: 'Medium', low: 'Low' }
+const PRIORITY_BORDER = { high: '#ef4444', medium: '#f59e0b', low: '#22c55e' }
 
 function Inbox({ tasks, goalMap, collabMap, collabMembersMap, onAssignTask, onEdit, onDelete, search, sortMode, sortDir, categoryFilter }) {
   const [hoverId, setHoverId] = useState(null)
@@ -43,6 +44,8 @@ function Inbox({ tasks, goalMap, collabMap, collabMembersMap, onAssignTask, onEd
                 {(provided, snapshot) => (
                   <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}
                     className={'relative group border rounded-lg px-3 py-2.5 bg-white transition-colors ' + (snapshot.isDragging ? 'border-indigo-300 shadow-lg' : 'border-gray-200 hover:border-gray-300')}
+                    style={task.priority && PRIORITY_BORDER[task.priority] ? { borderLeft: '4px solid ' + PRIORITY_BORDER[task.priority] } : undefined}
+                    title={task.priority ? PRIORITY_LABELS[task.priority] + ' priority' : undefined}
                     onMouseEnter={() => setHoverId(task.id)} onMouseLeave={() => setHoverId(null)}>
                     {!snapshot.isDragging && (
                       <button
@@ -59,11 +62,6 @@ function Inbox({ tasks, goalMap, collabMap, collabMembersMap, onAssignTask, onEd
                         <div className="w-2 h-2 rounded-full shrink-0 mt-1" style={{ background: goalMap[task.goal_id].color }} />
                       )}
                     </div>
-                    {task.priority && PRIORITY_COLORS[task.priority] && (
-                      <span className="text-[10px] font-medium px-1.5 py-0.5 rounded inline-block mt-1" style={{ color: PRIORITY_COLORS[task.priority], background: PRIORITY_COLORS[task.priority] + '1a' }}>
-                        {PRIORITY_LABELS[task.priority]}
-                      </span>
-                    )}
                     {task.collaboration_id && collabMap && collabMap[task.collaboration_id] && (
                       <span
                         className="text-[10px] font-medium px-1.5 py-0.5 rounded inline-block mt-1 ml-1"

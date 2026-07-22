@@ -37,7 +37,12 @@ export default function DayColumn({ date, tasks, goalMap, collabMap, onMarkDone,
       <div className="flex-1 flex flex-col">
         {BUCKETS.map(bucket => {
           const bucketTasks = activeTasks.filter(t => (t.bucket || 'morning') === bucket.id).sort((a, b) => (a.position || 0) - (b.position || 0))
-          const bucketAll = tasks.filter(t => (t.bucket || 'morning') === bucket.id).sort((a, b) => (a.position || 0) - (b.position || 0))
+          const bucketAll = tasks.filter(t => (t.bucket || 'morning') === bucket.id).sort((a, b) => {
+            if (a.start_time && b.start_time) return a.start_time < b.start_time ? -1 : a.start_time > b.start_time ? 1 : 0
+            if (a.start_time && !b.start_time) return -1
+            if (!a.start_time && b.start_time) return 1
+            return (a.position || 0) - (b.position || 0)
+          })
           const droppableId = bucket.id + '-' + dateStr
           return (
             <div key={bucket.id} className="group relative flex-1 flex flex-col border-b border-gray-50 last:border-0">

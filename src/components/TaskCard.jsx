@@ -17,6 +17,7 @@ function formatDueDate(d) {
 
 const PRIORITY_COLORS = { high: '#ef4444', medium: '#f59e0b', low: '#9ca3af' }
 const PRIORITY_LABELS = { high: 'High', medium: 'Medium', low: 'Low' }
+const PRIORITY_BORDER = { high: '#ef4444', medium: '#f59e0b', low: '#22c55e' }
 
 export default function TaskCard({ task, isDone, isDragging, goalColor, collabBadge, onMarkDone, onRescheduleToTomorrow, onMoveToInbox, onDelete, onEdit }) {
   const [showActions, setShowActions] = useState(false)
@@ -25,6 +26,8 @@ export default function TaskCard({ task, isDone, isDragging, goalColor, collabBa
   return (
     <div
       className={'relative group rounded-lg border px-2.5 py-2 text-base transition-colors ' + (isDragging ? 'border-indigo-300 bg-white shadow-lg' : isDone ? 'border-gray-100 bg-gray-50 opacity-60' : 'border-gray-200 bg-white hover:border-gray-300')}
+      style={task.priority && !isDone && PRIORITY_BORDER[task.priority] ? { borderLeft: '4px solid ' + PRIORITY_BORDER[task.priority] } : undefined}
+      title={task.priority ? PRIORITY_LABELS[task.priority] + ' priority' : undefined}
       onMouseEnter={canHover ? () => setShowActions(true) : undefined}
       onMouseLeave={canHover ? () => setShowActions(false) : undefined}
     >
@@ -48,11 +51,6 @@ export default function TaskCard({ task, isDone, isDragging, goalColor, collabBa
           <span className={'leading-snug break-words ' + (isDone ? 'line-through text-gray-400' : 'text-gray-800')}>
             {task.title}
           </span>
-          {task.priority && PRIORITY_COLORS[task.priority] && (
-            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded ml-1.5" style={{ color: PRIORITY_COLORS[task.priority], background: PRIORITY_COLORS[task.priority] + '1a' }}>
-              {PRIORITY_LABELS[task.priority]}
-            </span>
-          )}
           {task.category && (
             <span className="text-[10px] text-gray-400 ml-1.5">{task.category}</span>
           )}
