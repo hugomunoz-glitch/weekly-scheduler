@@ -81,6 +81,12 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
   const [editingCategoryCustom, setEditingCategoryCustom] = useState('')
   const [editingPriority, setEditingPriority] = useState('')
   const [editingCollaborationId, setEditingCollaborationId] = useState('')
+  const [editShowSmart, setEditShowSmart] = useState(false)
+  const [editSmartSpecific, setEditSmartSpecific] = useState('')
+  const [editSmartMeasurable, setEditSmartMeasurable] = useState('')
+  const [editSmartAchievable, setEditSmartAchievable] = useState('')
+  const [editSmartRelevant, setEditSmartRelevant] = useState('')
+  const [editSmartTimebound, setEditSmartTimebound] = useState('')
   const [editGoalError, setEditGoalError] = useState('')
   const allCategories = [...new Set([...GOAL_CATEGORIES, ...goals.map(g => g.category).filter(Boolean)])].sort()
   const [longPressGoalId, setLongPressGoalId] = useState(null)
@@ -102,6 +108,12 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
     }
     setEditingPriority(goal.priority || '')
     setEditingCollaborationId(goal.collaboration_id || '')
+    setEditSmartSpecific(goal.smart_specific || '')
+    setEditSmartMeasurable(goal.smart_measurable || '')
+    setEditSmartAchievable(goal.smart_achievable || '')
+    setEditSmartRelevant(goal.smart_relevant || '')
+    setEditSmartTimebound(goal.smart_timebound || '')
+    setEditShowSmart(!!(goal.smart_specific || goal.smart_measurable || goal.smart_achievable || goal.smart_relevant || goal.smart_timebound))
     setEditGoalError('')
   }
 
@@ -110,7 +122,15 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
     if (!editingTitle.trim()) return
     try {
       const category = editingCustomCategory ? editingCategoryCustom.trim() : editingCategory
-      await onEditGoal(editingGoalId, editingTitle.trim(), { category: category || null, priority: editingPriority || null }, editingCollaborationId || null)
+      await onEditGoal(editingGoalId, editingTitle.trim(), {
+        category: category || null,
+        priority: editingPriority || null,
+        smartSpecific: editSmartSpecific.trim() || null,
+        smartMeasurable: editSmartMeasurable.trim() || null,
+        smartAchievable: editSmartAchievable.trim() || null,
+        smartRelevant: editSmartRelevant.trim() || null,
+        smartTimebound: editSmartTimebound.trim() || null
+      }, editingCollaborationId || null)
       closeEditingGoal()
     } catch {
       setEditGoalError('Could not save. Try again.')
@@ -158,11 +178,7 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
   if (categoryFilter !== 'all') visibleGoals = visibleGoals.filter(g => g.category === categoryFilter)
   visibleGoals = [...visibleGoals].sort((a, b) => {
     let result
-    if (sortMode === 'completed') {
-      const aDone = pctCompleted(a.id) === 1, bDone = pctCompleted(b.id) === 1
-      result = aDone === bDone ? 0 : aDone ? -1 : 1
-    }
-    else if (sortMode === 'created') result = new Date(b.created_at || 0) - new Date(a.created_at || 0)
+    if (sortMode === 'created') result = new Date(b.created_at || 0) - new Date(a.created_at || 0)
     else if (sortMode === 'alpha') result = a.title.localeCompare(b.title)
     else if (sortMode === 'percentage') result = pctCompleted(b.id) - pctCompleted(a.id)
     else if (sortMode === 'taskCount') result = completedCount(b.id) - completedCount(a.id)
@@ -258,7 +274,6 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
               <option value="created">Date Created</option>
               <option value="percentage">% Completed</option>
               <option value="taskCount"># of Tasks Completed</option>
-              <option value="completed">Completed</option>
             </select>
             <button
               onClick={() => setSortDir(d => d * -1)}
@@ -410,6 +425,17 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
                     <option value="">Save to: Personal</option>
                     {collaborations.map(c => <option key={c.id} value={c.id}>Save to: {c.name}</option>)}
                   </select>
+                )}
+                {!editShowSmart ? (
+                  <button type="button" onClick={() => setEditShowSmart(true)} style={{ background: 'none', border: 'none', color: '#6366f1', fontSize: '12px', textAlign: 'left', cursor: 'pointer', padding: 0 }}>+ Make it a SMART goal (optional)</button>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', borderTop: '1px solid #f3f4f6', paddingTop: '6px' }}>
+                    <input type="text" placeholder="Specific: what & why?" value={editSmartSpecific} onChange={e => setEditSmartSpecific(e.target.value)} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '7px 8px', fontSize: '12px', outline: 'none' }} />
+                    <input type="text" placeholder="Measurable: how will you know?" value={editSmartMeasurable} onChange={e => setEditSmartMeasurable(e.target.value)} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '7px 8px', fontSize: '12px', outline: 'none' }} />
+                    <input type="text" placeholder="Achievable: realistic?" value={editSmartAchievable} onChange={e => setEditSmartAchievable(e.target.value)} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '7px 8px', fontSize: '12px', outline: 'none' }} />
+                    <input type="text" placeholder="Relevant: why does it matter?" value={editSmartRelevant} onChange={e => setEditSmartRelevant(e.target.value)} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '7px 8px', fontSize: '12px', outline: 'none' }} />
+                    <input type="text" placeholder="Time-bound: target deadline?" value={editSmartTimebound} onChange={e => setEditSmartTimebound(e.target.value)} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '7px 8px', fontSize: '12px', outline: 'none' }} />
+                  </div>
                 )}
                 <div style={{ display: 'flex', gap: '8px', marginTop: '4px', alignItems: 'center' }}>
                   <button type="submit" style={{ background: '#6366f1', color: 'white', border: 'none', borderRadius: '8px', padding: '8px 14px', fontSize: '13px', cursor: 'pointer' }}>Save</button>

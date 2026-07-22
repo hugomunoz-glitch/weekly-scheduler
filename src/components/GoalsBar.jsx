@@ -114,11 +114,7 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
 
   visibleGoals = [...visibleGoals].sort((a, b) => {
     let result
-    if (sortMode === 'completed') {
-      const aDone = pctCompleted(a.id) === 1, bDone = pctCompleted(b.id) === 1
-      result = aDone === bDone ? 0 : aDone ? -1 : 1
-    }
-    else if (sortMode === 'created') result = new Date(b.created_at || 0) - new Date(a.created_at || 0)
+    if (sortMode === 'created') result = new Date(b.created_at || 0) - new Date(a.created_at || 0)
     else if (sortMode === 'alpha') result = a.title.localeCompare(b.title)
     else if (sortMode === 'percentage') result = pctCompleted(b.id) - pctCompleted(a.id)
     else if (sortMode === 'taskCount') result = completedCount(b.id) - completedCount(a.id)
@@ -181,6 +177,12 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
   const [editingCategoryCustom, setEditingCategoryCustom] = useState('')
   const [editingPriority, setEditingPriority] = useState('')
   const [editingCollaborationId, setEditingCollaborationId] = useState('')
+  const [editShowSmart, setEditShowSmart] = useState(false)
+  const [editSmartSpecific, setEditSmartSpecific] = useState('')
+  const [editSmartMeasurable, setEditSmartMeasurable] = useState('')
+  const [editSmartAchievable, setEditSmartAchievable] = useState('')
+  const [editSmartRelevant, setEditSmartRelevant] = useState('')
+  const [editSmartTimebound, setEditSmartTimebound] = useState('')
   const [editError, setEditError] = useState('')
 
   function startEdit(goal) {
@@ -197,6 +199,12 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
     }
     setEditingPriority(goal.priority || '')
     setEditingCollaborationId(goal.collaboration_id || '')
+    setEditSmartSpecific(goal.smart_specific || '')
+    setEditSmartMeasurable(goal.smart_measurable || '')
+    setEditSmartAchievable(goal.smart_achievable || '')
+    setEditSmartRelevant(goal.smart_relevant || '')
+    setEditSmartTimebound(goal.smart_timebound || '')
+    setEditShowSmart(!!(goal.smart_specific || goal.smart_measurable || goal.smart_achievable || goal.smart_relevant || goal.smart_timebound))
     setEditError('')
   }
 
@@ -205,7 +213,15 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
     if (!editingTitle.trim()) return
     try {
       const category = editingCustomCategory ? editingCategoryCustom.trim() : editingCategory
-      await onEditGoal(goalId, editingTitle.trim(), { category: category || null, priority: editingPriority || null }, editingCollaborationId || null)
+      await onEditGoal(goalId, editingTitle.trim(), {
+        category: category || null,
+        priority: editingPriority || null,
+        smartSpecific: editSmartSpecific.trim() || null,
+        smartMeasurable: editSmartMeasurable.trim() || null,
+        smartAchievable: editSmartAchievable.trim() || null,
+        smartRelevant: editSmartRelevant.trim() || null,
+        smartTimebound: editSmartTimebound.trim() || null
+      }, editingCollaborationId || null)
       setEditingId(null)
     } catch {
       setEditError('Could not save. Try again.')
@@ -377,6 +393,17 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
                       {collaborations.map(c => <option key={c.id} value={c.id}>Save to: {c.name}</option>)}
                     </select>
                   )}
+                  {!editShowSmart ? (
+                    <button type="button" onClick={() => setEditShowSmart(true)} className="text-xs text-indigo-500 hover:text-indigo-700 text-left">+ Make it a SMART goal (optional)</button>
+                  ) : (
+                    <div className="space-y-1.5 pt-1 border-t border-gray-200">
+                      <input type="text" placeholder="Specific: what & why?" value={editSmartSpecific} onChange={e => setEditSmartSpecific(e.target.value)} className="w-full border border-gray-200 rounded px-1.5 py-1 text-xs focus:outline-none" />
+                      <input type="text" placeholder="Measurable: how will you know?" value={editSmartMeasurable} onChange={e => setEditSmartMeasurable(e.target.value)} className="w-full border border-gray-200 rounded px-1.5 py-1 text-xs focus:outline-none" />
+                      <input type="text" placeholder="Achievable: realistic?" value={editSmartAchievable} onChange={e => setEditSmartAchievable(e.target.value)} className="w-full border border-gray-200 rounded px-1.5 py-1 text-xs focus:outline-none" />
+                      <input type="text" placeholder="Relevant: why does it matter?" value={editSmartRelevant} onChange={e => setEditSmartRelevant(e.target.value)} className="w-full border border-gray-200 rounded px-1.5 py-1 text-xs focus:outline-none" />
+                      <input type="text" placeholder="Time-bound: target deadline?" value={editSmartTimebound} onChange={e => setEditSmartTimebound(e.target.value)} className="w-full border border-gray-200 rounded px-1.5 py-1 text-xs focus:outline-none" />
+                    </div>
+                  )}
                   <div className="flex gap-1.5">
                     <button type="submit" className="text-xs text-white bg-indigo-600 hover:bg-indigo-700 px-2 py-0.5 rounded">Save</button>
                     <button type="button" onClick={() => setEditingId(null)} className="text-xs text-gray-400 hover:text-gray-600">Cancel</button>
@@ -535,7 +562,6 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
               <option value="created">Date Created</option>
               <option value="percentage">% Completed</option>
               <option value="taskCount"># of Tasks Completed</option>
-              <option value="completed">Completed</option>
             </select>
             <button
               onClick={() => setSortDir(d => d * -1)}
