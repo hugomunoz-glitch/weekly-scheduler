@@ -268,12 +268,12 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
           <span style={{ fontSize: '9px', color: '#9ca3af', fontWeight: 500, lineHeight: 1 }}>Sort by</span>
           <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
             <select value={sortMode} onChange={e => setSortMode(e.target.value)} style={{ fontSize: '11px', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '5px 8px', outline: 'none' }}>
-              <option value="deadline">Deadline</option>
-              <option value="priority">Priority</option>
+              <option value="taskCount"># of Tasks Completed</option>
+              <option value="percentage">% Completed</option>
               <option value="alpha">A-Z</option>
               <option value="created">Date Created</option>
-              <option value="percentage">% Completed</option>
-              <option value="taskCount"># of Tasks Completed</option>
+              <option value="deadline">Deadline</option>
+              <option value="priority">Priority</option>
             </select>
             <button
               onClick={() => setSortDir(d => d * -1)}
@@ -377,9 +377,9 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
               />
             )}
           </div>
-          {goal.category && (
+          {categoryBadge(goal.category) && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px', paddingLeft: '2px' }}>
-              <span style={{ fontSize: '11px', color: '#9ca3af' }}>{goal.category}</span>
+              <span style={{ fontSize: '10px', fontWeight: 500, padding: '2px 6px', borderRadius: '4px', color: categoryBadge(goal.category).color, background: categoryBadge(goal.category).color + '1a' }}>{categoryBadge(goal.category).name}</span>
             </div>
           )}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingLeft: '2px' }}>
@@ -459,7 +459,7 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
                     <p style={{ fontSize: '30px', fontWeight: 700, color: '#1f2937', margin: 0 }}>{goal.title}</p>
                   </div>
-                  {goal.category && <p style={{ fontSize: '12px', color: '#9ca3af', marginTop: '2px', marginBottom: '8px' }}>{goal.category}</p>}
+                  {categoryBadge(goal.category) && <span style={{ display: 'inline-block', fontSize: '12px', fontWeight: 500, padding: '3px 8px', borderRadius: '6px', marginTop: '2px', marginBottom: '8px', color: categoryBadge(goal.category).color, background: categoryBadge(goal.category).color + '1a' }}>{categoryBadge(goal.category).name}</span>}
                   {(goal.smart_specific || goal.smart_measurable || goal.smart_achievable || goal.smart_relevant || goal.smart_timebound) && (
                     <div style={{ background: '#f9fafb', borderRadius: '8px', padding: '8px', marginBottom: '10px', display: 'flex', flexDirection: 'column', gap: '3px' }}>
                       {goal.smart_specific && <p style={{ fontSize: '11px', color: '#4b5563', margin: 0 }}><b>Specific:</b> {goal.smart_specific}</p>}
@@ -1020,12 +1020,12 @@ export default function MobileLayout({
               <span style={{ fontSize: '9px', color: '#9ca3af', fontWeight: 500, lineHeight: 1 }}>Sort by</span>
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                 <select value={taskSort} onChange={e => setTaskSort(e.target.value)} style={{ fontSize: '11px', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '5px 8px', outline: 'none' }}>
-                  <option value="manual">Manual</option>
-                  <option value="deadline">Deadline</option>
-                  <option value="priority">Priority</option>
                   <option value="alpha">A-Z</option>
-                  <option value="created">Date Created</option>
                   <option value="completed">Completed</option>
+                  <option value="created">Date Created</option>
+                  <option value="deadline">Deadline</option>
+                  <option value="manual">Manual</option>
+                  <option value="priority">Priority</option>
                 </select>
                 <button
                   onClick={() => setTaskSortDir(d => d * -1)}

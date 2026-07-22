@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { Droppable, Draggable } from '@hello-pangea/dnd'
+import { categoryBadge } from './TaskCard'
 
 const COLORS = ['#6366f1', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316']
 
@@ -437,9 +438,14 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
                   &#10005;
                 </span>
               )}
-              {goal.category && (
+              {categoryBadge(goal.category) && (
                 <div className="flex items-center gap-1 mt-0.5">
-                  <span className="text-[10px] text-gray-400 truncate">{goal.category}</span>
+                  <span
+                    className="text-[10px] font-medium px-1.5 py-0.5 rounded"
+                    style={{ color: categoryBadge(goal.category).color, background: categoryBadge(goal.category).color + '1a' }}
+                  >
+                    {categoryBadge(goal.category).name}
+                  </span>
                 </div>
               )}
               <div className="flex items-center gap-1.5 mt-1">
@@ -474,7 +480,14 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
                     </button>
                   </div>
                   <div className="p-4 max-h-[70vh] overflow-y-auto">
-                    {goal.category && <p className="text-base text-gray-400 mb-3">{goal.category}</p>}
+                    {categoryBadge(goal.category) && (
+                      <span
+                        className="inline-block text-sm font-medium px-2 py-1 rounded mb-3"
+                        style={{ color: categoryBadge(goal.category).color, background: categoryBadge(goal.category).color + '1a' }}
+                      >
+                        {categoryBadge(goal.category).name}
+                      </span>
+                    )}
                     {(goal.smart_specific || goal.smart_measurable || goal.smart_achievable || goal.smart_relevant || goal.smart_timebound) && (
                       <div className="mb-4 p-3 bg-gray-50 rounded-lg space-y-1">
                         {goal.smart_specific && <p className="text-base text-gray-600"><span className="font-semibold text-gray-700">Specific:</span> {goal.smart_specific}</p>}
@@ -556,12 +569,12 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
           <span className="text-[10px] text-gray-400 font-medium leading-none">Sort by</span>
           <div className="flex items-center gap-1">
             <select value={sortMode} onChange={e => setSortMode(e.target.value)} className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-300">
-              <option value="deadline">Deadline</option>
-              <option value="priority">Priority</option>
+              <option value="taskCount"># of Tasks Completed</option>
+              <option value="percentage">% Completed</option>
               <option value="alpha">A-Z</option>
               <option value="created">Date Created</option>
-              <option value="percentage">% Completed</option>
-              <option value="taskCount"># of Tasks Completed</option>
+              <option value="deadline">Deadline</option>
+              <option value="priority">Priority</option>
             </select>
             <button
               onClick={() => setSortDir(d => d * -1)}

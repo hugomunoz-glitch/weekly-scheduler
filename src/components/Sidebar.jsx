@@ -324,12 +324,12 @@ export default function Sidebar({ tasks, goalMap, collabMap, collabMembersMap, o
                 <span className="text-[10px] text-gray-400 font-medium leading-none">Sort by</span>
                 <div className="flex items-center gap-1">
                   <select value={taskSort} onChange={e => setTaskSort(e.target.value)} style={{ width: '100px' }} className="shrink-0 overflow-hidden text-ellipsis whitespace-nowrap text-xs border border-gray-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-indigo-300">
-                    <option value="manual">Manual</option>
-                    <option value="deadline">Deadline</option>
-                    <option value="priority">Priority</option>
                     <option value="alpha">A-Z</option>
-                    <option value="created">Date Created</option>
                     <option value="completed">Completed</option>
+                    <option value="created">Date Created</option>
+                    <option value="deadline">Deadline</option>
+                    <option value="manual">Manual</option>
+                    <option value="priority">Priority</option>
                   </select>
                   <button
                     onClick={() => setTaskSortDir(d => d * -1)}
