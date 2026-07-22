@@ -45,7 +45,7 @@ function Inbox({ tasks, goalMap, collabMap, collabMembersMap, onAssignTask, onEd
                 {(provided, snapshot) => (
                   <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}
                     className={'relative group border rounded-lg px-3 py-2.5 bg-white transition-colors ' + (snapshot.isDragging ? 'border-indigo-300 shadow-lg' : 'border-gray-200 hover:border-gray-300')}
-                    style={task.priority && PRIORITY_BORDER[task.priority] ? { borderLeft: '4px solid ' + PRIORITY_BORDER[task.priority] } : undefined}
+                    style={{ ...provided.draggableProps.style, ...(task.priority && PRIORITY_BORDER[task.priority] ? { borderLeft: '4px solid ' + PRIORITY_BORDER[task.priority] } : {}) }}
                     title={task.priority ? PRIORITY_LABELS[task.priority] + ' priority' : undefined}
                     onMouseEnter={() => setHoverId(task.id)} onMouseLeave={() => setHoverId(null)}>
                     {!snapshot.isDragging && (

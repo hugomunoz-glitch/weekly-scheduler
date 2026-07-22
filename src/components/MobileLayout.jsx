@@ -814,7 +814,7 @@ export default function MobileLayout({
   const taskCategories = [...new Set(tasks.map(t => t.category).filter(Boolean))].sort()
 
   const tasksForDay = (date) => tasks.filter(t => t.scheduled_date === format(date, 'yyyy-MM-dd'))
-  const dueCardsForDay = (date) => tasks.filter(t => t.due_date_card_date === format(date, 'yyyy-MM-dd'))
+  const dueCardsForDay = (date) => tasks.filter(t => t.due_date_card_date === format(date, 'yyyy-MM-dd') && t.scheduled_date !== t.due_date_card_date)
   const dayNames = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
 
   return (

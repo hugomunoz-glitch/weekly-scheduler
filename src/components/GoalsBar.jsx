@@ -461,7 +461,7 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
                                       {...dragProvided.draggableProps}
                                       {...dragProvided.dragHandleProps}
                                       className={'text-xl text-gray-600 flex items-center gap-2 group rounded px-2 py-1.5 -mx-2 ' + (dragSnapshot.isDragging ? 'bg-indigo-50 shadow-md' : 'hover:bg-gray-50')}
-                                      style={t.priority && PRIORITY_BORDER[t.priority] ? { borderLeft: '4px solid ' + PRIORITY_BORDER[t.priority] } : undefined}
+                                      style={{ ...dragProvided.draggableProps.style, ...(t.priority && PRIORITY_BORDER[t.priority] ? { borderLeft: '4px solid ' + PRIORITY_BORDER[t.priority] } : {}) }}
                                       title={t.priority ? PRIORITY_LABELS[t.priority] + ' priority' : undefined}
                                     >
                                       <span className="cursor-pointer shrink-0" onClick={() => onMarkDone(t.id)}>
