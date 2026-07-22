@@ -4,7 +4,7 @@ import { useAssistantHistory } from '../hooks/useAssistantHistory'
 import { useAuth } from '../contexts/AuthContext'
 import CollaborationPanel from './CollaborationPanel'
 import { resetViewportZoom } from '../lib/resetZoom'
-import { format, isToday } from 'date-fns'
+import { format, isToday, parseISO } from 'date-fns'
 import { Droppable, Draggable } from '@hello-pangea/dnd'
 import TaskCard, { categoryBadge } from './TaskCard'
 import ViewSwitcher from './ViewSwitcher'
@@ -678,6 +678,9 @@ function MobileInbox({ tasks, goalMap, collabMap, collabMembersMap, onAssignTask
                         )}
                         <button onClick={(e) => { e.stopPropagation(); onDelete(task.id) }} style={{ fontSize: '17px', color: '#ef4444', background: 'none', border: 'none', padding: 0, cursor: 'pointer', marginLeft: 'auto', lineHeight: 1 }} title="Delete">&#128465;</button>
                       </div>
+                    )}
+                    {!snapshot.isDragging && pressedTaskId === task.id && task.due_date && (
+                      <p style={{ fontSize: '11px', color: '#9ca3af', margin: '6px 0 0' }}>Deadline: {format(parseISO(task.due_date), 'MMM d')}</p>
                     )}
                   </div>
                   )

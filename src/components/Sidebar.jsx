@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Droppable, Draggable } from '@hello-pangea/dnd'
 import { useAssistantHistory } from '../hooks/useAssistantHistory'
 import { categoryBadge } from './TaskCard'
+import { format, parseISO } from 'date-fns'
 
 const PRIORITY_RANK = { high: 0, medium: 1, low: 2 }
 const PRIORITY_COLORS = { high: '#ef4444', medium: '#f59e0b', low: '#9ca3af' }
@@ -106,8 +107,11 @@ function Inbox({ tasks, goalMap, collabMap, collabMembersMap, onAssignTask, onMa
                     )}
                     {task.notes && <p className="text-xs text-gray-400 mt-1 truncate">{task.notes}</p>}
                     {!snapshot.isDragging && hoverId === task.id && (
-                      <div className="flex gap-2 mt-1.5">
+                      <div className="flex items-center gap-2 mt-1.5">
                         <button onClick={() => onEdit(task)} className="text-[27px] text-indigo-400 hover:text-indigo-600 leading-none" title="Edit">&#9998;</button>
+                        {task.due_date && (
+                          <span className="text-xs text-gray-400">Deadline: {format(parseISO(task.due_date), 'MMM d')}</span>
+                        )}
                       </div>
                     )}
                   </div>
