@@ -64,6 +64,7 @@ export default function App() {
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i))
 
   const fetchTasks = useCallback(async () => {
+    if (!user) { setTasks([]); setGoals([]); setGoalTasks([]); setLoading(false); return }
     setLoading(true)
     const s = format(weekStart, 'yyyy-MM-dd')
     const e = format(addDays(weekStart, 6), 'yyyy-MM-dd')
@@ -80,7 +81,7 @@ export default function App() {
     setGoals(goalsRes.data || [])
     setGoalTasks(goalTasksRes.data || [])
     setLoading(false)
-  }, [weekStart])
+  }, [weekStart, user])
 
   useEffect(() => { fetchTasks() }, [fetchTasks])
 
