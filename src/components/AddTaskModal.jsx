@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { resetViewportZoom } from '../lib/resetZoom'
 
 const GOAL_CATEGORIES = [
   'Career/Professional', 'Financial', 'Intellectual',
@@ -7,6 +8,10 @@ const GOAL_CATEGORIES = [
 ]
 
 export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTask, onAddGoal, initialScheduledDate, initialStartTime, existingTaskCategories }) {
+  function closeModal() {
+    resetViewportZoom()
+    onClose()
+  }
   const [title, setTitle] = useState(editingTask ? editingTask.title : '')
   const [notes, setNotes] = useState(editingTask ? (editingTask.notes || '') : '')
   const [goalId, setGoalId] = useState(editingTask ? (editingTask.goal_id || '') : '')
@@ -35,7 +40,7 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
 
   useEffect(() => { inputRef.current?.focus() }, [])
   useEffect(() => {
-    function handleKey(e) { if (e.key === 'Escape') onClose() }
+    function handleKey(e) { if (e.key === 'Escape') closeModal() }
     document.addEventListener('keydown', handleKey)
     return () => document.removeEventListener('keydown', handleKey)
   }, [onClose])
@@ -77,11 +82,11 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
     } else {
       onAdd(title.trim(), notes.trim(), goalId || null, startTime || null, dueDate || null, scheduledDate || null, priority || null, category)
     }
-    onClose()
+    closeModal()
   }
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50" onClick={(e) => e.target === e.currentTarget && onClose()}>
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50" onClick={(e) => e.target === e.currentTarget && closeModal()}>
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 p-6 overflow-hidden" onClick={(e) => e.stopPropagation()}>
         <h2 className="text-base font-semibold text-gray-900 mb-4">{editingTask ? 'Edit task' : initialScheduledDate ? 'Add task for ' + initialScheduledDate : 'Add task'}</h2>
         <form onSubmit={handleSubmit} className="space-y-3">
@@ -246,7 +251,7 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
             )}
           </div>
           <div className="flex gap-2 pt-1">
-            <button type="button" onClick={onClose} className="flex-1 py-2 text-sm text-gray-500 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">Cancel</button>
+            <button type="button" onClick={closeModal} className="flex-1 py-2 text-sm text-gray-500 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">Cancel</button>
             <button type="submit" disabled={!title.trim()} className="flex-1 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">{editingTask ? 'Save changes' : 'Add to Task List'}</button>
           </div>
         </form>

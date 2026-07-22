@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { useAssistantHistory } from '../hooks/useAssistantHistory'
 import { useAuth } from '../contexts/AuthContext'
 import CollaborationPanel from './CollaborationPanel'
+import { resetViewportZoom } from '../lib/resetZoom'
 import { format, isToday } from 'date-fns'
 import { Droppable, Draggable } from '@hello-pangea/dnd'
 import TaskCard from './TaskCard'
@@ -106,10 +107,25 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
     try {
       const category = editingCustomCategory ? editingCategoryCustom.trim() : editingCategory
       await onEditGoal(editingGoalId, editingTitle.trim(), { category: category || null, priority: editingPriority || null })
-      setEditingGoalId(null)
+      closeEditingGoal()
     } catch {
       setEditGoalError('Could not save. Try again.')
     }
+  }
+
+  function closeAdding() {
+    resetViewportZoom()
+    setAdding(false)
+  }
+
+  function closeEditingGoal() {
+    resetViewportZoom()
+    setEditingGoalId(null)
+  }
+
+  function closeViewingGoal() {
+    resetViewportZoom()
+    setViewingGoalId(null)
   }
 
   function nearestDueDate(goalId) {
@@ -153,7 +169,7 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
 
   function handleEditTask(taskId) {
     const full = (allTasks || []).find(t => t.id === taskId)
-    if (full) { setViewingGoalId(null); onEditTask(full) }
+    if (full) { closeViewingGoal(); onEditTask(full) }
   }
 
   function handleAddTaskToGoal(e, goalId) {
@@ -181,7 +197,7 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
       setNewTitle(''); setNewCategory(''); setNewPriority(''); setCustomCategory(false); setNewCategoryCustom('')
       setSmartSpecific(''); setSmartMeasurable(''); setSmartAchievable(''); setSmartRelevant(''); setSmartTimebound('')
       setShowSmart(false)
-      setAdding(false)
+      closeAdding()
       setAddGoalError('')
     } catch {
       setAddGoalError('Could not save. Try again.')
@@ -241,7 +257,7 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
         </select>
       </div>
       {adding && createPortal((
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setAdding(false)}>
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={closeAdding}>
           <form onSubmit={handleAdd} onClick={e => e.stopPropagation()} style={{ background: 'white', borderRadius: '12px', padding: '16px', width: '85vw', maxWidth: '320px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <input autoFocus value={newTitle} onChange={e => setNewTitle(e.target.value)}
               style={{ border: '1px solid #6366f1', borderRadius: '8px', padding: '8px', fontSize: '14px', outline: 'none' }}
@@ -285,7 +301,7 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
             )}
             <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
               <button type="submit" style={{ background: '#6366f1', color: 'white', border: 'none', borderRadius: '8px', padding: '8px 14px', fontSize: '13px', cursor: 'pointer' }}>Add</button>
-              <button type="button" onClick={() => { setAdding(false); setShowSmart(false) }} style={{ background: 'none', border: 'none', color: '#9ca3af', fontSize: '13px', cursor: 'pointer' }}>Cancel</button>
+              <button type="button" onClick={() => { closeAdding(); setShowSmart(false) }} style={{ background: 'none', border: 'none', color: '#9ca3af', fontSize: '13px', cursor: 'pointer' }}>Cancel</button>
             </div>
             {addGoalError && <p style={{ fontSize: '12px', color: '#ef4444', margin: 0 }}>{addGoalError}</p>}
           </form>
@@ -332,7 +348,7 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
             <span style={{ fontSize: "11px", color: "#9ca3af", flexShrink: 0 }}>{done.length}/{linked.length}</span>
           </div>
           {editingGoalId === goal.id && (
-            <div onClick={(e) => { e.stopPropagation(); setEditingGoalId(null) }} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div onClick={(e) => { e.stopPropagation(); closeEditingGoal() }} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <form onSubmit={handleEditGoalSubmit} onClick={e => e.stopPropagation()} style={{ background: 'white', borderRadius: '12px', padding: '16px', width: '85vw', maxWidth: '320px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <input autoFocus value={editingTitle} onChange={e => setEditingTitle(e.target.value)}
                   style={{ border: '1px solid #6366f1', borderRadius: '8px', padding: '8px', fontSize: '14px', outline: 'none' }} />
@@ -364,18 +380,18 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
                 </select>
                 <div style={{ display: 'flex', gap: '8px', marginTop: '4px', alignItems: 'center' }}>
                   <button type="submit" style={{ background: '#6366f1', color: 'white', border: 'none', borderRadius: '8px', padding: '8px 14px', fontSize: '13px', cursor: 'pointer' }}>Save</button>
-                  <button type="button" onClick={() => setEditingGoalId(null)} style={{ background: 'none', border: 'none', color: '#9ca3af', fontSize: '13px', cursor: 'pointer' }}>Cancel</button>
-                  <button type="button" onClick={() => { onDeleteGoal(editingGoalId); setEditingGoalId(null) }} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '18px', cursor: 'pointer', marginLeft: 'auto', lineHeight: 1 }} title="Delete goal">&#128465;</button>
+                  <button type="button" onClick={closeEditingGoal} style={{ background: 'none', border: 'none', color: '#9ca3af', fontSize: '13px', cursor: 'pointer' }}>Cancel</button>
+                  <button type="button" onClick={() => { onDeleteGoal(editingGoalId); closeEditingGoal() }} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '18px', cursor: 'pointer', marginLeft: 'auto', lineHeight: 1 }} title="Delete goal">&#128465;</button>
                 </div>
                 {editGoalError && <p style={{ fontSize: '12px', color: '#ef4444', margin: 0 }}>{editGoalError}</p>}
               </form>
             </div>
           )}
           {viewingGoalId === goal.id && (
-            <div onClick={(e) => { e.stopPropagation(); setViewingGoalId(null) }} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div onClick={(e) => { e.stopPropagation(); closeViewingGoal() }} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <div style={{ position: 'relative', width: '90vw', maxWidth: '380px' }}>
                 <button
-                  onClick={() => setViewingGoalId(null)}
+                  onClick={closeViewingGoal}
                   style={{ position: 'absolute', top: '-12px', right: '-12px', zIndex: 10, width: '28px', height: '28px', borderRadius: '50%', background: '#374151', color: 'white', border: 'none', fontSize: '12px', cursor: 'pointer', boxShadow: '0 2px 6px rgba(0,0,0,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                 >
                   &#10005;
