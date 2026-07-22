@@ -544,7 +544,7 @@ function MobileDayView({ date, tasks, dueCards, goalMap, collabMap, onMarkDone, 
   )
 }
 
-function MobileInbox({ tasks, goalMap, collabMap, collabMembersMap, onAssignTask, onAddTask, onEdit, onDelete, search, sortMode, sortDir, categoryFilter }) {
+function MobileInbox({ tasks, goalMap, collabMap, collabMembersMap, onAssignTask, onMarkDone, onAddTask, onEdit, onDelete, search, sortMode, sortDir, categoryFilter }) {
   const [pressedTaskId, setPressedTaskId] = useState(null)
   const searched = search && search.trim() ? tasks.filter(t => t.title.toLowerCase().includes(search.trim().toLowerCase())) : tasks
   const filteredTasks = categoryFilter && categoryFilter !== 'all' ? searched.filter(t => t.category === categoryFilter) : searched
@@ -597,8 +597,14 @@ function MobileInbox({ tasks, goalMap, collabMap, collabMembersMap, onAssignTask
                       <span style={{ position: 'absolute', top: '-4px', right: '-4px', width: '8px', height: '8px', borderRadius: '50%', background: collabMap[task.collaboration_id].color }} title={'Shared with: ' + collabMap[task.collaboration_id].name} />
                     )}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); onMarkDone(task.id) }}
+                        style={{ marginTop: '2px', width: '16px', height: '16px', borderRadius: '4px', border: '1px solid ' + (task.status === 'done' ? '#a7f3d0' : '#d1d5db'), background: task.status === 'done' ? '#d1fae5' : 'transparent', color: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '11px', lineHeight: 1 }}
+                      >
+                        {task.status === 'done' && '\u2713'}
+                      </button>
                       <div style={{ flex: 1 }}>
-                        <p style={{ fontSize: '14px', color: '#1f2937', margin: 0 }}>
+                        <p style={{ fontSize: '14px', color: task.status === 'done' ? '#9ca3af' : '#1f2937', margin: 0, textDecoration: task.status === 'done' ? 'line-through' : 'none' }}>
                           {task.title}
                         </p>
                         {categoryBadge(task.category) && (() => {
@@ -979,7 +985,7 @@ export default function MobileLayout({
               {taskCategories.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
-          <MobileInbox tasks={loading ? [] : inboxTasks} goalMap={goalMap} collabMap={collabMap} collabMembersMap={collabMembersMap} onAssignTask={onAssignTask} onAddTask={onAddTask} onEdit={onEdit} onDelete={onDelete} search={taskSearch} sortMode={taskSort} sortDir={taskSortDir} categoryFilter={taskCategoryFilter} />
+          <MobileInbox tasks={loading ? [] : inboxTasks} goalMap={goalMap} collabMap={collabMap} collabMembersMap={collabMembersMap} onAssignTask={onAssignTask} onMarkDone={onMarkDone} onAddTask={onAddTask} onEdit={onEdit} onDelete={onDelete} search={taskSearch} sortMode={taskSort} sortDir={taskSortDir} categoryFilter={taskCategoryFilter} />
         </>
       )}
 

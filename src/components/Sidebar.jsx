@@ -8,7 +8,7 @@ const PRIORITY_COLORS = { high: '#ef4444', medium: '#f59e0b', low: '#9ca3af' }
 const PRIORITY_LABELS = { high: 'High', medium: 'Medium', low: 'Low' }
 const PRIORITY_BORDER = { high: '#ef4444', medium: '#f59e0b', low: '#22c55e' }
 
-function Inbox({ tasks, goalMap, collabMap, collabMembersMap, onAssignTask, onEdit, onDelete, search, sortMode, sortDir, categoryFilter }) {
+function Inbox({ tasks, goalMap, collabMap, collabMembersMap, onAssignTask, onMarkDone, onEdit, onDelete, search, sortMode, sortDir, categoryFilter }) {
   const [hoverId, setHoverId] = useState(null)
   const searched = search && search.trim() ? tasks.filter(t => t.title.toLowerCase().includes(search.trim().toLowerCase())) : tasks
   const filteredTasks = categoryFilter && categoryFilter !== 'all' ? searched.filter(t => t.category === categoryFilter) : searched
@@ -66,9 +66,17 @@ function Inbox({ tasks, goalMap, collabMap, collabMembersMap, onAssignTask, onEd
                         &#10005;
                       </button>
                     )}
-                    <p className="text-sm text-gray-800 leading-snug break-words">
-                      {task.title}
-                    </p>
+                    <div className="flex items-start gap-2">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); onMarkDone(task.id) }}
+                        className={'mt-0.5 w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors ' + (task.status === 'done' ? 'bg-emerald-100 border-emerald-200 text-emerald-600' : 'border-gray-300 hover:border-emerald-400 hover:bg-emerald-50')}
+                      >
+                        {task.status === 'done' && <span className="text-xs leading-none">&#10003;</span>}
+                      </button>
+                      <p className={'text-sm leading-snug break-words flex-1 ' + (task.status === 'done' ? 'line-through text-gray-400' : 'text-gray-800')}>
+                        {task.title}
+                      </p>
+                    </div>
                     {(categoryBadge(task.category) || (task.collaboration_id && collabMembersMap && collabMembersMap[task.collaboration_id] && collabMembersMap[task.collaboration_id].length > 0)) && (
                       <div className="flex items-center gap-1.5 mt-1">
                         {categoryBadge(task.category) && (
@@ -262,7 +270,7 @@ function Assistant({ goals, tasks, onCreateTask, onAddGoal }) {
   )
 }
 
-export default function Sidebar({ tasks, goalMap, collabMap, collabMembersMap, onAssignTask, goals, allTasks, onAddTask, onCreateTask, onAddGoal, onEdit, onDelete }) {
+export default function Sidebar({ tasks, goalMap, collabMap, collabMembersMap, onAssignTask, onMarkDone, goals, allTasks, onAddTask, onCreateTask, onAddGoal, onEdit, onDelete }) {
   const [tab, setTab] = useState('inbox')
   const [taskSearch, setTaskSearch] = useState('')
   const [showTaskSearch, setShowTaskSearch] = useState(false)
@@ -333,7 +341,7 @@ export default function Sidebar({ tasks, goalMap, collabMap, collabMembersMap, o
                 {taskCategories.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
-            <Inbox tasks={tasks} goalMap={goalMap} collabMap={collabMap} collabMembersMap={collabMembersMap} onAssignTask={onAssignTask} onEdit={onEdit} onDelete={onDelete} search={taskSearch} sortMode={taskSort} sortDir={taskSortDir} categoryFilter={taskCategoryFilter} />
+            <Inbox tasks={tasks} goalMap={goalMap} collabMap={collabMap} collabMembersMap={collabMembersMap} onAssignTask={onAssignTask} onMarkDone={onMarkDone} onEdit={onEdit} onDelete={onDelete} search={taskSearch} sortMode={taskSort} sortDir={taskSortDir} categoryFilter={taskCategoryFilter} />
           </>
         ) : (
           <Assistant goals={goals} tasks={allTasks} onCreateTask={onCreateTask} onAddGoal={onAddGoal} />
