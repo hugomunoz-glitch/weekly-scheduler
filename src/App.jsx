@@ -4,6 +4,7 @@ import { DragDropContext } from '@hello-pangea/dnd'
 import { supabase } from './lib/supabase'
 import { useAuth } from './contexts/AuthContext'
 import Login from './components/Login'
+import CollaborationPanel from './components/CollaborationPanel'
 import { useIsMobile } from './hooks/useIsMobile'
 import WeekGrid from './components/WeekGrid'
 import Sidebar from './components/Sidebar'
@@ -59,6 +60,7 @@ export default function App() {
   const [addForDate, setAddForDate] = useState(null)
   const [addForTime, setAddForTime] = useState(null)
   const [editingTask, setEditingTask] = useState(null)
+  const [showCollab, setShowCollab] = useState(false)
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i))
 
   const fetchTasks = useCallback(async () => {
@@ -351,6 +353,7 @@ export default function App() {
                 <button onClick={rolloverOverdue} className="px-3 py-1.5 text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100">Roll over {overdueTasks.length} overdue</button>
               )}
               <button onClick={() => setShowAdd(true)} className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700">+ Add task</button>
+              <button onClick={() => setShowCollab(true)} className="px-2 py-1 text-xs text-indigo-600 hover:text-indigo-700 font-medium">Collaborations</button>
               <span className="text-xs text-gray-400 ml-2">{profile?.username}</span>
               <button onClick={signOut} className="px-2 py-1 text-xs text-gray-400 hover:text-gray-700">Sign out</button>
             </div>
@@ -372,6 +375,7 @@ export default function App() {
       )}
       {showAdd && <AddTaskModal onAdd={addTask} onClose={() => { setShowAdd(false); setAddForDate(null); setAddForTime(null) }} goals={goals} onAddGoal={addGoal} initialScheduledDate={addForDate} initialStartTime={addForTime} existingTaskCategories={taskCategories} />}
       {editingTask && <AddTaskModal editingTask={editingTask} onEdit={editTask} onClose={() => setEditingTask(null)} goals={goals} onAddGoal={addGoal} existingTaskCategories={taskCategories} />}
+      {showCollab && <CollaborationPanel onClose={() => setShowCollab(false)} />}
       {undoQueue.length > 0 && (
         <div className={'fixed left-1/2 -translate-x-1/2 z-[2000] flex flex-col gap-2 items-center ' + (isMobile ? 'bottom-20' : 'bottom-4')}>
           {undoQueue.map(u => (
