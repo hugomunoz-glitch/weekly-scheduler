@@ -75,7 +75,18 @@ export function AuthProvider({ children }) {
     return { error }
   }
 
-  const value = { session, user: session?.user ?? null, profile, loading, signIn, signUp, signOut, updateEmail, updatePassword }
+  async function updateUsername(newUsername) {
+    if (!profile) return { error: { message: 'Not signed in.' } }
+    const { data, error } = await supabase.from('profiles').update({ username: newUsername }).eq('id', profile.id).select().single()
+    if (error) {
+      if (error.code === '23505') return { error: { message: 'That username is already taken.' } }
+      return { error }
+    }
+    setProfile(data)
+    return { error: null }
+  }
+
+  const value = { session, user: session?.user ?? null, profile, loading, signIn, signUp, signOut, updateEmail, updatePassword, updateUsername }
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 

@@ -2,12 +2,13 @@ import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 
 export default function SettingsDropdown({ onOpenCollaborations }) {
-  const { user, profile, signOut, updateEmail, updatePassword } = useAuth()
+  const { user, profile, signOut, updateEmail, updatePassword, updateUsername } = useAuth()
   const [open, setOpen] = useState(false)
-  const [section, setSection] = useState(null) // 'email' | 'password' | null
+  const [section, setSection] = useState(null) // 'email' | 'password' | 'username' | null
   const [newEmail, setNewEmail] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [newUsername, setNewUsername] = useState('')
   const [message, setMessage] = useState(null)
   const [error, setError] = useState(null)
   const [submitting, setSubmitting] = useState(false)
@@ -48,6 +49,21 @@ export default function SettingsDropdown({ onOpenCollaborations }) {
     setSection(null)
   }
 
+  async function handleUsernameSubmit(e) {
+    e.preventDefault()
+    setError(null)
+    setMessage(null)
+    const trimmed = newUsername.trim()
+    if (!trimmed) return
+    setSubmitting(true)
+    const { error } = await updateUsername(trimmed)
+    setSubmitting(false)
+    if (error) { setError(error.message); return }
+    setMessage('Username updated.')
+    setNewUsername('')
+    setSection(null)
+  }
+
   return (
     <div className="relative">
       <button
@@ -72,6 +88,33 @@ export default function SettingsDropdown({ onOpenCollaborations }) {
 
             {message && <div className="px-3 py-2 text-xs text-emerald-600 bg-emerald-50 border-b border-gray-100">{message}</div>}
             {error && <div className="px-3 py-2 text-xs text-red-600 bg-red-50 border-b border-gray-100">{error}</div>}
+
+            {section === 'username' ? (
+              <form onSubmit={handleUsernameSubmit} className="px-3 py-2 space-y-2 border-b border-gray-100">
+                <input
+                  autoFocus
+                  type="text"
+                  required
+                  placeholder="New username"
+                  value={newUsername}
+                  onChange={e => setNewUsername(e.target.value)}
+                  className="w-full text-sm border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-300"
+                />
+                <div className="flex gap-2">
+                  <button type="submit" disabled={submitting} className="text-xs text-white bg-indigo-600 hover:bg-indigo-700 px-3 py-1.5 rounded-lg disabled:opacity-50">
+                    {submitting ? 'Saving...' : 'Save'}
+                  </button>
+                  <button type="button" onClick={() => { setSection(null); setError(null) }} className="text-xs text-gray-400 hover:text-gray-600 px-2">Cancel</button>
+                </div>
+              </form>
+            ) : (
+              <button
+                onClick={() => { setSection('username'); setNewUsername(profile?.username || ''); setError(null); setMessage(null) }}
+                className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+              >
+                Change username
+              </button>
+            )}
 
             {section === 'email' ? (
               <form onSubmit={handleEmailSubmit} className="px-3 py-2 space-y-2 border-b border-gray-100">
