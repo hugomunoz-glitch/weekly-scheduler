@@ -84,26 +84,16 @@ export default function App() {
   const fetchTasks = useCallback(async () => {
     if (!user) { setTasks([]); setGoals([]); setGoalTasks([]); setLoading(false); return }
     setLoading(true)
-    const s = format(weekStart, 'yyyy-MM-dd')
-    const e = format(addDays(weekStart, 6), 'yyyy-MM-dd')
-    const [inboxRes, weekRes, completedRes, goalsRes, goalTasksRes] = await Promise.all([
-      supabase.from('tasks').select('*').is('scheduled_date', null).order('created_at', { ascending: false }),
-      supabase.from('tasks').select('*').gte('scheduled_date', s).lte('scheduled_date', e).order('position'),
-      supabase.from('tasks').select('*').eq('status', 'done').not('scheduled_date', 'is', null).order('scheduled_date', { ascending: false }),
+    const [tasksRes, goalsRes, goalTasksRes] = await Promise.all([
+      supabase.from('tasks').select('*').order('created_at', { ascending: false }),
       supabase.from('goals').select('*').order('created_at'),
       supabase.from('tasks').select('id, title, goal_id, status, due_date, start_time, priority, collaboration_id, assigned_to').not('goal_id', 'is', null)
     ])
-    const weekTasks = weekRes.data || []
-    const inboxTasks = inboxRes.data || []
-    const completedScheduledTasks = completedRes.data || []
-    const weekIds = new Set(weekTasks.map(t => t.id))
-    const combined = [...weekTasks, ...inboxTasks.filter(t => !weekIds.has(t.id))]
-    const combinedIds = new Set(combined.map(t => t.id))
-    setTasks([...combined, ...completedScheduledTasks.filter(t => !combinedIds.has(t.id))])
+    setTasks(tasksRes.data || [])
     setGoals(goalsRes.data || [])
     setGoalTasks(goalTasksRes.data || [])
     setLoading(false)
-  }, [weekStart, user])
+  }, [user])
 
   useEffect(() => { fetchTasks() }, [fetchTasks])
 
@@ -408,7 +398,7 @@ export default function App() {
     await supabase.from('tasks').update({ scheduled_date: todayStr }).in('id', ids)
   }
 
-  const inboxTasks = visibleTasks.filter(t => !t.scheduled_date || t.status === 'done')
+  const inboxTasks = visibleTasks
   const taskCategories = [...new Set(visibleTasks.map(t => t.category).filter(Boolean))].sort()
   const tasksForDay = (date) => visibleTasks.filter(t => t.scheduled_date === format(date, 'yyyy-MM-dd'))
   const dueCardsForDay = (date) => visibleTasks.filter(t => t.due_date_card_date === format(date, 'yyyy-MM-dd') && t.scheduled_date !== t.due_date_card_date)

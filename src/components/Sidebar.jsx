@@ -107,8 +107,11 @@ function Inbox({ tasks, goalMap, collabMap, collabMembersMap, onAssignTask, onMa
                     )}
                     {task.notes && <p className="text-xs text-gray-400 mt-1 truncate">{task.notes}</p>}
                     {!snapshot.isDragging && hoverId === task.id && (
-                      <div className="flex items-center gap-2 mt-1.5">
+                      <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                         <button onClick={() => onEdit(task)} className="text-[27px] text-indigo-400 hover:text-indigo-600 leading-none" title="Edit">&#9998;</button>
+                        {task.scheduled_date && (
+                          <span className="text-xs text-gray-400">Scheduled: {format(parseISO(task.scheduled_date), 'MMM d')}</span>
+                        )}
                         {task.due_date && (
                           <span className="text-xs text-gray-400">Deadline: {format(parseISO(task.due_date), 'MMM d')}</span>
                         )}

@@ -679,8 +679,11 @@ function MobileInbox({ tasks, goalMap, collabMap, collabMembersMap, onAssignTask
                         <button onClick={(e) => { e.stopPropagation(); onDelete(task.id) }} style={{ fontSize: '17px', color: '#ef4444', background: 'none', border: 'none', padding: 0, cursor: 'pointer', marginLeft: 'auto', lineHeight: 1 }} title="Delete">&#128465;</button>
                       </div>
                     )}
+                    {!snapshot.isDragging && pressedTaskId === task.id && task.scheduled_date && (
+                      <p style={{ fontSize: '11px', color: '#9ca3af', margin: '6px 0 0' }}>Scheduled: {format(parseISO(task.scheduled_date), 'MMM d')}</p>
+                    )}
                     {!snapshot.isDragging && pressedTaskId === task.id && task.due_date && (
-                      <p style={{ fontSize: '11px', color: '#9ca3af', margin: '6px 0 0' }}>Deadline: {format(parseISO(task.due_date), 'MMM d')}</p>
+                      <p style={{ fontSize: '11px', color: '#9ca3af', margin: '2px 0 0' }}>Deadline: {format(parseISO(task.due_date), 'MMM d')}</p>
                     )}
                   </div>
                   )
