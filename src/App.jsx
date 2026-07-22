@@ -87,7 +87,7 @@ export default function App() {
     const s = format(weekStart, 'yyyy-MM-dd')
     const e = format(addDays(weekStart, 6), 'yyyy-MM-dd')
     const [inboxRes, weekRes, goalsRes, goalTasksRes] = await Promise.all([
-      supabase.from('tasks').select('*').eq('status', 'inbox').order('created_at', { ascending: false }),
+      supabase.from('tasks').select('*').is('scheduled_date', null).order('created_at', { ascending: false }),
       supabase.from('tasks').select('*').gte('scheduled_date', s).lte('scheduled_date', e).order('position'),
       supabase.from('goals').select('*').order('created_at'),
       supabase.from('tasks').select('id, title, goal_id, status, due_date, start_time, priority, collaboration_id, assigned_to').not('goal_id', 'is', null)
@@ -404,7 +404,7 @@ export default function App() {
     await supabase.from('tasks').update({ scheduled_date: todayStr }).in('id', ids)
   }
 
-  const inboxTasks = visibleTasks.filter(t => t.status === 'inbox')
+  const inboxTasks = visibleTasks.filter(t => !t.scheduled_date)
   const taskCategories = [...new Set(visibleTasks.map(t => t.category).filter(Boolean))].sort()
   const tasksForDay = (date) => visibleTasks.filter(t => t.scheduled_date === format(date, 'yyyy-MM-dd'))
   const dueCardsForDay = (date) => visibleTasks.filter(t => t.due_date_card_date === format(date, 'yyyy-MM-dd') && t.scheduled_date !== t.due_date_card_date)

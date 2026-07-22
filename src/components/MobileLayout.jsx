@@ -549,6 +549,8 @@ function MobileInbox({ tasks, goalMap, collabMap, collabMembersMap, onAssignTask
   const searched = search && search.trim() ? tasks.filter(t => t.title.toLowerCase().includes(search.trim().toLowerCase())) : tasks
   const filteredTasks = categoryFilter && categoryFilter !== 'all' ? searched.filter(t => t.category === categoryFilter) : searched
   const visibleTasks = [...filteredTasks].sort((a, b) => {
+    const aDone = a.status === 'done', bDone = b.status === 'done'
+    if (aDone !== bDone) return aDone ? 1 : -1
     let result
     if (sortMode === 'manual') result = (a.position || 0) - (b.position || 0)
     else if (sortMode === 'created') result = new Date(b.created_at || 0) - new Date(a.created_at || 0)
@@ -872,7 +874,7 @@ export default function MobileLayout({
       {activeTab === 'inbox' && (
         <>
           <div style={{ padding: '10px 16px 6px', flexShrink: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '15px', fontWeight: 500, color: '#111827' }}>&#128221; Task List <span style={{ fontSize: '13px', color: '#9ca3af', fontWeight: 400 }}>{inboxTasks.length}</span></span>
+            <span style={{ fontSize: '15px', fontWeight: 500, color: '#111827' }}>&#128221; Task List <span style={{ fontSize: '13px', color: '#9ca3af', fontWeight: 400 }}>{inboxTasks.filter(t => t.status !== 'done').length}</span></span>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               {showTaskSearch ? (
                 <input
@@ -967,7 +969,7 @@ export default function MobileLayout({
         {[
           { id: 'day', label: 'Today', emoji: '&#128197;' },
           { id: 'goals', label: 'Goals', emoji: '&#127919;' },
-          { id: 'inbox', label: 'Task List', emoji: '&#128221;', badge: inboxTasks.length },
+          { id: 'inbox', label: 'Task List', emoji: '&#128221;', badge: inboxTasks.filter(t => t.status !== 'done').length },
           { id: 'assistant', label: 'Assistant', emoji: '&#129302;' },
           { id: 'settings', label: 'Settings', emoji: '&#9881;' }
         ].map(tab => (
