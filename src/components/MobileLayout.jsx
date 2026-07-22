@@ -925,6 +925,22 @@ export default function MobileLayout({
             <span style={{ fontSize: '15px', fontWeight: 500, color: '#111827' }}>{format(selectedDay, 'EEEE, MMM d')}</span>
             <span style={{ fontSize: '11px', color: '#9ca3af' }}>Tap, Drag &amp; Drop to move</span>
           </div>
+          {(() => {
+            const dayTasks = tasksForDay(selectedDay)
+            const dayDone = dayTasks.filter(t => t.status === 'done').length
+            const dayPct = dayTasks.length > 0 ? Math.round((dayDone / dayTasks.length) * 100) : 0
+            return (
+              <div style={{ padding: '0 16px 8px', flexShrink: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <div style={{ flex: 1, height: '4px', background: '#f3f4f6', borderRadius: '2px', overflow: 'hidden' }}>
+                    <div style={{ height: '100%', width: dayPct + '%', background: '#6366f1', borderRadius: '2px' }} />
+                  </div>
+                  <span style={{ fontSize: '11px', color: '#9ca3af', flexShrink: 0 }}>{dayPct}%</span>
+                </div>
+                <p style={{ fontSize: '11px', color: '#d1d5db', margin: '2px 0 0' }}>{dayDone}/{dayTasks.length}</p>
+              </div>
+            )
+          })()}
           {loading ? (
             <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af', fontSize: '13px' }}>Loading</div>
           ) : (

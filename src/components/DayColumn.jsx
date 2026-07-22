@@ -3,7 +3,6 @@ import { Droppable, Draggable } from '@hello-pangea/dnd'
 import { createPortal } from 'react-dom'
 import TaskCard from './TaskCard'
 
-const DAILY_CAP = 5
 const BUCKETS = [
   { id: 'morning', label: 'Morning' },
   { id: 'midday', label: 'Afternoon' },
@@ -16,9 +15,7 @@ export default function DayColumn({ date, tasks, dueCards, goalMap, collabMap, o
   const dateStr = format(date, 'yyyy-MM-dd')
   const activeTasks = tasks.filter(t => t.status !== 'done')
   const doneTasks = tasks.filter(t => t.status === 'done')
-  const count = activeTasks.length
-  const fillPct = Math.min((count / DAILY_CAP) * 100, 100)
-  const capColor = count >= DAILY_CAP ? 'bg-red-400' : count >= 3 ? 'bg-amber-400' : count > 0 ? 'bg-emerald-400' : 'bg-gray-200'
+  const donePct = tasks.length > 0 ? Math.round((doneTasks.length / tasks.length) * 100) : 0
 
   return (
     <div className={'flex flex-col rounded-xl border transition-colors ' + (today ? 'border-indigo-200 bg-white' : isPast ? 'border-gray-100 bg-gray-50' : 'border-gray-200 bg-white')}>
@@ -27,12 +24,13 @@ export default function DayColumn({ date, tasks, dueCards, goalMap, collabMap, o
           <span className={'text-lg font-semibold uppercase tracking-wide ' + (isPast ? 'text-gray-400' : 'text-gray-700')}>{format(date, 'EEE')}</span>
           <span className={'text-lg font-bold px-2 py-0.5 rounded ' + (today ? 'bg-indigo-600 text-white' : isPast ? 'text-gray-400' : 'text-gray-700')}>{format(date, 'd')}</span>
         </div>
-        <div className="h-1 bg-gray-100 rounded-full overflow-hidden">
-          <div className={'h-full rounded-full transition-all duration-300 ' + capColor} style={{ width: fillPct + '%' }} />
+        <div className="flex items-center gap-1.5">
+          <div className="flex-1 h-1 bg-gray-100 rounded-full overflow-hidden">
+            <div className="h-full rounded-full transition-all" style={{ width: donePct + '%', background: '#6366f1' }} />
+          </div>
+          <span className="text-xs text-gray-400 shrink-0">{donePct}%</span>
         </div>
-        <div className="flex justify-between mt-1">
-          <span className={'text-xs ' + (count >= DAILY_CAP ? 'text-red-400 font-medium' : 'text-gray-400')}>{count} {count === 1 ? 'task' : 'tasks'}</span>
-        </div>
+        <p className="text-xs text-gray-300 mt-0.5">{doneTasks.length}/{tasks.length}</p>
       </div>
       <div className="flex-1 flex flex-col">
         {BUCKETS.map(bucket => {
