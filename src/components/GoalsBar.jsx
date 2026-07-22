@@ -104,6 +104,11 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
     return goalTasks.filter(t => t.goal_id === goalId && t.status === 'done').length
   }
 
+  const completedGoalsCount = goals.filter(g => {
+    const linked = goalTasks.filter(t => t.goal_id === g.id)
+    return linked.length > 0 && linked.every(t => t.status === 'done')
+  }).length
+
   let visibleGoals = goalSearch.trim() ? goals.filter(g => g.title.toLowerCase().includes(goalSearch.trim().toLowerCase())) : goals
   if (categoryFilter !== 'all') visibleGoals = visibleGoals.filter(g => g.category === categoryFilter)
 
@@ -207,7 +212,10 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
     <div className="bg-white px-6 py-2 shrink-0">
       <div className="flex items-center gap-3 overflow-x-auto">
       <div className="sticky left-0 z-10 bg-white self-stretch flex items-center gap-3 pr-3 shrink-0">
-        <span className="text-sm font-semibold text-gray-900 tracking-wide shrink-0">Goals</span>
+        <div className="flex flex-col gap-0.5 shrink-0">
+          <span className="text-sm font-semibold text-gray-900 tracking-wide">Goals</span>
+          <span className="text-[11px] text-gray-400">{completedGoalsCount} of {goals.length} done</span>
+        </div>
         {adding ? (
           <div className="border border-gray-200 rounded-lg p-3 space-y-2 bg-gray-50 shrink-0 w-72">
             <form onSubmit={handleAdd} className="space-y-2">
