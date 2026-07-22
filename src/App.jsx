@@ -131,10 +131,41 @@ export default function App() {
   const overdueTasks = visibleTasks.filter(t => t.scheduled_date && t.status === 'scheduled' && isBefore(parseISO(t.scheduled_date), today))
 
   async function onDragEnd(result) {
-    const { draggableId: taskId, destination, source } = result
+    const { draggableId, destination, source } = result
     if (!destination) return
     if (destination.droppableId === source.droppableId && destination.index === source.index) return
     if (destination.droppableId.startsWith('goalpopup-')) return
+
+    const isDueCard = draggableId.endsWith('__due__')
+    const taskId = isDueCard ? draggableId.slice(0, -7) : draggableId
+
+    if (isDueCard) {
+      try {
+        const destParts = destination.droppableId.split('-')
+        const destBucket = destParts[0]
+        const destDateStr = destParts.slice(2).join('-')
+        if (destination.droppableId === source.droppableId) {
+          const siblings = visibleTasks.filter(t => t.due_date_card_date === destDateStr && (t.due_date_card_bucket || 'morning') === destBucket).sort((a, b) => (a.due_date_card_position || 0) - (b.due_date_card_position || 0))
+          const reordered = Array.from(siblings)
+          const [moved] = reordered.splice(source.index, 1)
+          if (!moved) { fetchTasks(); return }
+          reordered.splice(destination.index, 0, moved)
+          const updatedPositions = Object.fromEntries(reordered.filter(Boolean).map((t, i) => [t.id, i]))
+          requestAnimationFrame(() => setTasks(prev => prev.map(t => updatedPositions[t.id] !== undefined ? { ...t, due_date_card_position: updatedPositions[t.id] } : t)))
+          await Promise.all(reordered.filter(Boolean).map((t, i) => supabase.from('tasks').update({ due_date_card_position: i }).eq('id', t.id)))
+        } else {
+          const newPosition = destination.index
+          requestAnimationFrame(() => setTasks(prev => prev.map(t => t.id === taskId ? { ...t, due_date_card_date: destDateStr, due_date_card_bucket: destBucket, due_date_card_position: newPosition } : t)))
+          const { error } = await supabase.from('tasks').update({ due_date_card_date: destDateStr, due_date_card_bucket: destBucket, due_date_card_position: newPosition }).eq('id', taskId)
+          if (error) fetchTasks()
+        }
+      } catch (e) {
+        console.error('onDragEnd (due card) failed, resyncing from server:', e)
+        fetchTasks()
+      }
+      return
+    }
+
     try {
       if (destination.droppableId === source.droppableId && destination.droppableId === 'inbox') {
         const inboxOnly = visibleTasks.filter(t => t.status === 'inbox').sort((a, b) => (a.position || 0) - (b.position || 0))
@@ -193,7 +224,9 @@ export default function App() {
       category: category || null,
       owner_id: user.id,
       collaboration_id: collaborationId || null,
-      assigned_to: assignedTo || null
+      assigned_to: assignedTo || null,
+      due_date_card_date: dueDate || null,
+      due_date_card_bucket: dueDate ? 'morning' : null
     }).select().single()
     if (error) { console.error('addTask failed:', error); throw error }
     setTasks(prev => [data, ...prev])
@@ -206,6 +239,16 @@ export default function App() {
     const updates = { title, notes: notes || null, goal_id: goalId || null, start_time: startTime || null, due_date: dueDate || null, priority: priority || null, category: category || null }
     if (collaborationId !== undefined) updates.collaboration_id = collaborationId || null
     if (assignedTo !== undefined) updates.assigned_to = assignedTo || null
+    const oldDueDate = existing ? existing.due_date : null
+    const oldDueCardDate = existing ? existing.due_date_card_date : null
+    const stillFollowingDueDate = !oldDueCardDate || oldDueCardDate === oldDueDate
+    if (!dueDate) {
+      updates.due_date_card_date = null
+      updates.due_date_card_bucket = null
+    } else if (stillFollowingDueDate) {
+      updates.due_date_card_date = dueDate
+      updates.due_date_card_bucket = existing && existing.due_date_card_bucket ? existing.due_date_card_bucket : 'morning'
+    }
     if (scheduledDate) {
       updates.scheduled_date = scheduledDate
       updates.status = existing && existing.status === 'done' ? 'done' : 'scheduled'
@@ -363,6 +406,7 @@ export default function App() {
   const inboxTasks = visibleTasks.filter(t => t.status === 'inbox')
   const taskCategories = [...new Set(visibleTasks.map(t => t.category).filter(Boolean))].sort()
   const tasksForDay = (date) => visibleTasks.filter(t => t.scheduled_date === format(date, 'yyyy-MM-dd'))
+  const dueCardsForDay = (date) => visibleTasks.filter(t => t.due_date_card_date === format(date, 'yyyy-MM-dd'))
   const openAddForDay = (date) => { setAddForDate(format(date, 'yyyy-MM-dd')); setAddForTime(null); setShowAdd(true) }
   const BUCKET_DEFAULT_TIME = { morning: '09:00', midday: '13:00', afternoon: '18:00' }
   const openAddForBucket = (date, bucketId) => {
@@ -433,7 +477,7 @@ export default function App() {
           <div className="flex flex-1 overflow-hidden gap-3 p-3">
             <main className="flex-1 overflow-x-auto overflow-y-auto rounded-xl border border-gray-200 shadow-sm bg-white p-4">
               {loading ? <div className="flex items-center justify-center h-full text-sm text-gray-400">Loading</div> : (
-                <WeekGrid days={weekDays} tasksForDay={tasksForDay} goalMap={goalMap} collabMap={collabMap} onMarkDone={markDone} onRescheduleToTomorrow={rescheduleToTomorrow} onMoveToInbox={moveToInbox} onDelete={deleteTask} onEdit={setEditingTask} onAddTaskForDay={openAddForDay} onAddTaskForBucket={openAddForBucket} />
+                <WeekGrid days={weekDays} tasksForDay={tasksForDay} dueCardsForDay={dueCardsForDay} goalMap={goalMap} collabMap={collabMap} onMarkDone={markDone} onRescheduleToTomorrow={rescheduleToTomorrow} onMoveToInbox={moveToInbox} onDelete={deleteTask} onEdit={setEditingTask} onAddTaskForDay={openAddForDay} onAddTaskForBucket={openAddForBucket} />
               )}
             </main>
             <div className="rounded-xl border border-gray-200 shadow-sm overflow-hidden shrink-0">

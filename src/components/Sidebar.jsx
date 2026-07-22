@@ -59,7 +59,13 @@ function Inbox({ tasks, goalMap, collabMap, collabMembersMap, onAssignTask, onEd
                     <div className="flex items-start justify-between gap-2">
                       <p className="text-sm text-gray-800 leading-snug break-words flex-1">{task.title}</p>
                       {task.goal_id && goalMap[task.goal_id] && (
-                        <div className="w-2 h-2 rounded-full shrink-0 mt-1" style={{ background: goalMap[task.goal_id].color }} />
+                        <span
+                          className="text-[9px] font-medium px-1.5 py-0.5 rounded shrink-0"
+                          style={{ color: goalMap[task.goal_id].color, background: goalMap[task.goal_id].color + '1a' }}
+                          title={'Goal: ' + goalMap[task.goal_id].title}
+                        >
+                          {goalMap[task.goal_id].title}
+                        </span>
                       )}
                     </div>
                     {task.collaboration_id && collabMap && collabMap[task.collaboration_id] && (

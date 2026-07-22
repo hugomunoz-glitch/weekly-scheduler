@@ -19,13 +19,13 @@ const PRIORITY_COLORS = { high: '#ef4444', medium: '#f59e0b', low: '#9ca3af' }
 const PRIORITY_LABELS = { high: 'High', medium: 'Medium', low: 'Low' }
 const PRIORITY_BORDER = { high: '#ef4444', medium: '#f59e0b', low: '#22c55e' }
 
-export default function TaskCard({ task, isDone, isDragging, goalColor, collabBadge, onMarkDone, onRescheduleToTomorrow, onMoveToInbox, onDelete, onEdit }) {
+export default function TaskCard({ task, isDone, isDragging, goalBadge, collabBadge, isDueCard, onMarkDone, onRescheduleToTomorrow, onMoveToInbox, onDelete, onEdit }) {
   const [showActions, setShowActions] = useState(false)
   const canHover = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(hover: hover)').matches
 
   return (
     <div
-      className={'relative group rounded-lg border px-2.5 py-2 text-base transition-colors ' + (isDragging ? 'border-indigo-300 bg-white shadow-lg' : isDone ? 'border-gray-100 bg-gray-50 opacity-60' : 'border-gray-200 bg-white hover:border-gray-300')}
+      className={'relative group rounded-lg border px-2.5 py-2 text-base transition-colors ' + (isDragging ? 'border-indigo-300 bg-white shadow-lg' : isDone ? 'border-gray-100 bg-gray-50 opacity-60' : isDueCard ? 'border-gray-300 border-dashed bg-white hover:border-gray-400' : 'border-gray-200 bg-white hover:border-gray-300')}
       style={task.priority && !isDone && PRIORITY_BORDER[task.priority] ? { borderLeft: '4px solid ' + PRIORITY_BORDER[task.priority] } : undefined}
       title={task.priority ? PRIORITY_LABELS[task.priority] + ' priority' : undefined}
       onMouseEnter={canHover ? () => setShowActions(true) : undefined}
@@ -48,6 +48,9 @@ export default function TaskCard({ task, isDone, isDragging, goalColor, collabBa
           {isDone && <span className="text-xs leading-none">&#10003;</span>}
         </button>
         <div className="flex-1 min-w-0">
+          {isDueCard && (
+            <span className="text-[9px] font-medium px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 mr-1.5 align-middle">Due</span>
+          )}
           <span className={'leading-snug break-words ' + (isDone ? 'line-through text-gray-400' : 'text-gray-800')}>
             {task.title}
           </span>
@@ -63,22 +66,20 @@ export default function TaskCard({ task, isDone, isDragging, goalColor, collabBa
               {collabBadge.name}
             </span>
           )}
-          {task.start_time && (
+          {task.start_time && !isDueCard && (
             <p className={'text-xs mt-0.5 ' + (isDone ? 'text-gray-300' : 'text-indigo-400 font-medium')}>
               {formatTime(task.start_time)}
             </p>
           )}
-          {task.due_date && (() => {
-            const overdue = !isDone && isBefore(parseISO(task.due_date), startOfDay(new Date()))
-            return (
-              <p className={'text-xs mt-0.5 font-medium ' + (isDone ? 'text-gray-300' : overdue ? 'text-red-500' : 'text-gray-400')}>
-                {overdue ? 'Overdue: ' : 'Due '}{formatDueDate(task.due_date)}
-              </p>
-            )
-          })()}
         </div>
-        {goalColor && (
-          <div className="w-2 h-2 rounded-full shrink-0 mt-1" style={{ background: goalColor }} />
+        {goalBadge && (
+          <span
+            className="text-[9px] font-medium px-1.5 py-0.5 rounded shrink-0"
+            style={{ color: goalBadge.color, background: goalBadge.color + '1a' }}
+            title={'Goal: ' + goalBadge.name}
+          >
+            {goalBadge.name}
+          </span>
         )}
         {!isDragging && (
           <button
@@ -98,6 +99,7 @@ export default function TaskCard({ task, isDone, isDragging, goalColor, collabBa
       {!isDone && !isDragging && showActions && (
         <div className="flex flex-wrap items-center gap-2 mt-2 pt-1.5 border-t border-gray-100">
           <button onClick={() => onEdit(task)} className="text-[27px] text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 px-1.5 py-0.5 rounded transition-colors leading-none" title="Edit">&#9998;</button>
+          {!isDueCard && (
           <button onClick={() => onRescheduleToTomorrow(task.id, task.scheduled_date)} className="hover:bg-indigo-50 px-1.5 py-0.5 rounded transition-colors leading-none flex items-center" title="Move to tomorrow">
             <svg width="20" height="20" viewBox="0 0 34 32" fill="none">
               <line x1="10" y1="0" x2="10" y2="7" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" />
@@ -108,6 +110,7 @@ export default function TaskCard({ task, isDone, isDragging, goalColor, collabBa
               <text x="26" y="27.5" textAnchor="middle" fill="white" fontSize="9" fontWeight="600">+1</text>
             </svg>
           </button>
+          )}
           <button onClick={() => onDelete(task.id)} className="md:hidden text-base text-red-500 hover:text-red-700 px-1 py-0.5 rounded transition-colors ml-auto" title="Delete">&#128465;</button>
         </div>
       )}

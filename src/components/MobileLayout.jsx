@@ -479,7 +479,7 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
   )
 }
 
-function MobileDayView({ date, tasks, goalMap, collabMap, onMarkDone, onRescheduleToTomorrow, onMoveToInbox, onDelete, onEdit, onAddTaskForBucket }) {
+function MobileDayView({ date, tasks, dueCards, goalMap, collabMap, onMarkDone, onRescheduleToTomorrow, onMoveToInbox, onDelete, onEdit, onAddTaskForBucket }) {
   const activeTasks = tasks.filter(t => t.status !== 'done')
   const doneTasks = tasks.filter(t => t.status === 'done')
   const dateStr = format(date, 'yyyy-MM-dd')
@@ -494,7 +494,9 @@ function MobileDayView({ date, tasks, goalMap, collabMap, onMarkDone, onReschedu
           if (!a.start_time && b.start_time) return 1
           return (a.position || 0) - (b.position || 0)
         })
+        const bucketDueCards = (dueCards || []).filter(t => (t.due_date_card_bucket || 'morning') === bucket.id).sort((a, b) => (a.due_date_card_position || 0) - (b.due_date_card_position || 0))
         const droppableId = bucket.id + '-' + dateStr
+        const dueDroppableId = bucket.id + '-due-' + dateStr
         return (
           <div key={bucket.id} style={{ marginBottom: '16px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
@@ -511,7 +513,7 @@ function MobileDayView({ date, tasks, goalMap, collabMap, onMarkDone, onReschedu
                       {(provided, snapshot) => {
                         const card = (
                           <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps} style={{ ...provided.draggableProps.style, marginBottom: '6px', WebkitTouchCallout: 'none', WebkitUserSelect: 'none', userSelect: 'none', touchAction: 'manipulation' }}>
-                            <TaskCard task={task} isDone={task.status === 'done'} isDragging={snapshot.isDragging} goalColor={goalMap[task.goal_id] ? goalMap[task.goal_id].color : null} collabBadge={task.collaboration_id && collabMap ? collabMap[task.collaboration_id] : null} onMarkDone={onMarkDone} onRescheduleToTomorrow={onRescheduleToTomorrow} onMoveToInbox={onMoveToInbox} onDelete={onDelete} onEdit={onEdit} />
+                            <TaskCard task={task} isDone={task.status === 'done'} isDragging={snapshot.isDragging} goalBadge={goalMap[task.goal_id] ? { name: goalMap[task.goal_id].title, color: goalMap[task.goal_id].color } : null} collabBadge={task.collaboration_id && collabMap ? collabMap[task.collaboration_id] : null} onMarkDone={onMarkDone} onRescheduleToTomorrow={onRescheduleToTomorrow} onMoveToInbox={onMoveToInbox} onDelete={onDelete} onEdit={onEdit} />
                           </div>
                         )
                         return snapshot.isDragging ? createPortal(card, document.body) : card
@@ -522,6 +524,28 @@ function MobileDayView({ date, tasks, goalMap, collabMap, onMarkDone, onReschedu
                 </div>
               )}
             </Droppable>
+            {bucketDueCards.length > 0 && (
+              <Droppable droppableId={dueDroppableId}>
+                {(provided, snapshot) => (
+                  <div ref={provided.innerRef} {...provided.droppableProps}
+                    style={{ minHeight: '10px', background: snapshot.isDraggingOver ? '#eef2ff' : 'transparent', borderRadius: '8px', padding: '2px', transition: 'background 0.15s' }}>
+                    {bucketDueCards.map((task, index) => (
+                      <Draggable key={task.id + '__due__'} draggableId={task.id + '__due__'} index={index} isDragDisabled={task.status === 'done'}>
+                        {(provided, snapshot) => {
+                          const card = (
+                            <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps} style={{ ...provided.draggableProps.style, marginBottom: '6px', WebkitTouchCallout: 'none', WebkitUserSelect: 'none', userSelect: 'none', touchAction: 'manipulation' }}>
+                              <TaskCard task={task} isDone={task.status === 'done'} isDragging={snapshot.isDragging} isDueCard goalBadge={goalMap[task.goal_id] ? { name: goalMap[task.goal_id].title, color: goalMap[task.goal_id].color } : null} collabBadge={task.collaboration_id && collabMap ? collabMap[task.collaboration_id] : null} onMarkDone={onMarkDone} onRescheduleToTomorrow={onRescheduleToTomorrow} onMoveToInbox={onMoveToInbox} onDelete={onDelete} onEdit={onEdit} />
+                            </div>
+                          )
+                          return snapshot.isDragging ? createPortal(card, document.body) : card
+                        }}
+                      </Draggable>
+                    ))}
+                    {provided.placeholder}
+                  </div>
+                )}
+              </Droppable>
+            )}
           </div>
         )
       })}
@@ -586,7 +610,7 @@ function MobileInbox({ tasks, goalMap, collabMap, collabMembersMap, onAssignTask
                         )}
                       </p>
                       {task.goal_id && goalMap[task.goal_id] && (
-                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: goalMap[task.goal_id].color, flexShrink: 0, marginTop: '4px' }} />
+                        <span style={{ fontSize: '9px', fontWeight: 500, padding: '2px 6px', borderRadius: '4px', flexShrink: 0, marginTop: '2px', color: goalMap[task.goal_id].color, background: goalMap[task.goal_id].color + '1a' }}>{goalMap[task.goal_id].title}</span>
                       )}
                       {!snapshot.isDragging && (
                         <button
@@ -799,6 +823,7 @@ export default function MobileLayout({
   const taskCategories = [...new Set(tasks.map(t => t.category).filter(Boolean))].sort()
 
   const tasksForDay = (date) => tasks.filter(t => t.scheduled_date === format(date, 'yyyy-MM-dd'))
+  const dueCardsForDay = (date) => tasks.filter(t => t.due_date_card_date === format(date, 'yyyy-MM-dd'))
   const dayNames = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
 
   return (
@@ -844,7 +869,7 @@ export default function MobileLayout({
           {loading ? (
             <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af', fontSize: '13px' }}>Loading</div>
           ) : (
-            <MobileDayView date={selectedDay} tasks={tasksForDay(selectedDay)} goalMap={goalMap} collabMap={collabMap} onMarkDone={onMarkDone} onRescheduleToTomorrow={onRescheduleToTomorrow} onMoveToInbox={onMoveToInbox} onDelete={onDelete} onEdit={onEdit} onAddTaskForBucket={onAddTaskForBucket} />
+            <MobileDayView date={selectedDay} tasks={tasksForDay(selectedDay)} dueCards={dueCardsForDay(selectedDay)} goalMap={goalMap} collabMap={collabMap} onMarkDone={onMarkDone} onRescheduleToTomorrow={onRescheduleToTomorrow} onMoveToInbox={onMoveToInbox} onDelete={onDelete} onEdit={onEdit} onAddTaskForBucket={onAddTaskForBucket} />
           )}
         </>
       )}
