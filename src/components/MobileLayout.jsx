@@ -124,12 +124,17 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
     return done / linked.length
   }
 
+  function completedCount(goalId) {
+    return goalTasks.filter(t => t.goal_id === goalId && t.status === 'done').length
+  }
+
   let visibleGoals = goalSearch.trim() ? goals.filter(g => g.title.toLowerCase().includes(goalSearch.trim().toLowerCase())) : goals
   if (categoryFilter !== 'all') visibleGoals = visibleGoals.filter(g => g.category === categoryFilter)
   visibleGoals = [...visibleGoals].sort((a, b) => {
     if (sortMode === 'created') return new Date(b.created_at || 0) - new Date(a.created_at || 0)
     if (sortMode === 'alpha') return a.title.localeCompare(b.title)
     if (sortMode === 'percentage') return pctCompleted(b.id) - pctCompleted(a.id)
+    if (sortMode === 'taskCount') return completedCount(b.id) - completedCount(a.id)
     if (sortMode === 'priority') {
       const aRank = a.priority in PRIORITY_RANK ? PRIORITY_RANK[a.priority] : 3
       const bRank = b.priority in PRIORITY_RANK ? PRIORITY_RANK[b.priority] : 3
@@ -211,6 +216,7 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
           <option value="alpha">Sort: A-Z</option>
           <option value="created">Sort: Date Created</option>
           <option value="percentage">Sort: % Completed</option>
+          <option value="taskCount"># of Tasks Completed</option>
         </select>
         <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} style={{ fontSize: '11px', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '5px 8px', outline: 'none', maxWidth: '140px' }}>
           <option value="all">All Categories</option>
