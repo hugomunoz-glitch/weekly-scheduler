@@ -69,6 +69,7 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
   const [goalSearch, setGoalSearch] = useState('')
   const [showGoalSearch, setShowGoalSearch] = useState(false)
   const [sortMode, setSortMode] = useState('deadline')
+  const [sortDir, setSortDir] = useState(1)
   const [categoryFilter, setCategoryFilter] = useState('all')
   const [editingGoalId, setEditingGoalId] = useState(null)
   const [editingTitle, setEditingTitle] = useState('')
@@ -131,21 +132,23 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
   let visibleGoals = goalSearch.trim() ? goals.filter(g => g.title.toLowerCase().includes(goalSearch.trim().toLowerCase())) : goals
   if (categoryFilter !== 'all') visibleGoals = visibleGoals.filter(g => g.category === categoryFilter)
   visibleGoals = [...visibleGoals].sort((a, b) => {
-    if (sortMode === 'created') return new Date(b.created_at || 0) - new Date(a.created_at || 0)
-    if (sortMode === 'alpha') return a.title.localeCompare(b.title)
-    if (sortMode === 'percentage') return pctCompleted(b.id) - pctCompleted(a.id)
-    if (sortMode === 'taskCount') return completedCount(b.id) - completedCount(a.id)
-    if (sortMode === 'priority') {
+    let result
+    if (sortMode === 'created') result = new Date(b.created_at || 0) - new Date(a.created_at || 0)
+    else if (sortMode === 'alpha') result = a.title.localeCompare(b.title)
+    else if (sortMode === 'percentage') result = pctCompleted(b.id) - pctCompleted(a.id)
+    else if (sortMode === 'taskCount') result = completedCount(b.id) - completedCount(a.id)
+    else if (sortMode === 'priority') {
       const aRank = a.priority in PRIORITY_RANK ? PRIORITY_RANK[a.priority] : 3
       const bRank = b.priority in PRIORITY_RANK ? PRIORITY_RANK[b.priority] : 3
-      if (aRank !== bRank) return aRank - bRank
-      return a.title.localeCompare(b.title)
+      result = aRank !== bRank ? aRank - bRank : a.title.localeCompare(b.title)
+    } else {
+      const aDate = nearestDueDate(a.id), bDate = nearestDueDate(b.id)
+      if (!aDate && !bDate) result = a.title.localeCompare(b.title)
+      else if (!aDate) result = 1
+      else if (!bDate) result = -1
+      else result = aDate < bDate ? -1 : aDate > bDate ? 1 : 0
     }
-    const aDate = nearestDueDate(a.id), bDate = nearestDueDate(b.id)
-    if (!aDate && !bDate) return a.title.localeCompare(b.title)
-    if (!aDate) return 1
-    if (!bDate) return -1
-    return aDate < bDate ? -1 : aDate > bDate ? 1 : 0
+    return result * sortDir
   })
 
   function handleEditTask(taskId) {
@@ -212,14 +215,25 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
       <div style={{ padding: '0 16px 8px', display: 'flex', justifyContent: 'flex-end', alignItems: 'flex-end', gap: '8px', flexShrink: 0 }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
           <span style={{ fontSize: '9px', color: '#9ca3af', fontWeight: 500, lineHeight: 1 }}>Sort by</span>
-          <select value={sortMode} onChange={e => setSortMode(e.target.value)} style={{ fontSize: '11px', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '5px 8px', outline: 'none' }}>
-            <option value="deadline">Deadline</option>
-            <option value="priority">Priority</option>
-            <option value="alpha">A-Z</option>
-            <option value="created">Date Created</option>
-            <option value="percentage">% Completed</option>
-            <option value="taskCount"># of Tasks Completed</option>
-          </select>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <select value={sortMode} onChange={e => setSortMode(e.target.value)} style={{ fontSize: '11px', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '5px 8px', outline: 'none' }}>
+              <option value="deadline">Deadline</option>
+              <option value="priority">Priority</option>
+              <option value="alpha">A-Z</option>
+              <option value="created">Date Created</option>
+              <option value="percentage">% Completed</option>
+              <option value="taskCount"># of Tasks Completed</option>
+            </select>
+            <button
+              onClick={() => setSortDir(d => d * -1)}
+              style={{ background: 'none', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '5px', color: '#9ca3af', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              title={sortDir === 1 ? 'Reverse order' : 'Reversed — tap to restore'}
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: sortDir === -1 ? 'scaleY(-1)' : 'none' }}>
+                <path d="M12 19V5M5 12l7-7 7 7" />
+              </svg>
+            </button>
+          </div>
         </div>
         <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} style={{ fontSize: '11px', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '5px 8px', outline: 'none', maxWidth: '140px' }}>
           <option value="all">All Categories</option>
