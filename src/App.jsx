@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { startOfWeek, addWeeks, subWeeks, addDays, format, parseISO, isBefore, startOfDay } from 'date-fns'
 import { DragDropContext } from '@hello-pangea/dnd'
 import { supabase } from './lib/supabase'
+import { useAuth } from './contexts/AuthContext'
+import Login from './components/Login'
 import { useIsMobile } from './hooks/useIsMobile'
 import WeekGrid from './components/WeekGrid'
 import Sidebar from './components/Sidebar'
@@ -41,6 +43,7 @@ function bucketFromTime(startTime) {
 
 export default function App() {
   const isMobile = useIsMobile()
+  const { user, profile, loading: authLoading, signOut } = useAuth()
 
   useEffect(() => {
     window.scrollTo(0, 1)
@@ -143,7 +146,8 @@ export default function App() {
       scheduled_date: scheduledDate || null,
       bucket: scheduledDate ? bucketFromTime(startTime) : null,
       priority: priority || null,
-      category: category || null
+      category: category || null,
+      owner_id: user.id
     }).select().single()
     if (error) { console.error('addTask failed:', error); throw error }
     setTasks(prev => [data, ...prev])
@@ -179,7 +183,7 @@ export default function App() {
   }
 
   async function addGoal(title, color, extra) {
-    const payload = { title, color }
+    const payload = { title, color, owner_id: user.id }
     if (extra) {
       if (extra.category) payload.category = extra.category
       if (extra.priority) payload.priority = extra.priority
@@ -321,6 +325,13 @@ export default function App() {
 
   const dndSensors = useMemo(() => [useWarmupSensor], [])
 
+  if (authLoading) {
+    return <div className="h-screen flex items-center justify-center text-sm text-gray-400">Loading...</div>
+  }
+  if (!user) {
+    return <Login />
+  }
+
   return (
     <DragDropContext onDragEnd={onDragEnd} sensors={dndSensors}>
       {isMobile ? (
@@ -340,6 +351,8 @@ export default function App() {
                 <button onClick={rolloverOverdue} className="px-3 py-1.5 text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100">Roll over {overdueTasks.length} overdue</button>
               )}
               <button onClick={() => setShowAdd(true)} className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700">+ Add task</button>
+              <span className="text-xs text-gray-400 ml-2">{profile?.username}</span>
+              <button onClick={signOut} className="px-2 py-1 text-xs text-gray-400 hover:text-gray-700">Sign out</button>
             </div>
           </header>
           <div className="mx-3 mt-3 rounded-xl border border-gray-200 shadow-sm overflow-hidden shrink-0">
