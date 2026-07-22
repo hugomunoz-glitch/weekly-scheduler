@@ -18,7 +18,7 @@ export default function DayColumn({ date, tasks, dueCards, goalMap, collabMap, o
   const activeTasks = tasks.filter(t => t.status !== 'done')
   const doneTasks = tasks.filter(t => t.status === 'done')
   const donePct = tasks.length > 0 ? Math.round((doneTasks.length / tasks.length) * 100) : 0
-  const overloadBorder = activeTasks.length >= OVERLOAD_CAP ? 'border-red-400' : activeTasks.length >= 3 ? 'border-amber-400' : null
+  const overloadBorder = activeTasks.length === 0 ? null : activeTasks.length >= OVERLOAD_CAP ? 'border-red-400' : activeTasks.length >= 3 ? 'border-amber-400' : 'border-emerald-400'
 
   return (
     <div className={'flex flex-col rounded-xl border transition-colors ' + (overloadBorder ? overloadBorder + ' bg-white' : today ? 'border-indigo-200 bg-white' : isPast ? 'border-gray-100 bg-gray-50' : 'border-gray-200 bg-white')}>
