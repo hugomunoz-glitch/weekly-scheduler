@@ -19,6 +19,9 @@ export default function CollaborationPanel({ onClose }) {
   const [generating, setGenerating] = useState(null)
   const [copiedCode, setCopiedCode] = useState(null)
   const [error, setError] = useState(null)
+  const [redeemCode, setRedeemCode] = useState('')
+  const [redeeming, setRedeeming] = useState(false)
+  const [redeemMessage, setRedeemMessage] = useState(null)
 
   const fetchCollaborations = useCallback(async () => {
     setLoading(true)
@@ -83,6 +86,54 @@ export default function CollaborationPanel({ onClose }) {
     setTimeout(() => setCopiedCode(null), 1500)
   }
 
+  async function handleRedeem(e) {
+    e.preventDefault()
+    if (!redeemCode.trim()) return
+    setRedeeming(true)
+    setError(null)
+    setRedeemMessage(null)
+    const code = redeemCode.trim().toUpperCase()
+
+    const { data: invite, error: lookupError } = await supabase
+      .from('invite_codes')
+      .select('*')
+      .eq('code', code)
+      .is('used_by', null)
+      .maybeSingle()
+
+    if (lookupError || !invite) {
+      setRedeeming(false)
+      setError('Invalid or already-used invite code')
+      return
+    }
+    if (invite.expires_at && new Date(invite.expires_at) < new Date()) {
+      setRedeeming(false)
+      setError('This invite code has expired')
+      return
+    }
+    if (!invite.collaboration_id) {
+      setRedeeming(false)
+      setError('This code is not tied to a collaboration')
+      return
+    }
+
+    const { error: memberError } = await supabase.from('collaboration_members').insert({
+      collaboration_id: invite.collaboration_id, user_id: user.id, role: 'member'
+    })
+    if (memberError) {
+      setRedeeming(false)
+      setError(memberError.message)
+      return
+    }
+
+    await supabase.from('invite_codes').update({ used_by: user.id, used_at: new Date().toISOString() }).eq('code', code)
+
+    setRedeeming(false)
+    setRedeemCode('')
+    setRedeemMessage("You've joined the collaboration.")
+    fetchCollaborations()
+  }
+
   return (
     <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-[3000] p-4" onClick={onClose}>
       <div className="bg-white rounded-xl shadow-xl w-full max-w-md max-h-[85vh] overflow-y-auto p-5" onClick={e => e.stopPropagation()}>
@@ -104,6 +155,22 @@ export default function CollaborationPanel({ onClose }) {
             {creating ? 'Creating...' : 'Create'}
           </button>
         </form>
+
+        <div className="mb-5 pb-5 border-b border-gray-100">
+          <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Enter Invite Code</h3>
+          {redeemMessage && <div className="mb-2 text-sm text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">{redeemMessage}</div>}
+          <form onSubmit={handleRedeem} className="flex gap-2">
+            <input
+              type="text" placeholder="e.g. 7F3KQ92R"
+              value={redeemCode} onChange={e => setRedeemCode(e.target.value)}
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono tracking-wider"
+            />
+            <button type="submit" disabled={redeeming || !redeemCode.trim()}
+              className="px-3 py-2 bg-gray-800 text-white text-sm font-medium rounded-lg hover:bg-gray-900 disabled:opacity-50 shrink-0">
+              {redeeming ? 'Joining...' : 'Join'}
+            </button>
+          </form>
+        </div>
 
         {loading ? (
           <div className="text-sm text-gray-400 text-center py-6">Loading...</div>
