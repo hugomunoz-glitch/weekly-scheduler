@@ -209,15 +209,18 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
           <button onClick={() => setAdding(true)} style={{ background: '#6366f1', color: 'white', border: 'none', borderRadius: '8px', padding: '6px 12px', fontSize: '12px', cursor: 'pointer' }} title="Add goal">+</button>
         </div>
       </div>
-      <div style={{ padding: '0 16px 8px', display: 'flex', justifyContent: 'flex-end', gap: '8px', flexShrink: 0 }}>
-        <select value={sortMode} onChange={e => setSortMode(e.target.value)} style={{ fontSize: '11px', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '5px 8px', outline: 'none' }}>
-          <option value="deadline">Sort: Deadline</option>
-          <option value="priority">Sort: Priority</option>
-          <option value="alpha">Sort: A-Z</option>
-          <option value="created">Sort: Date Created</option>
-          <option value="percentage">Sort: % Completed</option>
-          <option value="taskCount"># of Tasks Completed</option>
-        </select>
+      <div style={{ padding: '0 16px 8px', display: 'flex', justifyContent: 'flex-end', alignItems: 'flex-end', gap: '8px', flexShrink: 0 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+          <span style={{ fontSize: '9px', color: '#9ca3af', fontWeight: 500, lineHeight: 1 }}>Sort by</span>
+          <select value={sortMode} onChange={e => setSortMode(e.target.value)} style={{ fontSize: '11px', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '5px 8px', outline: 'none' }}>
+            <option value="deadline">Deadline</option>
+            <option value="priority">Priority</option>
+            <option value="alpha">A-Z</option>
+            <option value="created">Date Created</option>
+            <option value="percentage">% Completed</option>
+            <option value="taskCount"># of Tasks Completed</option>
+          </select>
+        </div>
         <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} style={{ fontSize: '11px', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '5px 8px', outline: 'none', maxWidth: '140px' }}>
           <option value="all">All Categories</option>
           {allCategories.map(c => <option key={c} value={c}>{c}</option>)}

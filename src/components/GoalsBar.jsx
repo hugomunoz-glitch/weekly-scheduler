@@ -472,15 +472,18 @@ export default function GoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEdit
         )
       })}
       </div>
-      <div className="flex items-center gap-2 mt-2">
-        <select value={sortMode} onChange={e => setSortMode(e.target.value)} className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-300" title="Sort goals">
-          <option value="deadline">Sort: Deadline</option>
-          <option value="priority">Sort: Priority</option>
-          <option value="alpha">Sort: A-Z</option>
-          <option value="created">Sort: Date Created</option>
-          <option value="percentage">Sort: % Completed</option>
-          <option value="taskCount"># of Tasks Completed</option>
-        </select>
+      <div className="flex items-end gap-2 mt-2">
+        <div className="flex flex-col gap-0.5">
+          <span className="text-[10px] text-gray-400 font-medium leading-none">Sort by</span>
+          <select value={sortMode} onChange={e => setSortMode(e.target.value)} className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-300">
+            <option value="deadline">Deadline</option>
+            <option value="priority">Priority</option>
+            <option value="alpha">A-Z</option>
+            <option value="created">Date Created</option>
+            <option value="percentage">% Completed</option>
+            <option value="taskCount"># of Tasks Completed</option>
+          </select>
+        </div>
         <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-300" title="Filter by category">
           <option value="all">All Categories</option>
           {allCategories.map(c => <option key={c} value={c}>{c}</option>)}
