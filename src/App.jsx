@@ -63,12 +63,20 @@ export default function App() {
   const [editingTask, setEditingTask] = useState(null)
   const [showCollab, setShowCollab] = useState(false)
   const [collaborations, setCollaborations] = useState([])
+  const [collabMembersMap, setCollabMembersMap] = useState({})
   const [activeView, setActiveView] = useState('all')
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i))
 
   useEffect(() => {
-    if (!user) { setCollaborations([]); return }
-    supabase.from('collaborations').select('id, name').then(({ data }) => setCollaborations(data || []))
+    if (!user) { setCollaborations([]); setCollabMembersMap({}); return }
+    supabase.from('collaborations').select('id, name, collaboration_members(user_id, profiles(username))').then(({ data }) => {
+      const rows = data || []
+      setCollaborations(rows.map(c => ({ id: c.id, name: c.name })))
+      setCollabMembersMap(Object.fromEntries(rows.map(c => [
+        c.id,
+        (c.collaboration_members || []).map(m => ({ id: m.user_id, username: m.profiles?.username || 'unknown' }))
+      ])))
+    })
   }, [user])
 
   const fetchTasks = useCallback(async () => {
@@ -80,7 +88,7 @@ export default function App() {
       supabase.from('tasks').select('*').eq('status', 'inbox').order('created_at', { ascending: false }),
       supabase.from('tasks').select('*').gte('scheduled_date', s).lte('scheduled_date', e).order('position'),
       supabase.from('goals').select('*').order('created_at'),
-      supabase.from('tasks').select('id, title, goal_id, status, due_date, start_time, priority, collaboration_id').not('goal_id', 'is', null)
+      supabase.from('tasks').select('id, title, goal_id, status, due_date, start_time, priority, collaboration_id, assigned_to').not('goal_id', 'is', null)
     ])
     const weekTasks = weekRes.data || []
     const inboxTasks = inboxRes.data || []
@@ -95,6 +103,7 @@ export default function App() {
 
   const COLLAB_COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316']
   const collabMap = Object.fromEntries(collaborations.map((c, i) => [c.id, { name: c.name, color: COLLAB_COLORS[i % COLLAB_COLORS.length] }]))
+  const profileMap = Object.fromEntries(Object.values(collabMembersMap).flat().map(m => [m.id, m.username]))
   const defaultCollaborationId = (activeView !== 'all' && activeView !== 'personal') ? activeView : null
 
   const today = startOfDay(new Date())
@@ -173,7 +182,7 @@ export default function App() {
     }
   }
 
-  async function addTask(title, notes, goalId, startTime, dueDate, scheduledDate, priority, category, collaborationId) {
+  async function addTask(title, notes, goalId, startTime, dueDate, scheduledDate, priority, category, collaborationId, assignedTo) {
     const { data, error } = await supabase.from('tasks').insert({
       title, notes: notes || null, goal_id: goalId || null, start_time: startTime || null, due_date: dueDate || null,
       status: scheduledDate ? 'scheduled' : 'inbox',
@@ -182,18 +191,20 @@ export default function App() {
       priority: priority || null,
       category: category || null,
       owner_id: user.id,
-      collaboration_id: collaborationId || null
+      collaboration_id: collaborationId || null,
+      assigned_to: assignedTo || null
     }).select().single()
     if (error) { console.error('addTask failed:', error); throw error }
     setTasks(prev => [data, ...prev])
-    if (data.goal_id) setGoalTasks(prev => [...prev, { id: data.id, title: data.title, goal_id: data.goal_id, status: data.status, due_date: data.due_date, start_time: data.start_time, priority: data.priority, collaboration_id: data.collaboration_id }])
+    if (data.goal_id) setGoalTasks(prev => [...prev, { id: data.id, title: data.title, goal_id: data.goal_id, status: data.status, due_date: data.due_date, start_time: data.start_time, priority: data.priority, collaboration_id: data.collaboration_id, assigned_to: data.assigned_to }])
   }
 
-  async function editTask(taskId, title, notes, goalId, startTime, dueDate, scheduledDate, priority, category, collaborationId) {
+  async function editTask(taskId, title, notes, goalId, startTime, dueDate, scheduledDate, priority, category, collaborationId, assignedTo) {
     const existing = tasks.find(t => t.id === taskId)
     const wasScheduled = existing && existing.scheduled_date
     const updates = { title, notes: notes || null, goal_id: goalId || null, start_time: startTime || null, due_date: dueDate || null, priority: priority || null, category: category || null }
     if (collaborationId !== undefined) updates.collaboration_id = collaborationId || null
+    if (assignedTo !== undefined) updates.assigned_to = assignedTo || null
     if (scheduledDate) {
       updates.scheduled_date = scheduledDate
       updates.status = existing && existing.status === 'done' ? 'done' : 'scheduled'
@@ -212,9 +223,19 @@ export default function App() {
       setTasks(prev => prev.map(t => t.id === taskId ? data : t))
       setGoalTasks(prev => {
         const filtered = prev.filter(t => t.id !== taskId)
-        if (data.goal_id) return [...filtered, { id: data.id, title: data.title, goal_id: data.goal_id, status: data.status, due_date: data.due_date, start_time: data.start_time, priority: data.priority, collaboration_id: data.collaboration_id }]
+        if (data.goal_id) return [...filtered, { id: data.id, title: data.title, goal_id: data.goal_id, status: data.status, due_date: data.due_date, start_time: data.start_time, priority: data.priority, collaboration_id: data.collaboration_id, assigned_to: data.assigned_to }]
         return filtered
       })
+    }
+  }
+
+  async function assignTask(taskId, assigneeId) {
+    const { data, error } = await supabase.from('tasks').update({ assigned_to: assigneeId || null }).eq('id', taskId).select().single()
+    if (!error) {
+      setTasks(prev => prev.map(t => t.id === taskId ? data : t))
+      setGoalTasks(prev => prev.map(t => t.id === taskId ? { ...t, assigned_to: data.assigned_to } : t))
+    } else {
+      console.error('assignTask failed:', error)
     }
   }
 
@@ -350,10 +371,10 @@ export default function App() {
   }
 
   const sharedProps = {
-    weekStart, weekDays, tasks: visibleTasks, goals: visibleGoals, goalMap, collabMap, goalTasks: visibleGoalTasks, inboxTasks, loading,
+    weekStart, weekDays, tasks: visibleTasks, goals: visibleGoals, goalMap, collabMap, collabMembersMap, profileMap, goalTasks: visibleGoalTasks, inboxTasks, loading,
     collaborations, activeView, onChangeView: setActiveView, defaultCollaborationId,
     overdueTasks, onMarkDone: markDone, onRescheduleToTomorrow: rescheduleToTomorrow,
-    onMoveToInbox: moveToInbox, onDelete: deleteTask, onEdit: setEditingTask,
+    onMoveToInbox: moveToInbox, onDelete: deleteTask, onEdit: setEditingTask, onAssignTask: assignTask,
     onAddTask: () => setShowAdd(true), onAddTaskForDay: openAddForDay, onAddTaskForBucket: openAddForBucket, onCreateTask: addTask, onRollover: rolloverOverdue,
     onAddGoal: addGoal, onEditGoal: editGoal, onDeleteGoal: deleteGoal,
     onPrevWeek: () => setWeekStart(w => subWeeks(w, 1)),
@@ -412,13 +433,13 @@ export default function App() {
               )}
             </main>
             <div className="rounded-xl border border-gray-200 shadow-sm overflow-hidden shrink-0">
-              <Sidebar tasks={inboxTasks} goalMap={goalMap} collabMap={collabMap} goals={visibleGoals} allTasks={visibleTasks} onAddTask={() => setShowAdd(true)} onCreateTask={addTask} onAddGoal={addGoal} onEdit={setEditingTask} onDelete={deleteTask} />
+              <Sidebar tasks={inboxTasks} goalMap={goalMap} collabMap={collabMap} collabMembersMap={collabMembersMap} profileMap={profileMap} onAssignTask={assignTask} goals={visibleGoals} allTasks={visibleTasks} onAddTask={() => setShowAdd(true)} onCreateTask={addTask} onAddGoal={addGoal} onEdit={setEditingTask} onDelete={deleteTask} />
             </div>
           </div>
         </div>
       )}
-      {showAdd && <AddTaskModal onAdd={addTask} onClose={() => { setShowAdd(false); setAddForDate(null); setAddForTime(null) }} goals={visibleGoals} onAddGoal={addGoal} initialScheduledDate={addForDate} initialStartTime={addForTime} existingTaskCategories={taskCategories} collaborations={collaborations} defaultCollaborationId={defaultCollaborationId} />}
-      {editingTask && <AddTaskModal editingTask={editingTask} onEdit={editTask} onClose={() => setEditingTask(null)} goals={visibleGoals} onAddGoal={addGoal} existingTaskCategories={taskCategories} collaborations={collaborations} defaultCollaborationId={defaultCollaborationId} />}
+      {showAdd && <AddTaskModal onAdd={addTask} onClose={() => { setShowAdd(false); setAddForDate(null); setAddForTime(null) }} goals={visibleGoals} onAddGoal={addGoal} initialScheduledDate={addForDate} initialStartTime={addForTime} existingTaskCategories={taskCategories} collaborations={collaborations} collabMembersMap={collabMembersMap} defaultCollaborationId={defaultCollaborationId} />}
+      {editingTask && <AddTaskModal editingTask={editingTask} onEdit={editTask} onClose={() => setEditingTask(null)} goals={visibleGoals} onAddGoal={addGoal} existingTaskCategories={taskCategories} collaborations={collaborations} collabMembersMap={collabMembersMap} defaultCollaborationId={defaultCollaborationId} />}
       {showCollab && <CollaborationPanel onClose={() => setShowCollab(false)} />}
       {undoQueue.length > 0 && (
         <div className={'fixed left-1/2 -translate-x-1/2 z-[2000] flex flex-col gap-2 items-center ' + (isMobile ? 'bottom-20' : 'bottom-4')}>

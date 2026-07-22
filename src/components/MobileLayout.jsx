@@ -523,7 +523,7 @@ function MobileDayView({ date, tasks, goalMap, collabMap, onMarkDone, onReschedu
   )
 }
 
-function MobileInbox({ tasks, goalMap, collabMap, onAddTask, onEdit, onDelete, search, sortMode, sortDir, categoryFilter }) {
+function MobileInbox({ tasks, goalMap, collabMap, collabMembersMap, onAssignTask, onAddTask, onEdit, onDelete, search, sortMode, sortDir, categoryFilter }) {
   const [pressedTaskId, setPressedTaskId] = useState(null)
   const searched = search && search.trim() ? tasks.filter(t => t.title.toLowerCase().includes(search.trim().toLowerCase())) : tasks
   const filteredTasks = categoryFilter && categoryFilter !== 'all' ? searched.filter(t => t.category === categoryFilter) : searched
@@ -597,8 +597,19 @@ function MobileInbox({ tasks, goalMap, collabMap, onAddTask, onEdit, onDelete, s
                     </div>
                     {task.notes && <p style={{ fontSize: '12px', color: '#9ca3af', margin: '4px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{task.notes}</p>}
                     {!snapshot.isDragging && pressedTaskId === task.id && (
-                      <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '8px' }}>
                         <button onClick={(e) => { e.stopPropagation(); onEdit(task) }} style={{ fontSize: '27px', color: '#6366f1', background: 'none', border: 'none', padding: 0, cursor: 'pointer', lineHeight: 1 }} title="Edit">&#9998;</button>
+                        {task.collaboration_id && collabMembersMap && collabMembersMap[task.collaboration_id] && collabMembersMap[task.collaboration_id].length > 0 && (
+                          <select
+                            value={task.assigned_to || ''}
+                            onChange={(e) => { e.stopPropagation(); onAssignTask(task.id, e.target.value || null) }}
+                            onClick={(e) => e.stopPropagation()}
+                            style={{ fontSize: '11px', border: '1px solid #e5e7eb', borderRadius: '6px', padding: '4px 6px' }}
+                          >
+                            <option value="">Unassigned</option>
+                            {collabMembersMap[task.collaboration_id].map(m => <option key={m.id} value={m.id}>{m.username}</option>)}
+                          </select>
+                        )}
                         <button onClick={(e) => { e.stopPropagation(); onDelete(task.id) }} style={{ fontSize: '17px', color: '#ef4444', background: 'none', border: 'none', padding: 0, cursor: 'pointer', marginLeft: 'auto', lineHeight: 1 }} title="Delete">&#128465;</button>
                       </div>
                     )}
@@ -763,11 +774,11 @@ function MobileAssistant({ goals, tasks, onCreateTask, onAddGoal }) {
 }
 
 export default function MobileLayout({
-  weekStart, weekDays, tasks, goals, goalMap, collabMap, goalTasks, inboxTasks, loading,
+  weekStart, weekDays, tasks, goals, goalMap, collabMap, collabMembersMap, goalTasks, inboxTasks, loading,
   collaborations, activeView, onChangeView, defaultCollaborationId,
   overdueTasks, onPrevWeek, onNextWeek, onMarkDone,
   onRescheduleToTomorrow, onMoveToInbox, onDelete, onEdit, onAddTask, onAddTaskForBucket, onCreateTask,
-  onRollover, onAddGoal, onEditGoal, onDeleteGoal
+  onRollover, onAddGoal, onEditGoal, onDeleteGoal, onAssignTask
 }) {
   const [selectedDay, setSelectedDay] = useState(() => {
     const today = new Date()
@@ -890,7 +901,7 @@ export default function MobileLayout({
               {taskCategories.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
-          <MobileInbox tasks={loading ? [] : inboxTasks} goalMap={goalMap} collabMap={collabMap} onAddTask={onAddTask} onEdit={onEdit} onDelete={onDelete} search={taskSearch} sortMode={taskSort} sortDir={taskSortDir} categoryFilter={taskCategoryFilter} />
+          <MobileInbox tasks={loading ? [] : inboxTasks} goalMap={goalMap} collabMap={collabMap} collabMembersMap={collabMembersMap} onAssignTask={onAssignTask} onAddTask={onAddTask} onEdit={onEdit} onDelete={onDelete} search={taskSearch} sortMode={taskSort} sortDir={taskSortDir} categoryFilter={taskCategoryFilter} />
         </>
       )}
 

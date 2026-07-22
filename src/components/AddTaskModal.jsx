@@ -7,12 +7,13 @@ const GOAL_CATEGORIES = [
   'Social (Community/Volunteering)', 'Spiritual (Prayer/Church)'
 ]
 
-export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTask, onAddGoal, initialScheduledDate, initialStartTime, existingTaskCategories, collaborations, defaultCollaborationId }) {
+export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTask, onAddGoal, initialScheduledDate, initialStartTime, existingTaskCategories, collaborations, collabMembersMap, defaultCollaborationId }) {
   function closeModal() {
     resetViewportZoom()
     onClose()
   }
   const [collaborationId, setCollaborationId] = useState(editingTask ? (editingTask.collaboration_id || '') : (defaultCollaborationId || ''))
+  const [assignedTo, setAssignedTo] = useState(editingTask ? (editingTask.assigned_to || '') : '')
   const [title, setTitle] = useState(editingTask ? editingTask.title : '')
   const [notes, setNotes] = useState(editingTask ? (editingTask.notes || '') : '')
   const [goalId, setGoalId] = useState(editingTask ? (editingTask.goal_id || '') : '')
@@ -79,9 +80,9 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
     if (!title.trim()) return
     const category = (customTaskCategory ? taskCategoryCustom.trim() : taskCategory) || null
     if (editingTask) {
-      onEdit(editingTask.id, title.trim(), notes.trim(), goalId || null, startTime || null, dueDate || null, scheduledDate || null, priority || null, category, collaborationId || null)
+      onEdit(editingTask.id, title.trim(), notes.trim(), goalId || null, startTime || null, dueDate || null, scheduledDate || null, priority || null, category, collaborationId || null, assignedTo || null)
     } else {
-      onAdd(title.trim(), notes.trim(), goalId || null, startTime || null, dueDate || null, scheduledDate || null, priority || null, category, collaborationId || null)
+      onAdd(title.trim(), notes.trim(), goalId || null, startTime || null, dueDate || null, scheduledDate || null, priority || null, category, collaborationId || null, assignedTo || null)
     }
     closeModal()
   }
@@ -146,11 +147,24 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
               <label className="block text-xs font-medium text-gray-500 mb-1">Save to</label>
               <select
                 value={collaborationId}
-                onChange={e => setCollaborationId(e.target.value)}
+                onChange={e => { setCollaborationId(e.target.value); setAssignedTo('') }}
                 className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 text-gray-700"
               >
                 <option value="">Personal</option>
                 {collaborations.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </div>
+          )}
+          {collaborationId && collabMembersMap && collabMembersMap[collaborationId] && collabMembersMap[collaborationId].length > 0 && (
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Assign to</label>
+              <select
+                value={assignedTo}
+                onChange={e => setAssignedTo(e.target.value)}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 text-gray-700"
+              >
+                <option value="">Unassigned</option>
+                {collabMembersMap[collaborationId].map(m => <option key={m.id} value={m.id}>{m.username}</option>)}
               </select>
             </div>
           )}
