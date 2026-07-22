@@ -32,7 +32,7 @@ function Inbox({ tasks, goalMap, collabMap, collabMembersMap, onAssignTask, onMa
     return result * sortDir
   })
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex-1 min-h-0 flex flex-col">
       <Droppable droppableId="inbox">
         {(provided, snapshot) => (
           <div ref={provided.innerRef} {...provided.droppableProps}

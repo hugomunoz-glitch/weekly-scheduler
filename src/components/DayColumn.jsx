@@ -9,6 +9,8 @@ const BUCKETS = [
   { id: 'afternoon', label: 'Evening' },
 ]
 
+const OVERLOAD_CAP = 5
+
 export default function DayColumn({ date, tasks, dueCards, goalMap, collabMap, onMarkDone, onRescheduleToTomorrow, onMoveToInbox, onDelete, onEdit, onAddTaskForBucket }) {
   const today = isToday(date)
   const isPast = isBefore(date, startOfDay(new Date())) && !today
@@ -16,9 +18,10 @@ export default function DayColumn({ date, tasks, dueCards, goalMap, collabMap, o
   const activeTasks = tasks.filter(t => t.status !== 'done')
   const doneTasks = tasks.filter(t => t.status === 'done')
   const donePct = tasks.length > 0 ? Math.round((doneTasks.length / tasks.length) * 100) : 0
+  const overloadBorder = activeTasks.length >= OVERLOAD_CAP ? 'border-red-400' : activeTasks.length >= 3 ? 'border-amber-400' : null
 
   return (
-    <div className={'flex flex-col rounded-xl border transition-colors ' + (today ? 'border-indigo-200 bg-white' : isPast ? 'border-gray-100 bg-gray-50' : 'border-gray-200 bg-white')}>
+    <div className={'flex flex-col rounded-xl border transition-colors ' + (overloadBorder ? overloadBorder + ' bg-white' : today ? 'border-indigo-200 bg-white' : isPast ? 'border-gray-100 bg-gray-50' : 'border-gray-200 bg-white')}>
       <div className={'px-3 pt-3 pb-2 border-b ' + (today ? 'border-indigo-100' : 'border-gray-100')}>
         <div className="flex items-center justify-between mb-1.5">
           <span className={'text-lg font-semibold uppercase tracking-wide ' + (isPast ? 'text-gray-400' : 'text-gray-700')}>{format(date, 'EEE')}</span>
