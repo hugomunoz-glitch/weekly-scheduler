@@ -1,6 +1,8 @@
 import { useState, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { useAssistantHistory } from '../hooks/useAssistantHistory'
+import { useAuth } from '../contexts/AuthContext'
+import CollaborationPanel from './CollaborationPanel'
 import { format, isToday } from 'date-fns'
 import { Droppable, Draggable } from '@hello-pangea/dnd'
 import TaskCard from './TaskCard'
@@ -694,6 +696,8 @@ export default function MobileLayout({
     return inWeek ? today : weekDays[0]
   })
   const [activeTab, setActiveTab] = useState('day')
+  const [showCollab, setShowCollab] = useState(false)
+  const { profile, signOut } = useAuth()
   const [taskSearch, setTaskSearch] = useState('')
   const [showTaskSearch, setShowTaskSearch] = useState(false)
   const [taskSort, setTaskSort] = useState('manual')
@@ -805,12 +809,39 @@ export default function MobileLayout({
         </>
       )}
 
+      {activeTab === 'settings' && (
+        <div style={{ flex: 1, overflowY: 'auto', padding: '16px' }}>
+          <div style={{ padding: '4px 0 12px' }}>
+            <span style={{ fontSize: '15px', fontWeight: 500, color: '#111827' }}>&#9881; Settings</span>
+          </div>
+          <div style={{ border: '1px solid #e5e7eb', borderRadius: '10px', padding: '14px', marginBottom: '10px', background: 'white' }}>
+            <p style={{ fontSize: '12px', color: '#9ca3af', margin: '0 0 2px' }}>Signed in as</p>
+            <p style={{ fontSize: '15px', fontWeight: 600, color: '#1f2937', margin: 0 }}>{profile?.username}</p>
+          </div>
+          <button
+            onClick={() => setShowCollab(true)}
+            style={{ width: '100%', textAlign: 'left', background: 'white', border: '1px solid #e5e7eb', borderRadius: '10px', padding: '14px', marginBottom: '10px', fontSize: '14px', color: '#1f2937', cursor: 'pointer', fontWeight: 500 }}
+          >
+            Collaborations
+          </button>
+          <button
+            onClick={signOut}
+            style={{ width: '100%', textAlign: 'left', background: 'white', border: '1px solid #e5e7eb', borderRadius: '10px', padding: '14px', fontSize: '14px', color: '#ef4444', cursor: 'pointer', fontWeight: 500 }}
+          >
+            Sign out
+          </button>
+        </div>
+      )}
+
+      {showCollab && <CollaborationPanel onClose={() => setShowCollab(false)} />}
+
       <div style={{ background: 'white', borderTop: '1px solid #e5e7eb', padding: '6px 0 8px', display: 'flex', flexShrink: 0 }}>
         {[
           { id: 'day', label: 'Today', emoji: '&#128197;' },
           { id: 'goals', label: 'Goals', emoji: '&#127919;' },
           { id: 'inbox', label: 'Task List', emoji: '&#128221;', badge: inboxTasks.length },
-          { id: 'assistant', label: 'Assistant', emoji: '&#129302;' }
+          { id: 'assistant', label: 'Assistant', emoji: '&#129302;' },
+          { id: 'settings', label: 'Settings', emoji: '&#9881;' }
         ].map(tab => (
           <button key={tab.id} onClick={() => setActiveTab(tab.id)}
             style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0', position: 'relative' }}>
