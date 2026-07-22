@@ -7,24 +7,25 @@ const GOAL_CATEGORIES = [
   'Social (Community/Volunteering)', 'Spiritual (Prayer/Church)'
 ]
 
-export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTask, onAddGoal, initialScheduledDate, initialStartTime, existingTaskCategories, collaborations, collabMembersMap, defaultCollaborationId }) {
+export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTask, onAddGoal, initialScheduledDate, initialStartTime, existingTaskCategories, collaborations, collabMembersMap, defaultCollaborationId, onCreateFollowUp, followUpPrefill }) {
   function closeModal() {
     resetViewportZoom()
     onClose()
   }
-  const [collaborationId, setCollaborationId] = useState(editingTask ? (editingTask.collaboration_id || '') : (defaultCollaborationId || ''))
+  const [collaborationId, setCollaborationId] = useState(editingTask ? (editingTask.collaboration_id || '') : (followUpPrefill?.collaborationId || defaultCollaborationId || ''))
   const [assignedTo, setAssignedTo] = useState(editingTask ? (editingTask.assigned_to || '') : '')
-  const [title, setTitle] = useState(editingTask ? editingTask.title : '')
+  const [title, setTitle] = useState(editingTask ? editingTask.title : (followUpPrefill?.title || ''))
   const [notes, setNotes] = useState(editingTask ? (editingTask.notes || '') : '')
-  const [goalId, setGoalId] = useState(editingTask ? (editingTask.goal_id || '') : '')
+  const [goalId, setGoalId] = useState(editingTask ? (editingTask.goal_id || '') : (followUpPrefill?.goalId || ''))
   const [startTime, setStartTime] = useState(editingTask ? (editingTask.start_time || '') : (initialStartTime || ''))
   const [dueDate, setDueDate] = useState(editingTask ? (editingTask.due_date || '') : '')
   const [scheduledDate, setScheduledDate] = useState(editingTask ? (editingTask.scheduled_date || '') : (initialScheduledDate || ''))
-  const [priority, setPriority] = useState(editingTask ? (editingTask.priority || '') : '')
+  const [priority, setPriority] = useState(editingTask ? (editingTask.priority || '') : (followUpPrefill?.priority || ''))
   const allTaskCategories = [...new Set([...GOAL_CATEGORIES, ...(existingTaskCategories || [])])].sort()
-  const [taskCategory, setTaskCategory] = useState(editingTask && editingTask.category && !allTaskCategories.includes(editingTask.category) ? '' : (editingTask ? (editingTask.category || '') : ''))
-  const [customTaskCategory, setCustomTaskCategory] = useState(editingTask && editingTask.category && !allTaskCategories.includes(editingTask.category))
-  const [taskCategoryCustom, setTaskCategoryCustom] = useState(editingTask && editingTask.category && !allTaskCategories.includes(editingTask.category) ? editingTask.category : '')
+  const initialCategory = editingTask ? editingTask.category : followUpPrefill?.category
+  const [taskCategory, setTaskCategory] = useState(initialCategory && !allTaskCategories.includes(initialCategory) ? '' : (initialCategory || ''))
+  const [customTaskCategory, setCustomTaskCategory] = useState(!!(initialCategory && !allTaskCategories.includes(initialCategory)))
+  const [taskCategoryCustom, setTaskCategoryCustom] = useState(initialCategory && !allTaskCategories.includes(initialCategory) ? initialCategory : '')
   const [addingGoal, setAddingGoal] = useState(false)
   const [newGoalTitle, setNewGoalTitle] = useState('')
   const [showGoalDetails, setShowGoalDetails] = useState(false)
@@ -38,6 +39,9 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
   const [smartAchievable, setSmartAchievable] = useState('')
   const [smartRelevant, setSmartRelevant] = useState('')
   const [smartTimebound, setSmartTimebound] = useState('')
+  const [bulkMode, setBulkMode] = useState(false)
+  const [bulkTitles, setBulkTitles] = useState('')
+  const [bulkSubmitting, setBulkSubmitting] = useState(false)
   const inputRef = useRef(null)
 
   useEffect(() => { inputRef.current?.focus() }, [])
@@ -75,31 +79,79 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
     }
   }
 
-  function handleSubmit(e) {
+  function handleSubmitCore(e, keepOpen) {
     e.preventDefault()
     if (!title.trim()) return
     const category = (customTaskCategory ? taskCategoryCustom.trim() : taskCategory) || null
     if (editingTask) {
       onEdit(editingTask.id, title.trim(), notes.trim(), goalId || null, startTime || null, dueDate || null, scheduledDate || null, priority || null, category, collaborationId || null, assignedTo || null)
-    } else {
-      onAdd(title.trim(), notes.trim(), goalId || null, startTime || null, dueDate || null, scheduledDate || null, priority || null, category, collaborationId || null, assignedTo || null)
+      closeModal()
+      return
     }
-    closeModal()
+    onAdd(title.trim(), notes.trim(), goalId || null, startTime || null, dueDate || null, scheduledDate || null, priority || null, category, collaborationId || null, assignedTo || null)
+    if (keepOpen) {
+      setTitle('')
+      setNotes('')
+      inputRef.current?.focus()
+    } else {
+      closeModal()
+    }
   }
+
+  async function handleBulkSubmit(e) {
+    e.preventDefault()
+    const lines = bulkTitles.split('\n').map(l => l.trim()).filter(Boolean)
+    if (lines.length === 0) return
+    const category = (customTaskCategory ? taskCategoryCustom.trim() : taskCategory) || null
+    setBulkSubmitting(true)
+    try {
+      for (const line of lines) {
+        await onAdd(line, '', goalId || null, startTime || null, dueDate || null, scheduledDate || null, priority || null, category, collaborationId || null, assignedTo || null)
+      }
+      closeModal()
+    } finally {
+      setBulkSubmitting(false)
+    }
+  }
+
+  const bulkCount = bulkTitles.split('\n').map(l => l.trim()).filter(Boolean).length
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50" onClick={(e) => e.target === e.currentTarget && closeModal()}>
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 p-6 overflow-hidden" onClick={(e) => e.stopPropagation()}>
         <h2 className="text-base font-semibold text-gray-900 mb-4">{editingTask ? 'Edit task' : initialScheduledDate ? 'Add task for ' + initialScheduledDate : 'Add task'}</h2>
-        <form onSubmit={handleSubmit} className="space-y-3">
-          <input
-            ref={inputRef}
-            type="text"
-            placeholder="What do you need to do?"
-            value={title}
-            onChange={e => setTitle(e.target.value)}
-            className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400"
-          />
+        <form onSubmit={bulkMode ? handleBulkSubmit : (e) => handleSubmitCore(e, false)} className="space-y-3">
+          {!editingTask && (
+            <div className="flex justify-end -mb-1">
+              <button
+                type="button"
+                onClick={() => setBulkMode(m => !m)}
+                className="text-xs text-indigo-500 hover:text-indigo-700"
+              >
+                {bulkMode ? 'Switch to single task' : 'Add multiple tasks at once'}
+              </button>
+            </div>
+          )}
+          {bulkMode ? (
+            <textarea
+              autoFocus
+              placeholder={'One task per line, e.g.\nCall dentist\nBuy groceries\nReview budget'}
+              value={bulkTitles}
+              onChange={e => setBulkTitles(e.target.value)}
+              rows={5}
+              className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 resize-none"
+            />
+          ) : (
+            <input
+              ref={inputRef}
+              type="text"
+              placeholder="What do you need to do?"
+              value={title}
+              onChange={e => setTitle(e.target.value)}
+              className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400"
+            />
+          )}
+          {!bulkMode && (
           <textarea
             placeholder="Notes (optional)"
             value={notes}
@@ -107,6 +159,7 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
             rows={2}
             className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 resize-none"
           />
+          )}
           <div className="flex flex-wrap gap-3">
             <div className="flex-1 min-w-0">
               <label className="block text-xs font-medium text-gray-500 mb-1">Goal</label>
@@ -280,7 +333,27 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
           </div>
           <div className="flex gap-2 pt-1">
             <button type="button" onClick={closeModal} className="flex-1 py-2 text-sm text-gray-500 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">Cancel</button>
-            <button type="submit" disabled={!title.trim()} className="flex-1 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">{editingTask ? 'Save changes' : 'Add to Task List'}</button>
+            {bulkMode ? (
+              <button type="submit" disabled={bulkCount === 0 || bulkSubmitting} className="flex-1 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+                {bulkSubmitting ? 'Adding...' : bulkCount > 0 ? 'Add ' + bulkCount + ' tasks' : 'Add tasks'}
+              </button>
+            ) : editingTask ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => onCreateFollowUp && onCreateFollowUp({ title: editingTask.title, goalId: editingTask.goal_id, category: editingTask.category, priority: editingTask.priority, collaborationId: editingTask.collaboration_id })}
+                  className="flex-1 py-2 text-sm font-medium text-indigo-600 border border-indigo-200 rounded-lg hover:bg-indigo-50 transition-colors"
+                >
+                  Follow-up
+                </button>
+                <button type="submit" disabled={!title.trim()} className="flex-1 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">Save changes</button>
+              </>
+            ) : (
+              <>
+                <button type="button" onClick={(e) => handleSubmitCore(e, true)} disabled={!title.trim()} className="flex-1 py-2 text-sm font-medium text-indigo-600 border border-indigo-200 rounded-lg hover:bg-indigo-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">Add another</button>
+                <button type="submit" disabled={!title.trim()} className="flex-1 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">Add</button>
+              </>
+            )}
           </div>
         </form>
       </div>
