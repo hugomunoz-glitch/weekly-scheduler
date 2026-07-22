@@ -62,7 +62,14 @@ export default function App() {
   const [addForTime, setAddForTime] = useState(null)
   const [editingTask, setEditingTask] = useState(null)
   const [showCollab, setShowCollab] = useState(false)
+  const [collaborations, setCollaborations] = useState([])
+  const [activeView, setActiveView] = useState('all')
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i))
+
+  useEffect(() => {
+    if (!user) { setCollaborations([]); return }
+    supabase.from('collaborations').select('id, name').then(({ data }) => setCollaborations(data || []))
+  }, [user])
 
   const fetchTasks = useCallback(async () => {
     if (!user) { setTasks([]); setGoals([]); setGoalTasks([]); setLoading(false); return }
@@ -73,7 +80,7 @@ export default function App() {
       supabase.from('tasks').select('*').eq('status', 'inbox').order('created_at', { ascending: false }),
       supabase.from('tasks').select('*').gte('scheduled_date', s).lte('scheduled_date', e).order('position'),
       supabase.from('goals').select('*').order('created_at'),
-      supabase.from('tasks').select('id, title, goal_id, status, due_date, start_time, priority').not('goal_id', 'is', null)
+      supabase.from('tasks').select('id, title, goal_id, status, due_date, start_time, priority, collaboration_id').not('goal_id', 'is', null)
     ])
     const weekTasks = weekRes.data || []
     const inboxTasks = inboxRes.data || []
@@ -86,9 +93,32 @@ export default function App() {
 
   useEffect(() => { fetchTasks() }, [fetchTasks])
 
+  const COLLAB_COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316']
+  const collabMap = Object.fromEntries(collaborations.map((c, i) => [c.id, { name: c.name, color: COLLAB_COLORS[i % COLLAB_COLORS.length] }]))
+  const defaultCollaborationId = (activeView !== 'all' && activeView !== 'personal') ? activeView : null
+
   const today = startOfDay(new Date())
   const goalMap = Object.fromEntries(goals.map(g => [g.id, g]))
-  const overdueTasks = tasks.filter(t => t.scheduled_date && t.status === 'scheduled' && isBefore(parseISO(t.scheduled_date), today))
+
+  const visibleTasks = useMemo(() => {
+    if (activeView === 'all') return tasks
+    if (activeView === 'personal') return tasks.filter(t => !t.collaboration_id)
+    return tasks.filter(t => t.collaboration_id === activeView)
+  }, [tasks, activeView])
+
+  const visibleGoals = useMemo(() => {
+    if (activeView === 'all') return goals
+    if (activeView === 'personal') return goals.filter(g => !g.collaboration_id)
+    return goals.filter(g => g.collaboration_id === activeView)
+  }, [goals, activeView])
+
+  const visibleGoalTasks = useMemo(() => {
+    if (activeView === 'all') return goalTasks
+    if (activeView === 'personal') return goalTasks.filter(t => !t.collaboration_id)
+    return goalTasks.filter(t => t.collaboration_id === activeView)
+  }, [goalTasks, activeView])
+
+  const overdueTasks = visibleTasks.filter(t => t.scheduled_date && t.status === 'scheduled' && isBefore(parseISO(t.scheduled_date), today))
 
   async function onDragEnd(result) {
     const { draggableId: taskId, destination, source } = result
@@ -97,7 +127,7 @@ export default function App() {
     if (destination.droppableId.startsWith('goalpopup-')) return
     try {
       if (destination.droppableId === source.droppableId && destination.droppableId === 'inbox') {
-        const inboxOnly = tasks.filter(t => t.status === 'inbox').sort((a, b) => (a.position || 0) - (b.position || 0))
+        const inboxOnly = visibleTasks.filter(t => t.status === 'inbox').sort((a, b) => (a.position || 0) - (b.position || 0))
         const reordered = Array.from(inboxOnly)
         const [moved] = reordered.splice(source.index, 1)
         if (!moved) { fetchTasks(); return }
@@ -114,7 +144,7 @@ export default function App() {
         const parts = destination.droppableId.split('-')
         const bucket = parts[0]
         const dateStr = parts.slice(1).join('-')
-        const bucketTasks = tasks.filter(t => t.scheduled_date === dateStr && (t.bucket || 'morning') === bucket).sort((a, b) => (a.position || 0) - (b.position || 0))
+        const bucketTasks = visibleTasks.filter(t => t.scheduled_date === dateStr && (t.bucket || 'morning') === bucket).sort((a, b) => (a.position || 0) - (b.position || 0))
         const reordered = Array.from(bucketTasks)
         const [moved] = reordered.splice(source.index, 1)
         if (!moved) { fetchTasks(); return }
@@ -143,7 +173,7 @@ export default function App() {
     }
   }
 
-  async function addTask(title, notes, goalId, startTime, dueDate, scheduledDate, priority, category) {
+  async function addTask(title, notes, goalId, startTime, dueDate, scheduledDate, priority, category, collaborationId) {
     const { data, error } = await supabase.from('tasks').insert({
       title, notes: notes || null, goal_id: goalId || null, start_time: startTime || null, due_date: dueDate || null,
       status: scheduledDate ? 'scheduled' : 'inbox',
@@ -151,17 +181,19 @@ export default function App() {
       bucket: scheduledDate ? bucketFromTime(startTime) : null,
       priority: priority || null,
       category: category || null,
-      owner_id: user.id
+      owner_id: user.id,
+      collaboration_id: collaborationId || null
     }).select().single()
     if (error) { console.error('addTask failed:', error); throw error }
     setTasks(prev => [data, ...prev])
-    if (data.goal_id) setGoalTasks(prev => [...prev, { id: data.id, title: data.title, goal_id: data.goal_id, status: data.status, due_date: data.due_date, start_time: data.start_time, priority: data.priority }])
+    if (data.goal_id) setGoalTasks(prev => [...prev, { id: data.id, title: data.title, goal_id: data.goal_id, status: data.status, due_date: data.due_date, start_time: data.start_time, priority: data.priority, collaboration_id: data.collaboration_id }])
   }
 
-  async function editTask(taskId, title, notes, goalId, startTime, dueDate, scheduledDate, priority, category) {
+  async function editTask(taskId, title, notes, goalId, startTime, dueDate, scheduledDate, priority, category, collaborationId) {
     const existing = tasks.find(t => t.id === taskId)
     const wasScheduled = existing && existing.scheduled_date
     const updates = { title, notes: notes || null, goal_id: goalId || null, start_time: startTime || null, due_date: dueDate || null, priority: priority || null, category: category || null }
+    if (collaborationId !== undefined) updates.collaboration_id = collaborationId || null
     if (scheduledDate) {
       updates.scheduled_date = scheduledDate
       updates.status = existing && existing.status === 'done' ? 'done' : 'scheduled'
@@ -180,14 +212,14 @@ export default function App() {
       setTasks(prev => prev.map(t => t.id === taskId ? data : t))
       setGoalTasks(prev => {
         const filtered = prev.filter(t => t.id !== taskId)
-        if (data.goal_id) return [...filtered, { id: data.id, title: data.title, goal_id: data.goal_id, status: data.status, due_date: data.due_date, start_time: data.start_time, priority: data.priority }]
+        if (data.goal_id) return [...filtered, { id: data.id, title: data.title, goal_id: data.goal_id, status: data.status, due_date: data.due_date, start_time: data.start_time, priority: data.priority, collaboration_id: data.collaboration_id }]
         return filtered
       })
     }
   }
 
-  async function addGoal(title, color, extra) {
-    const payload = { title, color, owner_id: user.id }
+  async function addGoal(title, color, extra, collaborationId) {
+    const payload = { title, color, owner_id: user.id, collaboration_id: collaborationId || null }
     if (extra) {
       if (extra.category) payload.category = extra.category
       if (extra.priority) payload.priority = extra.priority
@@ -203,8 +235,9 @@ export default function App() {
     return data
   }
 
-  async function editGoal(goalId, title, extra) {
+  async function editGoal(goalId, title, extra, collaborationId) {
     const payload = { title }
+    if (collaborationId !== undefined) payload.collaboration_id = collaborationId || null
     if (extra) {
       if ('category' in extra) payload.category = extra.category || null
       if ('priority' in extra) payload.priority = extra.priority || null
@@ -305,9 +338,9 @@ export default function App() {
     await supabase.from('tasks').update({ scheduled_date: todayStr }).in('id', ids)
   }
 
-  const inboxTasks = tasks.filter(t => t.status === 'inbox')
-  const taskCategories = [...new Set(tasks.map(t => t.category).filter(Boolean))].sort()
-  const tasksForDay = (date) => tasks.filter(t => t.scheduled_date === format(date, 'yyyy-MM-dd'))
+  const inboxTasks = visibleTasks.filter(t => t.status === 'inbox')
+  const taskCategories = [...new Set(visibleTasks.map(t => t.category).filter(Boolean))].sort()
+  const tasksForDay = (date) => visibleTasks.filter(t => t.scheduled_date === format(date, 'yyyy-MM-dd'))
   const openAddForDay = (date) => { setAddForDate(format(date, 'yyyy-MM-dd')); setAddForTime(null); setShowAdd(true) }
   const BUCKET_DEFAULT_TIME = { morning: '09:00', midday: '13:00', afternoon: '18:00' }
   const openAddForBucket = (date, bucketId) => {
@@ -317,7 +350,8 @@ export default function App() {
   }
 
   const sharedProps = {
-    weekStart, weekDays, tasks, goals, goalMap, goalTasks, inboxTasks, loading,
+    weekStart, weekDays, tasks: visibleTasks, goals: visibleGoals, goalMap, collabMap, goalTasks: visibleGoalTasks, inboxTasks, loading,
+    collaborations, activeView, onChangeView: setActiveView, defaultCollaborationId,
     overdueTasks, onMarkDone: markDone, onRescheduleToTomorrow: rescheduleToTomorrow,
     onMoveToInbox: moveToInbox, onDelete: deleteTask, onEdit: setEditingTask,
     onAddTask: () => setShowAdd(true), onAddTaskForDay: openAddForDay, onAddTaskForBucket: openAddForBucket, onCreateTask: addTask, onRollover: rolloverOverdue,
@@ -349,6 +383,16 @@ export default function App() {
               <span className="text-sm font-medium text-gray-700 min-w-[200px] text-center">{format(weekStart, 'MMM d')} - {format(addDays(weekStart, 6), 'MMM d, yyyy')}</span>
               <button onClick={sharedProps.onNextWeek} className="px-2 py-1 text-sm text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded">Next</button>
               <button onClick={sharedProps.onThisWeek} className="px-3 py-1 text-xs text-indigo-600 border border-indigo-200 hover:bg-indigo-50 rounded">This week</button>
+              <select
+                value={activeView}
+                onChange={e => setActiveView(e.target.value)}
+                className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 ml-1 focus:outline-none focus:ring-1 focus:ring-indigo-300"
+                title="Viewing"
+              >
+                <option value="all">Viewing: All</option>
+                <option value="personal">Viewing: Personal</option>
+                {collaborations.map(c => <option key={c.id} value={c.id}>Viewing: {c.name}</option>)}
+              </select>
             </div>
             <div className="flex items-center gap-2">
               {overdueTasks.length > 0 && (
@@ -359,22 +403,22 @@ export default function App() {
             </div>
           </header>
           <div className="mx-3 mt-3 rounded-xl border border-gray-200 shadow-sm overflow-hidden shrink-0">
-            <GoalsBar goals={goals} goalTasks={goalTasks} allTasks={tasks} onAddGoal={addGoal} onEditGoal={editGoal} onDeleteGoal={deleteGoal} onMarkDone={markDone} onDelete={deleteTask} onCreateTask={addTask} onEditTask={setEditingTask} />
+            <GoalsBar goals={visibleGoals} goalTasks={visibleGoalTasks} allTasks={visibleTasks} collabMap={collabMap} collaborations={collaborations} defaultCollaborationId={defaultCollaborationId} onAddGoal={addGoal} onEditGoal={editGoal} onDeleteGoal={deleteGoal} onMarkDone={markDone} onDelete={deleteTask} onCreateTask={addTask} onEditTask={setEditingTask} />
           </div>
           <div className="flex flex-1 overflow-hidden gap-3 p-3">
             <main className="flex-1 overflow-x-auto overflow-y-auto rounded-xl border border-gray-200 shadow-sm bg-white p-4">
               {loading ? <div className="flex items-center justify-center h-full text-sm text-gray-400">Loading</div> : (
-                <WeekGrid days={weekDays} tasksForDay={tasksForDay} goalMap={goalMap} onMarkDone={markDone} onRescheduleToTomorrow={rescheduleToTomorrow} onMoveToInbox={moveToInbox} onDelete={deleteTask} onEdit={setEditingTask} onAddTaskForDay={openAddForDay} onAddTaskForBucket={openAddForBucket} />
+                <WeekGrid days={weekDays} tasksForDay={tasksForDay} goalMap={goalMap} collabMap={collabMap} onMarkDone={markDone} onRescheduleToTomorrow={rescheduleToTomorrow} onMoveToInbox={moveToInbox} onDelete={deleteTask} onEdit={setEditingTask} onAddTaskForDay={openAddForDay} onAddTaskForBucket={openAddForBucket} />
               )}
             </main>
             <div className="rounded-xl border border-gray-200 shadow-sm overflow-hidden shrink-0">
-              <Sidebar tasks={inboxTasks} goalMap={goalMap} goals={goals} allTasks={tasks} onAddTask={() => setShowAdd(true)} onCreateTask={addTask} onAddGoal={addGoal} onEdit={setEditingTask} onDelete={deleteTask} />
+              <Sidebar tasks={inboxTasks} goalMap={goalMap} collabMap={collabMap} goals={visibleGoals} allTasks={visibleTasks} onAddTask={() => setShowAdd(true)} onCreateTask={addTask} onAddGoal={addGoal} onEdit={setEditingTask} onDelete={deleteTask} />
             </div>
           </div>
         </div>
       )}
-      {showAdd && <AddTaskModal onAdd={addTask} onClose={() => { setShowAdd(false); setAddForDate(null); setAddForTime(null) }} goals={goals} onAddGoal={addGoal} initialScheduledDate={addForDate} initialStartTime={addForTime} existingTaskCategories={taskCategories} />}
-      {editingTask && <AddTaskModal editingTask={editingTask} onEdit={editTask} onClose={() => setEditingTask(null)} goals={goals} onAddGoal={addGoal} existingTaskCategories={taskCategories} />}
+      {showAdd && <AddTaskModal onAdd={addTask} onClose={() => { setShowAdd(false); setAddForDate(null); setAddForTime(null) }} goals={visibleGoals} onAddGoal={addGoal} initialScheduledDate={addForDate} initialStartTime={addForTime} existingTaskCategories={taskCategories} collaborations={collaborations} defaultCollaborationId={defaultCollaborationId} />}
+      {editingTask && <AddTaskModal editingTask={editingTask} onEdit={editTask} onClose={() => setEditingTask(null)} goals={visibleGoals} onAddGoal={addGoal} existingTaskCategories={taskCategories} collaborations={collaborations} defaultCollaborationId={defaultCollaborationId} />}
       {showCollab && <CollaborationPanel onClose={() => setShowCollab(false)} />}
       {undoQueue.length > 0 && (
         <div className={'fixed left-1/2 -translate-x-1/2 z-[2000] flex flex-col gap-2 items-center ' + (isMobile ? 'bottom-20' : 'bottom-4')}>

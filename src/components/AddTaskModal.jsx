@@ -7,11 +7,12 @@ const GOAL_CATEGORIES = [
   'Social (Community/Volunteering)', 'Spiritual (Prayer/Church)'
 ]
 
-export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTask, onAddGoal, initialScheduledDate, initialStartTime, existingTaskCategories }) {
+export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTask, onAddGoal, initialScheduledDate, initialStartTime, existingTaskCategories, collaborations, defaultCollaborationId }) {
   function closeModal() {
     resetViewportZoom()
     onClose()
   }
+  const [collaborationId, setCollaborationId] = useState(editingTask ? (editingTask.collaboration_id || '') : (defaultCollaborationId || ''))
   const [title, setTitle] = useState(editingTask ? editingTask.title : '')
   const [notes, setNotes] = useState(editingTask ? (editingTask.notes || '') : '')
   const [goalId, setGoalId] = useState(editingTask ? (editingTask.goal_id || '') : '')
@@ -78,9 +79,9 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
     if (!title.trim()) return
     const category = (customTaskCategory ? taskCategoryCustom.trim() : taskCategory) || null
     if (editingTask) {
-      onEdit(editingTask.id, title.trim(), notes.trim(), goalId || null, startTime || null, dueDate || null, scheduledDate || null, priority || null, category)
+      onEdit(editingTask.id, title.trim(), notes.trim(), goalId || null, startTime || null, dueDate || null, scheduledDate || null, priority || null, category, collaborationId || null)
     } else {
-      onAdd(title.trim(), notes.trim(), goalId || null, startTime || null, dueDate || null, scheduledDate || null, priority || null, category)
+      onAdd(title.trim(), notes.trim(), goalId || null, startTime || null, dueDate || null, scheduledDate || null, priority || null, category, collaborationId || null)
     }
     closeModal()
   }
@@ -140,6 +141,19 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
               </div>
             </div>
           </div>
+          {collaborations && collaborations.length > 0 && (
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Save to</label>
+              <select
+                value={collaborationId}
+                onChange={e => setCollaborationId(e.target.value)}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 text-gray-700"
+              >
+                <option value="">Personal</option>
+                {collaborations.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+            </div>
+          )}
           {addingGoal && (
             <div className="border border-gray-200 rounded-lg p-3 -mt-1 space-y-2 bg-gray-50">
               <div className="flex gap-2">

@@ -6,7 +6,7 @@ const PRIORITY_RANK = { high: 0, medium: 1, low: 2 }
 const PRIORITY_COLORS = { high: '#ef4444', medium: '#f59e0b', low: '#9ca3af' }
 const PRIORITY_LABELS = { high: 'High', medium: 'Medium', low: 'Low' }
 
-function Inbox({ tasks, goalMap, onEdit, onDelete, search, sortMode, sortDir, categoryFilter }) {
+function Inbox({ tasks, goalMap, collabMap, onEdit, onDelete, search, sortMode, sortDir, categoryFilter }) {
   const [hoverId, setHoverId] = useState(null)
   const searched = search && search.trim() ? tasks.filter(t => t.title.toLowerCase().includes(search.trim().toLowerCase())) : tasks
   const filteredTasks = categoryFilter && categoryFilter !== 'all' ? searched.filter(t => t.category === categoryFilter) : searched
@@ -62,6 +62,15 @@ function Inbox({ tasks, goalMap, onEdit, onDelete, search, sortMode, sortDir, ca
                     {task.priority && PRIORITY_COLORS[task.priority] && (
                       <span className="text-[10px] font-medium px-1.5 py-0.5 rounded inline-block mt-1" style={{ color: PRIORITY_COLORS[task.priority], background: PRIORITY_COLORS[task.priority] + '1a' }}>
                         {PRIORITY_LABELS[task.priority]}
+                      </span>
+                    )}
+                    {task.collaboration_id && collabMap && collabMap[task.collaboration_id] && (
+                      <span
+                        className="text-[10px] font-medium px-1.5 py-0.5 rounded inline-block mt-1 ml-1"
+                        style={{ color: collabMap[task.collaboration_id].color, background: collabMap[task.collaboration_id].color + '1a' }}
+                        title={'Shared with: ' + collabMap[task.collaboration_id].name}
+                      >
+                        {collabMap[task.collaboration_id].name}
                       </span>
                     )}
                     {task.notes && <p className="text-xs text-gray-400 mt-1 truncate">{task.notes}</p>}
@@ -231,7 +240,7 @@ function Assistant({ goals, tasks, onCreateTask, onAddGoal }) {
   )
 }
 
-export default function Sidebar({ tasks, goalMap, goals, allTasks, onAddTask, onCreateTask, onAddGoal, onEdit, onDelete }) {
+export default function Sidebar({ tasks, goalMap, collabMap, goals, allTasks, onAddTask, onCreateTask, onAddGoal, onEdit, onDelete }) {
   const [tab, setTab] = useState('inbox')
   const [taskSearch, setTaskSearch] = useState('')
   const [showTaskSearch, setShowTaskSearch] = useState(false)
@@ -299,7 +308,7 @@ export default function Sidebar({ tasks, goalMap, goals, allTasks, onAddTask, on
                 {taskCategories.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
-            <Inbox tasks={tasks} goalMap={goalMap} onEdit={onEdit} onDelete={onDelete} search={taskSearch} sortMode={taskSort} sortDir={taskSortDir} categoryFilter={taskCategoryFilter} />
+            <Inbox tasks={tasks} goalMap={goalMap} collabMap={collabMap} onEdit={onEdit} onDelete={onDelete} search={taskSearch} sortMode={taskSort} sortDir={taskSortDir} categoryFilter={taskCategoryFilter} />
           </>
         ) : (
           <Assistant goals={goals} tasks={allTasks} onCreateTask={onCreateTask} onAddGoal={onAddGoal} />

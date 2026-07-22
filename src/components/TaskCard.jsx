@@ -18,7 +18,7 @@ function formatDueDate(d) {
 const PRIORITY_COLORS = { high: '#ef4444', medium: '#f59e0b', low: '#9ca3af' }
 const PRIORITY_LABELS = { high: 'High', medium: 'Medium', low: 'Low' }
 
-export default function TaskCard({ task, isDone, isDragging, goalColor, onMarkDone, onRescheduleToTomorrow, onMoveToInbox, onDelete, onEdit }) {
+export default function TaskCard({ task, isDone, isDragging, goalColor, collabBadge, onMarkDone, onRescheduleToTomorrow, onMoveToInbox, onDelete, onEdit }) {
   const [showActions, setShowActions] = useState(false)
   const canHover = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(hover: hover)').matches
 
@@ -55,6 +55,15 @@ export default function TaskCard({ task, isDone, isDragging, goalColor, onMarkDo
           )}
           {task.category && (
             <span className="text-[10px] text-gray-400 ml-1.5">{task.category}</span>
+          )}
+          {collabBadge && (
+            <span
+              className="text-[9px] font-medium px-1.5 py-0.5 rounded ml-1.5"
+              style={{ color: collabBadge.color, background: collabBadge.color + '1a' }}
+              title={'Shared with: ' + collabBadge.name}
+            >
+              {collabBadge.name}
+            </span>
           )}
           {task.start_time && (
             <p className={'text-xs mt-0.5 ' + (isDone ? 'text-gray-300' : 'text-indigo-400 font-medium')}>

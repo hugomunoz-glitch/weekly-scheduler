@@ -10,7 +10,7 @@ const BUCKETS = [
   { id: 'afternoon', label: 'Evening' },
 ]
 
-export default function DayColumn({ date, tasks, goalMap, onMarkDone, onRescheduleToTomorrow, onMoveToInbox, onDelete, onEdit, onAddTaskForBucket }) {
+export default function DayColumn({ date, tasks, goalMap, collabMap, onMarkDone, onRescheduleToTomorrow, onMoveToInbox, onDelete, onEdit, onAddTaskForBucket }) {
   const today = isToday(date)
   const isPast = isBefore(date, startOfDay(new Date())) && !today
   const dateStr = format(date, 'yyyy-MM-dd')
@@ -64,7 +64,7 @@ export default function DayColumn({ date, tasks, goalMap, onMarkDone, onReschedu
                         {(provided, snapshot) => {
                           const card = (
                             <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps} className="mb-1.5" style={provided.draggableProps.style}>
-                              <TaskCard task={task} isDone={task.status === 'done'} isDragging={snapshot.isDragging} goalColor={goalMap[task.goal_id] ? goalMap[task.goal_id].color : null} onMarkDone={onMarkDone} onRescheduleToTomorrow={onRescheduleToTomorrow} onMoveToInbox={onMoveToInbox} onDelete={onDelete} onEdit={onEdit} />
+                              <TaskCard task={task} isDone={task.status === 'done'} isDragging={snapshot.isDragging} goalColor={goalMap[task.goal_id] ? goalMap[task.goal_id].color : null} collabBadge={task.collaboration_id && collabMap ? collabMap[task.collaboration_id] : null} onMarkDone={onMarkDone} onRescheduleToTomorrow={onRescheduleToTomorrow} onMoveToInbox={onMoveToInbox} onDelete={onDelete} onEdit={onEdit} />
                             </div>
                           )
                           return snapshot.isDragging ? createPortal(card, document.body) : card

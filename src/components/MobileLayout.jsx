@@ -52,7 +52,7 @@ function longPressHandlers(timerRef, firedRef, onLongPress, ms = 550) {
   }
 }
 
-function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onDeleteGoal, onMarkDone, onDelete, onCreateTask, onEditTask }) {
+function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations, defaultCollaborationId, onAddGoal, onEditGoal, onDeleteGoal, onMarkDone, onDelete, onCreateTask, onEditTask }) {
   const [adding, setAdding] = useState(false)
   const [newTitle, setNewTitle] = useState('')
   const [newCategory, setNewCategory] = useState('')
@@ -78,6 +78,7 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
   const [editingCustomCategory, setEditingCustomCategory] = useState(false)
   const [editingCategoryCustom, setEditingCategoryCustom] = useState('')
   const [editingPriority, setEditingPriority] = useState('')
+  const [editingCollaborationId, setEditingCollaborationId] = useState('')
   const [editGoalError, setEditGoalError] = useState('')
   const allCategories = [...new Set([...GOAL_CATEGORIES, ...goals.map(g => g.category).filter(Boolean)])].sort()
   const [longPressGoalId, setLongPressGoalId] = useState(null)
@@ -98,6 +99,7 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
       setEditingCategory(goal.category || '')
     }
     setEditingPriority(goal.priority || '')
+    setEditingCollaborationId(goal.collaboration_id || '')
     setEditGoalError('')
   }
 
@@ -106,7 +108,7 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
     if (!editingTitle.trim()) return
     try {
       const category = editingCustomCategory ? editingCategoryCustom.trim() : editingCategory
-      await onEditGoal(editingGoalId, editingTitle.trim(), { category: category || null, priority: editingPriority || null })
+      await onEditGoal(editingGoalId, editingTitle.trim(), { category: category || null, priority: editingPriority || null }, editingCollaborationId || null)
       closeEditingGoal()
     } catch {
       setEditGoalError('Could not save. Try again.')
@@ -175,11 +177,13 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
   function handleAddTaskToGoal(e, goalId) {
     e.preventDefault()
     if (!newTaskTitle.trim()) return
-    onCreateTask(newTaskTitle.trim(), '', goalId, null)
+    const goal = goals.find(g => g.id === goalId)
+    onCreateTask(newTaskTitle.trim(), '', goalId, null, null, null, null, null, goal?.collaboration_id || null)
     setNewTaskTitle('')
   }
 
   const [addGoalError, setAddGoalError] = useState('')
+  const [newGoalCollaborationId, setNewGoalCollaborationId] = useState(defaultCollaborationId || '')
 
   async function handleAdd(e) {
     e.preventDefault()
@@ -193,9 +197,10 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
         smartAchievable: smartAchievable.trim() || null,
         smartRelevant: smartRelevant.trim() || null,
         smartTimebound: smartTimebound.trim() || null
-      })
+      }, newGoalCollaborationId || null)
       setNewTitle(''); setNewCategory(''); setNewPriority(''); setCustomCategory(false); setNewCategoryCustom('')
       setSmartSpecific(''); setSmartMeasurable(''); setSmartAchievable(''); setSmartRelevant(''); setSmartTimebound('')
+      setNewGoalCollaborationId(defaultCollaborationId || '')
       setShowSmart(false)
       closeAdding()
       setAddGoalError('')
@@ -288,6 +293,12 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
               <option value="medium">Medium</option>
               <option value="low">Low</option>
             </select>
+            {collaborations && collaborations.length > 0 && (
+              <select value={newGoalCollaborationId} onChange={e => setNewGoalCollaborationId(e.target.value)} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '8px', fontSize: '12px', outline: 'none' }}>
+                <option value="">Save to: Personal</option>
+                {collaborations.map(c => <option key={c.id} value={c.id}>Save to: {c.name}</option>)}
+              </select>
+            )}
             {!showSmart ? (
               <button type="button" onClick={() => setShowSmart(true)} style={{ background: 'none', border: 'none', color: '#6366f1', fontSize: '12px', textAlign: 'left', cursor: 'pointer', padding: 0 }}>+ Make it a SMART goal (optional)</button>
             ) : (
@@ -331,6 +342,11 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
               onClick={(e) => { e.stopPropagation(); startEditGoal(goal) }}
               title="Tap to edit"
             >{goal.title}</span>
+            {goal.collaboration_id && collabMap && collabMap[goal.collaboration_id] && (
+              <span
+                style={{ fontSize: '9px', fontWeight: 500, padding: '1px 6px', borderRadius: '4px', flexShrink: 0, color: collabMap[goal.collaboration_id].color, background: collabMap[goal.collaboration_id].color + '1a' }}
+              >{collabMap[goal.collaboration_id].name}</span>
+            )}
           </div>
           {(goal.priority || goal.category) && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px', paddingLeft: '18px' }}>
@@ -378,6 +394,12 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
                   <option value="medium">Medium</option>
                   <option value="low">Low</option>
                 </select>
+                {collaborations && collaborations.length > 0 && (
+                  <select value={editingCollaborationId} onChange={e => setEditingCollaborationId(e.target.value)} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '8px', fontSize: '12px', outline: 'none' }}>
+                    <option value="">Save to: Personal</option>
+                    {collaborations.map(c => <option key={c.id} value={c.id}>Save to: {c.name}</option>)}
+                  </select>
+                )}
                 <div style={{ display: 'flex', gap: '8px', marginTop: '4px', alignItems: 'center' }}>
                   <button type="submit" style={{ background: '#6366f1', color: 'white', border: 'none', borderRadius: '8px', padding: '8px 14px', fontSize: '13px', cursor: 'pointer' }}>Save</button>
                   <button type="button" onClick={closeEditingGoal} style={{ background: 'none', border: 'none', color: '#9ca3af', fontSize: '13px', cursor: 'pointer' }}>Cancel</button>
@@ -424,6 +446,9 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
                           {t.priority && PRIORITY_COLORS[t.priority] && (
                             <span style={{ fontSize: '11px', fontWeight: 500, padding: '1px 5px', borderRadius: '4px', flexShrink: 0, color: PRIORITY_COLORS[t.priority], background: PRIORITY_COLORS[t.priority] + '1a' }}>{PRIORITY_LABELS[t.priority]}</span>
                           )}
+                          {t.collaboration_id && collabMap && collabMap[t.collaboration_id] && (
+                            <span style={{ fontSize: '11px', fontWeight: 500, padding: '1px 5px', borderRadius: '4px', flexShrink: 0, color: collabMap[t.collaboration_id].color, background: collabMap[t.collaboration_id].color + '1a' }}>{collabMap[t.collaboration_id].name}</span>
+                          )}
                           {t.start_time && (
                             <span style={{ fontSize: '13px', color: '#a5b4fc', flexShrink: 0, whiteSpace: 'nowrap' }}>{formatTime(t.start_time)}</span>
                           )}
@@ -453,7 +478,7 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onD
   )
 }
 
-function MobileDayView({ date, tasks, goalMap, onMarkDone, onRescheduleToTomorrow, onMoveToInbox, onDelete, onEdit, onAddTaskForBucket }) {
+function MobileDayView({ date, tasks, goalMap, collabMap, onMarkDone, onRescheduleToTomorrow, onMoveToInbox, onDelete, onEdit, onAddTaskForBucket }) {
   const activeTasks = tasks.filter(t => t.status !== 'done')
   const doneTasks = tasks.filter(t => t.status === 'done')
   const dateStr = format(date, 'yyyy-MM-dd')
@@ -480,7 +505,7 @@ function MobileDayView({ date, tasks, goalMap, onMarkDone, onRescheduleToTomorro
                       {(provided, snapshot) => {
                         const card = (
                           <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps} style={{ ...provided.draggableProps.style, marginBottom: '6px', WebkitTouchCallout: 'none', WebkitUserSelect: 'none', userSelect: 'none', touchAction: 'manipulation' }}>
-                            <TaskCard task={task} isDone={task.status === 'done'} isDragging={snapshot.isDragging} goalColor={goalMap[task.goal_id] ? goalMap[task.goal_id].color : null} onMarkDone={onMarkDone} onRescheduleToTomorrow={onRescheduleToTomorrow} onMoveToInbox={onMoveToInbox} onDelete={onDelete} onEdit={onEdit} />
+                            <TaskCard task={task} isDone={task.status === 'done'} isDragging={snapshot.isDragging} goalColor={goalMap[task.goal_id] ? goalMap[task.goal_id].color : null} collabBadge={task.collaboration_id && collabMap ? collabMap[task.collaboration_id] : null} onMarkDone={onMarkDone} onRescheduleToTomorrow={onRescheduleToTomorrow} onMoveToInbox={onMoveToInbox} onDelete={onDelete} onEdit={onEdit} />
                           </div>
                         )
                         return snapshot.isDragging ? createPortal(card, document.body) : card
@@ -498,7 +523,7 @@ function MobileDayView({ date, tasks, goalMap, onMarkDone, onRescheduleToTomorro
   )
 }
 
-function MobileInbox({ tasks, goalMap, onAddTask, onEdit, onDelete, search, sortMode, sortDir, categoryFilter }) {
+function MobileInbox({ tasks, goalMap, collabMap, onAddTask, onEdit, onDelete, search, sortMode, sortDir, categoryFilter }) {
   const [pressedTaskId, setPressedTaskId] = useState(null)
   const searched = search && search.trim() ? tasks.filter(t => t.title.toLowerCase().includes(search.trim().toLowerCase())) : tasks
   const filteredTasks = categoryFilter && categoryFilter !== 'all' ? searched.filter(t => t.category === categoryFilter) : searched
@@ -552,6 +577,9 @@ function MobileInbox({ tasks, goalMap, onAddTask, onEdit, onDelete, search, sort
                         )}
                         {task.category && (
                           <span style={{ fontSize: '10px', color: '#9ca3af', marginLeft: '6px' }}>{task.category}</span>
+                        )}
+                        {task.collaboration_id && collabMap && collabMap[task.collaboration_id] && (
+                          <span style={{ fontSize: '10px', fontWeight: 500, padding: '1px 6px', borderRadius: '4px', marginLeft: '6px', color: collabMap[task.collaboration_id].color, background: collabMap[task.collaboration_id].color + '1a' }}>{collabMap[task.collaboration_id].name}</span>
                         )}
                       </p>
                       {task.goal_id && goalMap[task.goal_id] && (
@@ -735,7 +763,8 @@ function MobileAssistant({ goals, tasks, onCreateTask, onAddGoal }) {
 }
 
 export default function MobileLayout({
-  weekStart, weekDays, tasks, goals, goalMap, goalTasks, inboxTasks, loading,
+  weekStart, weekDays, tasks, goals, goalMap, collabMap, goalTasks, inboxTasks, loading,
+  collaborations, activeView, onChangeView, defaultCollaborationId,
   overdueTasks, onPrevWeek, onNextWeek, onMarkDone,
   onRescheduleToTomorrow, onMoveToInbox, onDelete, onEdit, onAddTask, onAddTaskForBucket, onCreateTask,
   onRollover, onAddGoal, onEditGoal, onDeleteGoal
@@ -801,13 +830,13 @@ export default function MobileLayout({
           {loading ? (
             <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af', fontSize: '13px' }}>Loading</div>
           ) : (
-            <MobileDayView date={selectedDay} tasks={tasksForDay(selectedDay)} goalMap={goalMap} onMarkDone={onMarkDone} onRescheduleToTomorrow={onRescheduleToTomorrow} onMoveToInbox={onMoveToInbox} onDelete={onDelete} onEdit={onEdit} onAddTaskForBucket={onAddTaskForBucket} />
+            <MobileDayView date={selectedDay} tasks={tasksForDay(selectedDay)} goalMap={goalMap} collabMap={collabMap} onMarkDone={onMarkDone} onRescheduleToTomorrow={onRescheduleToTomorrow} onMoveToInbox={onMoveToInbox} onDelete={onDelete} onEdit={onEdit} onAddTaskForBucket={onAddTaskForBucket} />
           )}
         </>
       )}
 
       {activeTab === 'goals' && (
-        <MobileGoalsBar goals={goals} goalTasks={goalTasks} allTasks={tasks} onAddGoal={onAddGoal} onEditGoal={onEditGoal} onDeleteGoal={onDeleteGoal} onMarkDone={onMarkDone} onDelete={onDelete} onCreateTask={onCreateTask} onEditTask={onEdit} />
+        <MobileGoalsBar goals={goals} goalTasks={goalTasks} allTasks={tasks} collabMap={collabMap} collaborations={collaborations} defaultCollaborationId={defaultCollaborationId} onAddGoal={onAddGoal} onEditGoal={onEditGoal} onDeleteGoal={onDeleteGoal} onMarkDone={onMarkDone} onDelete={onDelete} onCreateTask={onCreateTask} onEditTask={onEdit} />
       )}
 
       {activeTab === 'inbox' && (
@@ -861,7 +890,7 @@ export default function MobileLayout({
               {taskCategories.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
-          <MobileInbox tasks={loading ? [] : inboxTasks} goalMap={goalMap} onAddTask={onAddTask} onEdit={onEdit} onDelete={onDelete} search={taskSearch} sortMode={taskSort} sortDir={taskSortDir} categoryFilter={taskCategoryFilter} />
+          <MobileInbox tasks={loading ? [] : inboxTasks} goalMap={goalMap} collabMap={collabMap} onAddTask={onAddTask} onEdit={onEdit} onDelete={onDelete} search={taskSearch} sortMode={taskSort} sortDir={taskSortDir} categoryFilter={taskCategoryFilter} />
         </>
       )}
 
@@ -882,6 +911,18 @@ export default function MobileLayout({
           <div style={{ border: '1px solid #e5e7eb', borderRadius: '10px', padding: '14px', marginBottom: '10px', background: 'white' }}>
             <p style={{ fontSize: '12px', color: '#9ca3af', margin: '0 0 2px' }}>Signed in as</p>
             <p style={{ fontSize: '15px', fontWeight: 600, color: '#1f2937', margin: 0 }}>{profile?.username}</p>
+          </div>
+          <div style={{ border: '1px solid #e5e7eb', borderRadius: '10px', padding: '14px', marginBottom: '10px', background: 'white' }}>
+            <p style={{ fontSize: '12px', color: '#9ca3af', margin: '0 0 6px' }}>Viewing</p>
+            <select
+              value={activeView}
+              onChange={e => onChangeView(e.target.value)}
+              style={{ width: '100%', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '8px', fontSize: '13px', outline: 'none' }}
+            >
+              <option value="all">All</option>
+              <option value="personal">Personal</option>
+              {collaborations && collaborations.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
           </div>
           <button
             onClick={() => setShowCollab(true)}

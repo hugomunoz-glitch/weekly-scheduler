@@ -31,13 +31,14 @@ function PriorityBadge({ priority }) {
   )
 }
 
-export default function GoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEditGoal, onDeleteGoal, onMarkDone, onDelete, onCreateTask, onEditTask }) {
+export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations, defaultCollaborationId, onAddGoal, onEditGoal, onDeleteGoal, onMarkDone, onDelete, onCreateTask, onEditTask }) {
   const [adding, setAdding] = useState(false)
   const [newTitle, setNewTitle] = useState('')
   const [newCategory, setNewCategory] = useState('')
   const [customCategory, setCustomCategory] = useState(false)
   const [newCategoryCustom, setNewCategoryCustom] = useState('')
   const [newPriority, setNewPriority] = useState('')
+  const [newGoalCollaborationId, setNewGoalCollaborationId] = useState(defaultCollaborationId || '')
   const [showSmart, setShowSmart] = useState(false)
   const [smartSpecific, setSmartSpecific] = useState('')
   const [smartMeasurable, setSmartMeasurable] = useState('')
@@ -133,7 +134,8 @@ export default function GoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEdit
   function handleAddTaskToGoal(e, goalId) {
     e.preventDefault()
     if (!newTaskTitle.trim()) return
-    onCreateTask(newTaskTitle.trim(), '', goalId, null)
+    const goal = goals.find(g => g.id === goalId)
+    onCreateTask(newTaskTitle.trim(), '', goalId, null, null, null, null, null, goal?.collaboration_id || null)
     setNewTaskTitle('')
   }
 
@@ -152,9 +154,10 @@ export default function GoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEdit
         smartAchievable: smartAchievable.trim() || null,
         smartRelevant: smartRelevant.trim() || null,
         smartTimebound: smartTimebound.trim() || null
-      })
+      }, newGoalCollaborationId || null)
       setNewTitle(''); setNewCategory(''); setNewPriority(''); setCustomCategory(false); setNewCategoryCustom('')
       setSmartSpecific(''); setSmartMeasurable(''); setSmartAchievable(''); setSmartRelevant(''); setSmartTimebound('')
+      setNewGoalCollaborationId(defaultCollaborationId || '')
       setShowSmart(false)
       setAdding(false)
       setAddGoalError('')
@@ -167,6 +170,7 @@ export default function GoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEdit
   const [editingCustomCategory, setEditingCustomCategory] = useState(false)
   const [editingCategoryCustom, setEditingCategoryCustom] = useState('')
   const [editingPriority, setEditingPriority] = useState('')
+  const [editingCollaborationId, setEditingCollaborationId] = useState('')
   const [editError, setEditError] = useState('')
 
   function startEdit(goal) {
@@ -182,6 +186,7 @@ export default function GoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEdit
       setEditingCategory(goal.category || '')
     }
     setEditingPriority(goal.priority || '')
+    setEditingCollaborationId(goal.collaboration_id || '')
     setEditError('')
   }
 
@@ -190,7 +195,7 @@ export default function GoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEdit
     if (!editingTitle.trim()) return
     try {
       const category = editingCustomCategory ? editingCategoryCustom.trim() : editingCategory
-      await onEditGoal(goalId, editingTitle.trim(), { category: category || null, priority: editingPriority || null })
+      await onEditGoal(goalId, editingTitle.trim(), { category: category || null, priority: editingPriority || null }, editingCollaborationId || null)
       setEditingId(null)
     } catch {
       setEditError('Could not save. Try again.')
@@ -241,6 +246,12 @@ export default function GoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEdit
                   <option value="low">Low</option>
                 </select>
               </div>
+              {collaborations && collaborations.length > 0 && (
+                <select value={newGoalCollaborationId} onChange={e => setNewGoalCollaborationId(e.target.value)} className="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-300">
+                  <option value="">Save to: Personal</option>
+                  {collaborations.map(c => <option key={c.id} value={c.id}>Save to: {c.name}</option>)}
+                </select>
+              )}
               {!showSmart ? (
                 <button type="button" onClick={() => setShowSmart(true)} className="text-xs text-indigo-500 hover:text-indigo-700">+ Make it a SMART goal (optional)</button>
               ) : (
@@ -342,6 +353,12 @@ export default function GoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEdit
                     <option value="medium">Medium</option>
                     <option value="low">Low</option>
                   </select>
+                  {collaborations && collaborations.length > 0 && (
+                    <select value={editingCollaborationId} onChange={e => setEditingCollaborationId(e.target.value)} className="text-xs border border-gray-200 rounded px-1 py-0.5 w-full focus:outline-none">
+                      <option value="">Save to: Personal</option>
+                      {collaborations.map(c => <option key={c.id} value={c.id}>Save to: {c.name}</option>)}
+                    </select>
+                  )}
                   <div className="flex gap-1.5">
                     <button type="submit" className="text-xs text-white bg-indigo-600 hover:bg-indigo-700 px-2 py-0.5 rounded">Save</button>
                     <button type="button" onClick={() => setEditingId(null)} className="text-xs text-gray-400 hover:text-gray-600">Cancel</button>
@@ -357,6 +374,15 @@ export default function GoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEdit
                   >
                     {goal.title}
                   </p>
+                  {goal.collaboration_id && collabMap && collabMap[goal.collaboration_id] && (
+                    <span
+                      className="text-[9px] font-medium px-1.5 py-0.5 rounded shrink-0"
+                      style={{ color: collabMap[goal.collaboration_id].color, background: collabMap[goal.collaboration_id].color + '1a' }}
+                      title={'Shared with: ' + collabMap[goal.collaboration_id].name}
+                    >
+                      {collabMap[goal.collaboration_id].name}
+                    </span>
+                  )}
                 </div>
               )}
               {editingId !== goal.id && (
@@ -438,6 +464,15 @@ export default function GoalsBar({ goals, goalTasks, allTasks, onAddGoal, onEdit
                                       </span>
                                       <span className={'flex-1 truncate cursor-pointer ' + (t.status === 'done' ? 'line-through text-gray-400' : '')} onClick={() => handleEditTask(t.id)}>{t.title}</span>
                                       <PriorityBadge priority={t.priority} />
+                                      {t.collaboration_id && collabMap && collabMap[t.collaboration_id] && (
+                                        <span
+                                          className="text-[9px] font-medium px-1.5 py-0.5 rounded shrink-0"
+                                          style={{ color: collabMap[t.collaboration_id].color, background: collabMap[t.collaboration_id].color + '1a' }}
+                                          title={'Shared with: ' + collabMap[t.collaboration_id].name}
+                                        >
+                                          {collabMap[t.collaboration_id].name}
+                                        </span>
+                                      )}
                                       {t.start_time && (
                                         <span className="text-sm text-indigo-400 shrink-0 whitespace-nowrap">{formatTime(t.start_time)}</span>
                                       )}
