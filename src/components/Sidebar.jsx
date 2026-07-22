@@ -50,13 +50,6 @@ function Inbox({ tasks, goalMap, collabMap, collabMembersMap, onAssignTask, onMa
                     style={{ ...provided.draggableProps.style, ...(task.priority && PRIORITY_BORDER[task.priority] ? { borderLeft: '4px solid ' + PRIORITY_BORDER[task.priority] } : {}) }}
                     title={task.priority ? PRIORITY_LABELS[task.priority] + ' priority' : undefined}
                     onMouseEnter={() => setHoverId(task.id)} onMouseLeave={() => setHoverId(null)}>
-                    {task.collaboration_id && collabMap && collabMap[task.collaboration_id] && (
-                      <span
-                        className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full z-[1]"
-                        style={{ background: collabMap[task.collaboration_id].color }}
-                        title={'Shared with: ' + collabMap[task.collaboration_id].name}
-                      />
-                    )}
                     {!snapshot.isDragging && (
                       <button
                         onClick={(e) => { e.stopPropagation(); onDelete(task.id) }}
@@ -74,6 +67,13 @@ function Inbox({ tasks, goalMap, collabMap, collabMembersMap, onAssignTask, onMa
                         {task.status === 'done' && <span className="text-xs leading-none">&#10003;</span>}
                       </button>
                       <p className={'text-sm leading-snug break-words flex-1 ' + (task.status === 'done' ? 'line-through text-gray-400' : 'text-gray-800')}>
+                        {task.collaboration_id && collabMap && collabMap[task.collaboration_id] && (
+                          <span
+                            className="inline-block w-2 h-2 rounded-full mr-1.5 align-middle"
+                            style={{ background: collabMap[task.collaboration_id].color }}
+                            title={'Shared with: ' + collabMap[task.collaboration_id].name}
+                          />
+                        )}
                         {task.title}
                       </p>
                     </div>

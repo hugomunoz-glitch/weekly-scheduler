@@ -592,10 +592,6 @@ function MobileInbox({ tasks, goalMap, collabMap, collabMembersMap, onAssignTask
                   const row = (
                   <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}
                     style={{ ...provided.draggableProps.style, border: '1px solid ' + (snapshot.isDragging ? '#a5b4fc' : '#e5e7eb'), borderLeft: task.priority && PRIORITY_BORDER[task.priority] ? '4px solid ' + PRIORITY_BORDER[task.priority] : undefined, borderRadius: '10px', padding: '10px 12px', background: 'white', marginBottom: '8px', WebkitTouchCallout: 'none', WebkitUserSelect: 'none', userSelect: 'none', touchAction: 'manipulation' }}>
-                    <div style={{ position: 'relative' }}>
-                    {task.collaboration_id && collabMap && collabMap[task.collaboration_id] && (
-                      <span style={{ position: 'absolute', top: '-4px', right: '-4px', width: '8px', height: '8px', borderRadius: '50%', background: collabMap[task.collaboration_id].color }} title={'Shared with: ' + collabMap[task.collaboration_id].name} />
-                    )}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
                       <button
                         onClick={(e) => { e.stopPropagation(); onMarkDone(task.id) }}
@@ -605,6 +601,9 @@ function MobileInbox({ tasks, goalMap, collabMap, collabMembersMap, onAssignTask
                       </button>
                       <div style={{ flex: 1 }}>
                         <p style={{ fontSize: '14px', color: task.status === 'done' ? '#9ca3af' : '#1f2937', margin: 0, textDecoration: task.status === 'done' ? 'line-through' : 'none' }}>
+                          {task.collaboration_id && collabMap && collabMap[task.collaboration_id] && (
+                            <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', marginRight: '6px', verticalAlign: 'middle', background: collabMap[task.collaboration_id].color }} title={'Shared with: ' + collabMap[task.collaboration_id].name} />
+                          )}
                           {task.title}
                         </p>
                         {categoryBadge(task.category) && (() => {
@@ -640,7 +639,6 @@ function MobileInbox({ tasks, goalMap, collabMap, collabMembersMap, onAssignTask
                         <button onClick={(e) => { e.stopPropagation(); onDelete(task.id) }} style={{ fontSize: '17px', color: '#ef4444', background: 'none', border: 'none', padding: 0, cursor: 'pointer', marginLeft: 'auto', lineHeight: 1 }} title="Delete">&#128465;</button>
                       </div>
                     )}
-                    </div>
                   </div>
                   )
                   return snapshot.isDragging ? createPortal(row, document.body) : row
