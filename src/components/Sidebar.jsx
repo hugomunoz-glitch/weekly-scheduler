@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Droppable, Draggable } from '@hello-pangea/dnd'
 import { useAssistantHistory } from '../hooks/useAssistantHistory'
+import { categoryBadge } from './TaskCard'
 
 const PRIORITY_RANK = { high: 0, medium: 1, low: 2 }
 const PRIORITY_COLORS = { high: '#ef4444', medium: '#f59e0b', low: '#9ca3af' }
@@ -58,13 +59,13 @@ function Inbox({ tasks, goalMap, collabMap, collabMembersMap, onAssignTask, onEd
                     )}
                     <div className="flex items-start justify-between gap-2">
                       <p className="text-sm text-gray-800 leading-snug break-words flex-1">{task.title}</p>
-                      {task.goal_id && goalMap[task.goal_id] && (
+                      {categoryBadge(task.category) && (
                         <span
                           className="text-[9px] font-medium px-1.5 py-0.5 rounded shrink-0"
-                          style={{ color: goalMap[task.goal_id].color, background: goalMap[task.goal_id].color + '1a' }}
-                          title={'Goal: ' + goalMap[task.goal_id].title}
+                          style={{ color: categoryBadge(task.category).color, background: categoryBadge(task.category).color + '1a' }}
+                          title={'Category: ' + categoryBadge(task.category).name}
                         >
-                          {goalMap[task.goal_id].title}
+                          {categoryBadge(task.category).name}
                         </span>
                       )}
                     </div>

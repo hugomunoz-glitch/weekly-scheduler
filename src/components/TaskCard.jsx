@@ -18,10 +18,21 @@ function formatDueDate(d) {
 const PRIORITY_COLORS = { high: '#ef4444', medium: '#f59e0b', low: '#9ca3af' }
 const PRIORITY_LABELS = { high: 'High', medium: 'Medium', low: 'Low' }
 const PRIORITY_BORDER = { high: '#ef4444', medium: '#f59e0b', low: '#22c55e' }
+const CATEGORY_COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316', '#ec4899']
 
-export default function TaskCard({ task, isDone, isDragging, goalBadge, collabBadge, isDueCard, onMarkDone, onRescheduleToTomorrow, onMoveToInbox, onDelete, onEdit }) {
+export function categoryBadge(category) {
+  if (!category) return null
+  const clean = category.replace(/\s*\([^)]*\)\s*/g, '').trim()
+  if (!clean) return null
+  let hash = 0
+  for (let i = 0; i < clean.length; i++) hash = (hash * 31 + clean.charCodeAt(i)) >>> 0
+  return { name: clean, color: CATEGORY_COLORS[hash % CATEGORY_COLORS.length] }
+}
+
+export default function TaskCard({ task, isDone, isDragging, collabBadge, isDueCard, onMarkDone, onRescheduleToTomorrow, onMoveToInbox, onDelete, onEdit }) {
   const [showActions, setShowActions] = useState(false)
   const canHover = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(hover: hover)').matches
+  const catBadge = categoryBadge(task.category)
 
   return (
     <div
@@ -54,9 +65,6 @@ export default function TaskCard({ task, isDone, isDragging, goalBadge, collabBa
           <span className={'leading-snug break-words ' + (isDone ? 'line-through text-gray-400' : 'text-gray-800')}>
             {task.title}
           </span>
-          {task.category && (
-            <span className="text-[10px] text-gray-400 ml-1.5">{task.category}</span>
-          )}
           {collabBadge && (
             <span
               className="text-[9px] font-medium px-1.5 py-0.5 rounded ml-1.5"
@@ -72,13 +80,13 @@ export default function TaskCard({ task, isDone, isDragging, goalBadge, collabBa
             </p>
           )}
         </div>
-        {goalBadge && (
+        {catBadge && (
           <span
             className="text-[9px] font-medium px-1.5 py-0.5 rounded shrink-0"
-            style={{ color: goalBadge.color, background: goalBadge.color + '1a' }}
-            title={'Goal: ' + goalBadge.name}
+            style={{ color: catBadge.color, background: catBadge.color + '1a' }}
+            title={'Category: ' + catBadge.name}
           >
-            {goalBadge.name}
+            {catBadge.name}
           </span>
         )}
         {!isDragging && (

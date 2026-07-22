@@ -6,7 +6,7 @@ import CollaborationPanel from './CollaborationPanel'
 import { resetViewportZoom } from '../lib/resetZoom'
 import { format, isToday } from 'date-fns'
 import { Droppable, Draggable } from '@hello-pangea/dnd'
-import TaskCard from './TaskCard'
+import TaskCard, { categoryBadge } from './TaskCard'
 
 function formatTime(t) {
   if (!t) return null
@@ -513,7 +513,7 @@ function MobileDayView({ date, tasks, dueCards, goalMap, collabMap, onMarkDone, 
                       {(provided, snapshot) => {
                         const card = (
                           <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps} style={{ ...provided.draggableProps.style, marginBottom: '6px', WebkitTouchCallout: 'none', WebkitUserSelect: 'none', userSelect: 'none', touchAction: 'manipulation' }}>
-                            <TaskCard task={task} isDone={task.status === 'done'} isDragging={snapshot.isDragging} goalBadge={goalMap[task.goal_id] ? { name: goalMap[task.goal_id].title, color: goalMap[task.goal_id].color } : null} collabBadge={task.collaboration_id && collabMap ? collabMap[task.collaboration_id] : null} onMarkDone={onMarkDone} onRescheduleToTomorrow={onRescheduleToTomorrow} onMoveToInbox={onMoveToInbox} onDelete={onDelete} onEdit={onEdit} />
+                            <TaskCard task={task} isDone={task.status === 'done'} isDragging={snapshot.isDragging} collabBadge={task.collaboration_id && collabMap ? collabMap[task.collaboration_id] : null} onMarkDone={onMarkDone} onRescheduleToTomorrow={onRescheduleToTomorrow} onMoveToInbox={onMoveToInbox} onDelete={onDelete} onEdit={onEdit} />
                           </div>
                         )
                         return snapshot.isDragging ? createPortal(card, document.body) : card
@@ -534,7 +534,7 @@ function MobileDayView({ date, tasks, dueCards, goalMap, collabMap, onMarkDone, 
                         {(provided, snapshot) => {
                           const card = (
                             <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps} style={{ ...provided.draggableProps.style, marginBottom: '6px', WebkitTouchCallout: 'none', WebkitUserSelect: 'none', userSelect: 'none', touchAction: 'manipulation' }}>
-                              <TaskCard task={task} isDone={task.status === 'done'} isDragging={snapshot.isDragging} isDueCard goalBadge={goalMap[task.goal_id] ? { name: goalMap[task.goal_id].title, color: goalMap[task.goal_id].color } : null} collabBadge={task.collaboration_id && collabMap ? collabMap[task.collaboration_id] : null} onMarkDone={onMarkDone} onRescheduleToTomorrow={onRescheduleToTomorrow} onMoveToInbox={onMoveToInbox} onDelete={onDelete} onEdit={onEdit} />
+                              <TaskCard task={task} isDone={task.status === 'done'} isDragging={snapshot.isDragging} isDueCard collabBadge={task.collaboration_id && collabMap ? collabMap[task.collaboration_id] : null} onMarkDone={onMarkDone} onRescheduleToTomorrow={onRescheduleToTomorrow} onMoveToInbox={onMoveToInbox} onDelete={onDelete} onEdit={onEdit} />
                             </div>
                           )
                           return snapshot.isDragging ? createPortal(card, document.body) : card
@@ -602,16 +602,14 @@ function MobileInbox({ tasks, goalMap, collabMap, collabMembersMap, onAssignTask
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
                       <p style={{ fontSize: '14px', color: '#1f2937', flex: 1, margin: 0 }}>
                         {task.title}
-                        {task.category && (
-                          <span style={{ fontSize: '10px', color: '#9ca3af', marginLeft: '6px' }}>{task.category}</span>
-                        )}
                         {task.collaboration_id && collabMap && collabMap[task.collaboration_id] && (
                           <span style={{ fontSize: '10px', fontWeight: 500, padding: '1px 6px', borderRadius: '4px', marginLeft: '6px', color: collabMap[task.collaboration_id].color, background: collabMap[task.collaboration_id].color + '1a' }}>{collabMap[task.collaboration_id].name}</span>
                         )}
                       </p>
-                      {task.goal_id && goalMap[task.goal_id] && (
-                        <span style={{ fontSize: '9px', fontWeight: 500, padding: '2px 6px', borderRadius: '4px', flexShrink: 0, marginTop: '2px', color: goalMap[task.goal_id].color, background: goalMap[task.goal_id].color + '1a' }}>{goalMap[task.goal_id].title}</span>
-                      )}
+                      {categoryBadge(task.category) && (() => {
+                        const cb = categoryBadge(task.category)
+                        return <span style={{ fontSize: '9px', fontWeight: 500, padding: '2px 6px', borderRadius: '4px', flexShrink: 0, marginTop: '2px', color: cb.color, background: cb.color + '1a' }}>{cb.name}</span>
+                      })()}
                       {!snapshot.isDragging && (
                         <button
                           onClick={(e) => { e.stopPropagation(); setPressedTaskId(pressedTaskId === task.id ? null : task.id) }}
