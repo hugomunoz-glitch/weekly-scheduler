@@ -1,6 +1,6 @@
 {
-  "name": "Weekly Planner",
-  "short_name": "Weekly Planner",
+  "name": "Schedulent",
+  "short_name": "Schedulent",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
