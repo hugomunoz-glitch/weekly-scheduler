@@ -265,11 +265,11 @@ export default function Sidebar({ tasks, goalMap, collabMap, collabMembersMap, o
     <div className="w-64 bg-white flex flex-col shrink-0 overflow-hidden h-full">
       <div className="flex border-b border-gray-100 shrink-0">
         <button onClick={() => setTab('inbox')}
-          className={'flex-1 py-2.5 text-xs font-medium transition-colors ' + (tab === 'inbox' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-400 hover:text-gray-600')}>
+          className={'flex-1 py-2.5 text-xs font-medium transition-colors ' + (tab === 'inbox' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-600 hover:text-gray-800')}>
           &#128221; Task List {tasks.length > 0 && <span className="ml-1 bg-indigo-100 text-indigo-600 px-1.5 py-0.5 rounded-full">{tasks.length}</span>}
         </button>
         <button onClick={() => setTab('assistant')}
-          className={'flex-1 py-2.5 text-xs font-medium transition-colors ' + (tab === 'assistant' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-400 hover:text-gray-600')}>
+          className={'flex-1 py-2.5 text-xs font-medium transition-colors ' + (tab === 'assistant' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-600 hover:text-gray-800')}>
           &#129302; Assistant
         </button>
       </div>

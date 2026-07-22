@@ -42,7 +42,10 @@ export default function Login() {
   return (
     <div className="h-screen flex items-center justify-center bg-gray-50">
       <form onSubmit={handleSubmit} className="w-full max-w-sm bg-white border border-gray-200 rounded-xl shadow-sm p-6">
-        <h1 className="text-lg font-semibold text-gray-900 mb-1">Schedulent</h1>
+        <div className="flex items-center gap-2 mb-1">
+          <img src="/icon-192.png" alt="" className="w-6 h-6 rounded-md" />
+          <h1 className="text-lg font-semibold text-gray-900">Schedulent</h1>
+        </div>
         <p className="text-sm text-gray-500 mb-5">{mode === 'signin' ? 'Sign in to your account' : 'Create your account'}</p>
 
         {error && <div className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</div>}
