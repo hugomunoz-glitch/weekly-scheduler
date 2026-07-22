@@ -65,7 +65,17 @@ export function AuthProvider({ children }) {
     await supabase.auth.signOut()
   }
 
-  const value = { session, user: session?.user ?? null, profile, loading, signIn, signUp, signOut }
+  async function updateEmail(newEmail) {
+    const { error } = await supabase.auth.updateUser({ email: newEmail })
+    return { error }
+  }
+
+  async function updatePassword(newPassword) {
+    const { error } = await supabase.auth.updateUser({ password: newPassword })
+    return { error }
+  }
+
+  const value = { session, user: session?.user ?? null, profile, loading, signIn, signUp, signOut, updateEmail, updatePassword }
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 
