@@ -592,13 +592,14 @@ function MobileInbox({ tasks, goalMap, collabMap, collabMembersMap, onAssignTask
                   const row = (
                   <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}
                     style={{ ...provided.draggableProps.style, border: '1px solid ' + (snapshot.isDragging ? '#a5b4fc' : '#e5e7eb'), borderLeft: task.priority && PRIORITY_BORDER[task.priority] ? '4px solid ' + PRIORITY_BORDER[task.priority] : undefined, borderRadius: '10px', padding: '10px 12px', background: 'white', marginBottom: '8px', WebkitTouchCallout: 'none', WebkitUserSelect: 'none', userSelect: 'none', touchAction: 'manipulation' }}>
+                    <div style={{ position: 'relative' }}>
+                    {task.collaboration_id && collabMap && collabMap[task.collaboration_id] && (
+                      <span style={{ position: 'absolute', top: '-4px', right: '-4px', width: '8px', height: '8px', borderRadius: '50%', background: collabMap[task.collaboration_id].color }} title={'Shared with: ' + collabMap[task.collaboration_id].name} />
+                    )}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
                       <div style={{ flex: 1 }}>
                         <p style={{ fontSize: '14px', color: '#1f2937', margin: 0 }}>
                           {task.title}
-                          {task.collaboration_id && collabMap && collabMap[task.collaboration_id] && (
-                            <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', marginLeft: '6px', verticalAlign: 'middle', background: collabMap[task.collaboration_id].color }} title={'Shared with: ' + collabMap[task.collaboration_id].name} />
-                          )}
                         </p>
                         {categoryBadge(task.category) && (() => {
                           const cb = categoryBadge(task.category)
@@ -633,6 +634,7 @@ function MobileInbox({ tasks, goalMap, collabMap, collabMembersMap, onAssignTask
                         <button onClick={(e) => { e.stopPropagation(); onDelete(task.id) }} style={{ fontSize: '17px', color: '#ef4444', background: 'none', border: 'none', padding: 0, cursor: 'pointer', marginLeft: 'auto', lineHeight: 1 }} title="Delete">&#128465;</button>
                       </div>
                     )}
+                    </div>
                   </div>
                   )
                   return snapshot.isDragging ? createPortal(row, document.body) : row
@@ -807,7 +809,59 @@ export default function MobileLayout({
   })
   const [activeTab, setActiveTab] = useState('day')
   const [showCollab, setShowCollab] = useState(false)
-  const { profile, signOut } = useAuth()
+  const { user, profile, signOut, updateEmail, updatePassword, updateUsername } = useAuth()
+  const [settingsSection, setSettingsSection] = useState(null) // 'username' | 'email' | 'password' | null
+  const [newUsername, setNewUsername] = useState('')
+  const [newEmail, setNewEmail] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [settingsMessage, setSettingsMessage] = useState(null)
+  const [settingsError, setSettingsError] = useState(null)
+  const [settingsSubmitting, setSettingsSubmitting] = useState(false)
+
+  async function handleUsernameSubmit(e) {
+    e.preventDefault()
+    setSettingsError(null)
+    setSettingsMessage(null)
+    const trimmed = newUsername.trim()
+    if (!trimmed) return
+    setSettingsSubmitting(true)
+    const { error } = await updateUsername(trimmed)
+    setSettingsSubmitting(false)
+    if (error) { setSettingsError(error.message); return }
+    setSettingsMessage('Username updated.')
+    setNewUsername('')
+    setSettingsSection(null)
+  }
+
+  async function handleEmailSubmit(e) {
+    e.preventDefault()
+    setSettingsError(null)
+    setSettingsMessage(null)
+    setSettingsSubmitting(true)
+    const { error } = await updateEmail(newEmail.trim())
+    setSettingsSubmitting(false)
+    if (error) { setSettingsError(error.message); return }
+    setSettingsMessage('Check your new email address to confirm the change.')
+    setNewEmail('')
+    setSettingsSection(null)
+  }
+
+  async function handlePasswordSubmit(e) {
+    e.preventDefault()
+    setSettingsError(null)
+    setSettingsMessage(null)
+    if (newPassword.length < 6) { setSettingsError('Password must be at least 6 characters.'); return }
+    if (newPassword !== confirmPassword) { setSettingsError('Passwords do not match.'); return }
+    setSettingsSubmitting(true)
+    const { error } = await updatePassword(newPassword)
+    setSettingsSubmitting(false)
+    if (error) { setSettingsError(error.message); return }
+    setSettingsMessage('Password updated.')
+    setNewPassword('')
+    setConfirmPassword('')
+    setSettingsSection(null)
+  }
   const [taskSearch, setTaskSearch] = useState('')
   const [showTaskSearch, setShowTaskSearch] = useState(false)
   const [taskSort, setTaskSort] = useState('manual')
@@ -873,7 +927,10 @@ export default function MobileLayout({
 
       {activeTab === 'inbox' && (
         <>
-          <div style={{ padding: '10px 16px 6px', flexShrink: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ padding: '10px 16px 0', flexShrink: 0 }}>
+            <span style={{ fontSize: '11px', color: '#9ca3af' }}>{inboxTasks.filter(t => t.status === 'done').length} of {inboxTasks.length} done</span>
+          </div>
+          <div style={{ padding: '4px 16px 6px', flexShrink: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: '15px', fontWeight: 500, color: '#111827' }}>&#128221; Task List <span style={{ fontSize: '13px', color: '#9ca3af', fontWeight: 400 }}>{inboxTasks.filter(t => t.status !== 'done').length}</span></span>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               {showTaskSearch ? (
@@ -943,7 +1000,59 @@ export default function MobileLayout({
           <div style={{ border: '1px solid #e5e7eb', borderRadius: '10px', padding: '14px', marginBottom: '10px', background: 'white' }}>
             <p style={{ fontSize: '12px', color: '#9ca3af', margin: '0 0 2px' }}>Signed in as</p>
             <p style={{ fontSize: '15px', fontWeight: 600, color: '#1f2937', margin: 0 }}>{profile?.username}</p>
+            <p style={{ fontSize: '12px', color: '#9ca3af', margin: '2px 0 0' }}>{user?.email}</p>
           </div>
+
+          {settingsMessage && <div style={{ fontSize: '13px', color: '#059669', background: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: '8px', padding: '8px 10px', marginBottom: '10px' }}>{settingsMessage}</div>}
+          {settingsError && <div style={{ fontSize: '13px', color: '#dc2626', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', padding: '8px 10px', marginBottom: '10px' }}>{settingsError}</div>}
+
+          <div style={{ border: '1px solid #e5e7eb', borderRadius: '10px', padding: '14px', marginBottom: '10px', background: 'white' }}>
+            {settingsSection === 'username' ? (
+              <form onSubmit={handleUsernameSubmit}>
+                <input autoFocus type="text" required placeholder="New username" value={newUsername} onChange={e => setNewUsername(e.target.value)}
+                  style={{ width: '100%', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '8px', fontSize: '14px', marginBottom: '8px' }} />
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button type="submit" disabled={settingsSubmitting} style={{ background: '#6366f1', color: 'white', border: 'none', borderRadius: '8px', padding: '8px 14px', fontSize: '13px' }}>{settingsSubmitting ? 'Saving...' : 'Save'}</button>
+                  <button type="button" onClick={() => { setSettingsSection(null); setSettingsError(null) }} style={{ background: 'none', border: 'none', color: '#9ca3af', fontSize: '13px' }}>Cancel</button>
+                </div>
+              </form>
+            ) : (
+              <button onClick={() => { setSettingsSection('username'); setNewUsername(profile?.username || ''); setSettingsError(null); setSettingsMessage(null) }} style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none', fontSize: '14px', color: '#1f2937', fontWeight: 500 }}>Change username</button>
+            )}
+          </div>
+
+          <div style={{ border: '1px solid #e5e7eb', borderRadius: '10px', padding: '14px', marginBottom: '10px', background: 'white' }}>
+            {settingsSection === 'email' ? (
+              <form onSubmit={handleEmailSubmit}>
+                <input autoFocus type="email" required placeholder="New email address" value={newEmail} onChange={e => setNewEmail(e.target.value)}
+                  style={{ width: '100%', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '8px', fontSize: '14px', marginBottom: '8px' }} />
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button type="submit" disabled={settingsSubmitting} style={{ background: '#6366f1', color: 'white', border: 'none', borderRadius: '8px', padding: '8px 14px', fontSize: '13px' }}>{settingsSubmitting ? 'Saving...' : 'Save'}</button>
+                  <button type="button" onClick={() => { setSettingsSection(null); setSettingsError(null) }} style={{ background: 'none', border: 'none', color: '#9ca3af', fontSize: '13px' }}>Cancel</button>
+                </div>
+              </form>
+            ) : (
+              <button onClick={() => { setSettingsSection('email'); setSettingsError(null); setSettingsMessage(null) }} style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none', fontSize: '14px', color: '#1f2937', fontWeight: 500 }}>Change email</button>
+            )}
+          </div>
+
+          <div style={{ border: '1px solid #e5e7eb', borderRadius: '10px', padding: '14px', marginBottom: '10px', background: 'white' }}>
+            {settingsSection === 'password' ? (
+              <form onSubmit={handlePasswordSubmit}>
+                <input type="password" required placeholder="New password" value={newPassword} onChange={e => setNewPassword(e.target.value)}
+                  style={{ width: '100%', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '8px', fontSize: '14px', marginBottom: '8px' }} />
+                <input type="password" required placeholder="Confirm new password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)}
+                  style={{ width: '100%', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '8px', fontSize: '14px', marginBottom: '8px' }} />
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button type="submit" disabled={settingsSubmitting} style={{ background: '#6366f1', color: 'white', border: 'none', borderRadius: '8px', padding: '8px 14px', fontSize: '13px' }}>{settingsSubmitting ? 'Saving...' : 'Save'}</button>
+                  <button type="button" onClick={() => { setSettingsSection(null); setSettingsError(null) }} style={{ background: 'none', border: 'none', color: '#9ca3af', fontSize: '13px' }}>Cancel</button>
+                </div>
+              </form>
+            ) : (
+              <button onClick={() => { setSettingsSection('password'); setSettingsError(null); setSettingsMessage(null) }} style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none', fontSize: '14px', color: '#1f2937', fontWeight: 500 }}>Change password</button>
+            )}
+          </div>
+
           <div style={{ border: '1px solid #e5e7eb', borderRadius: '10px', padding: '14px', marginBottom: '10px', background: 'white' }}>
             <p style={{ fontSize: '12px', color: '#9ca3af', margin: '0 0 6px' }}>Viewing</p>
             <ViewSwitcher activeView={activeView} onChangeView={onChangeView} collaborations={collaborations || []} collabMap={collabMap || {}} fullWidth />

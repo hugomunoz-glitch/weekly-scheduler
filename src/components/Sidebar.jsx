@@ -50,6 +50,13 @@ function Inbox({ tasks, goalMap, collabMap, collabMembersMap, onAssignTask, onEd
                     style={{ ...provided.draggableProps.style, ...(task.priority && PRIORITY_BORDER[task.priority] ? { borderLeft: '4px solid ' + PRIORITY_BORDER[task.priority] } : {}) }}
                     title={task.priority ? PRIORITY_LABELS[task.priority] + ' priority' : undefined}
                     onMouseEnter={() => setHoverId(task.id)} onMouseLeave={() => setHoverId(null)}>
+                    {task.collaboration_id && collabMap && collabMap[task.collaboration_id] && (
+                      <span
+                        className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full z-[1]"
+                        style={{ background: collabMap[task.collaboration_id].color }}
+                        title={'Shared with: ' + collabMap[task.collaboration_id].name}
+                      />
+                    )}
                     {!snapshot.isDragging && (
                       <button
                         onClick={(e) => { e.stopPropagation(); onDelete(task.id) }}
@@ -61,13 +68,6 @@ function Inbox({ tasks, goalMap, collabMap, collabMembersMap, onAssignTask, onEd
                     )}
                     <p className="text-sm text-gray-800 leading-snug break-words">
                       {task.title}
-                      {task.collaboration_id && collabMap && collabMap[task.collaboration_id] && (
-                        <span
-                          className="inline-block w-2 h-2 rounded-full ml-1.5 align-middle"
-                          style={{ background: collabMap[task.collaboration_id].color }}
-                          title={'Shared with: ' + collabMap[task.collaboration_id].name}
-                        />
-                      )}
                     </p>
                     {(categoryBadge(task.category) || (task.collaboration_id && collabMembersMap && collabMembersMap[task.collaboration_id] && collabMembersMap[task.collaboration_id].length > 0)) && (
                       <div className="flex items-center gap-1.5 mt-1">
@@ -285,6 +285,9 @@ export default function Sidebar({ tasks, goalMap, collabMap, collabMembersMap, o
       <div className="flex-1 overflow-hidden flex flex-col">
         {tab === 'inbox' ? (
           <>
+            <div className="px-4 pt-2 shrink-0">
+              <span className="text-xs text-gray-400">{tasks.filter(t => t.status === 'done').length} of {tasks.length} done</span>
+            </div>
             <div className="px-4 py-2 flex justify-end items-center gap-2 shrink-0">
               {showTaskSearch ? (
                 <input

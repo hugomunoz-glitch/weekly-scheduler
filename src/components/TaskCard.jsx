@@ -42,6 +42,13 @@ export default function TaskCard({ task, isDone, isDragging, collabBadge, isDueC
       onMouseEnter={canHover ? () => setShowActions(true) : undefined}
       onMouseLeave={canHover ? () => setShowActions(false) : undefined}
     >
+      {collabBadge && (
+        <span
+          className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full z-[1]"
+          style={{ background: collabBadge.color }}
+          title={'Shared with: ' + collabBadge.name}
+        />
+      )}
       {!isDragging && (
         <button
           onClick={(e) => { e.stopPropagation(); onDelete(task.id) }}
@@ -65,13 +72,6 @@ export default function TaskCard({ task, isDone, isDragging, collabBadge, isDueC
           <span className={'leading-snug break-words ' + (isDone ? 'line-through text-gray-400' : 'text-gray-800')}>
             {task.title}
           </span>
-          {collabBadge && (
-            <span
-              className="inline-block w-2 h-2 rounded-full ml-1.5 align-middle"
-              style={{ background: collabBadge.color }}
-              title={'Shared with: ' + collabBadge.name}
-            />
-          )}
           {task.start_time && !isDueCard && (
             <p className={'text-xs mt-0.5 ' + (isDone ? 'text-gray-300' : 'text-indigo-400 font-medium')}>
               {formatTime(task.start_time)}
