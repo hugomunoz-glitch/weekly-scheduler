@@ -906,7 +906,7 @@ export default function MobileLayout({
               <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: isSelected ? '#6366f1' : today ? '#e0e7ff' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <span style={{ fontSize: '17px', fontWeight: isSelected || today ? 700 : 500, color: isSelected ? 'white' : today ? '#6366f1' : '#374151' }}>{format(day, 'd')}</span>
               </div>
-              {count > 0 && <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: isSelected ? '#6366f1' : '#d1d5db' }} />}
+              {count > 0 && <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: count >= 5 ? '#ef4444' : count >= 3 ? '#f59e0b' : '#22c55e' }} />}
             </button>
           )
         })}
