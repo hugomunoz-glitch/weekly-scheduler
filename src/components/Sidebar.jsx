@@ -275,7 +275,7 @@ export default function Sidebar({ tasks, goalMap, collabMap, collabMembersMap, o
   const [tab, setTab] = useState('inbox')
   const [taskSearch, setTaskSearch] = useState('')
   const [showTaskSearch, setShowTaskSearch] = useState(false)
-  const [taskSort, setTaskSort] = useState('manual')
+  const [taskSort, setTaskSort] = useState('deadline')
   const [taskSortDir, setTaskSortDir] = useState(1)
   const [taskCategoryFilter, setTaskCategoryFilter] = useState('all')
   const taskCategories = [...new Set(allTasks.map(t => t.category).filter(Boolean))].sort()

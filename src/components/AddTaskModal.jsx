@@ -238,7 +238,7 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
             <p className="text-[11px] text-gray-400 mt-1">Leave blank to keep in Task List. Clearing this later sends it back to Task List.</p>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">Due date (optional)</label>
+            <label className="block text-xs font-medium text-gray-500 mb-1">Deadline (optional)</label>
             <input
               type="date"
               value={dueDate}

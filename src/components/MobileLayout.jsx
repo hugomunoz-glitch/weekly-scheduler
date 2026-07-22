@@ -882,7 +882,7 @@ export default function MobileLayout({
   }
   const [taskSearch, setTaskSearch] = useState('')
   const [showTaskSearch, setShowTaskSearch] = useState(false)
-  const [taskSort, setTaskSort] = useState('manual')
+  const [taskSort, setTaskSort] = useState('deadline')
   const [taskSortDir, setTaskSortDir] = useState(1)
   const [taskCategoryFilter, setTaskCategoryFilter] = useState('all')
   const taskCategories = [...new Set(tasks.map(t => t.category).filter(Boolean))].sort()
