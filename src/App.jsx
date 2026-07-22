@@ -398,7 +398,7 @@ export default function App() {
       ) : (
         <div className="h-screen flex flex-col bg-gray-50 overflow-hidden">
           <header className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between shrink-0">
-            <h1 className="text-base font-semibold text-gray-900 tracking-tight">Weekly Planner</h1>
+            <h1 className="text-base font-semibold text-gray-900 tracking-tight">Schedulent</h1>
             <div className="flex items-center gap-2">
               <button onClick={sharedProps.onPrevWeek} className="px-2 py-1 text-sm text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded">Prev</button>
               <span className="text-sm font-medium text-gray-700 min-w-[200px] text-center">{format(weekStart, 'MMM d')} - {format(addDays(weekStart, 6), 'MMM d, yyyy')}</span>
