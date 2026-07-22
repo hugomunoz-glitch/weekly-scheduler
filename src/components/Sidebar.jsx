@@ -6,24 +6,26 @@ const PRIORITY_RANK = { high: 0, medium: 1, low: 2 }
 const PRIORITY_COLORS = { high: '#ef4444', medium: '#f59e0b', low: '#9ca3af' }
 const PRIORITY_LABELS = { high: 'High', medium: 'Medium', low: 'Low' }
 
-function Inbox({ tasks, goalMap, onEdit, onDelete, search, sortMode, categoryFilter }) {
+function Inbox({ tasks, goalMap, onEdit, onDelete, search, sortMode, sortDir, categoryFilter }) {
   const [hoverId, setHoverId] = useState(null)
   const searched = search && search.trim() ? tasks.filter(t => t.title.toLowerCase().includes(search.trim().toLowerCase())) : tasks
   const filteredTasks = categoryFilter && categoryFilter !== 'all' ? searched.filter(t => t.category === categoryFilter) : searched
   const visibleTasks = [...filteredTasks].sort((a, b) => {
-    if (sortMode === 'manual') return (a.position || 0) - (b.position || 0)
-    if (sortMode === 'created') return new Date(b.created_at || 0) - new Date(a.created_at || 0)
-    if (sortMode === 'alpha') return a.title.localeCompare(b.title)
-    if (sortMode === 'priority') {
+    let result
+    if (sortMode === 'manual') result = (a.position || 0) - (b.position || 0)
+    else if (sortMode === 'created') result = new Date(b.created_at || 0) - new Date(a.created_at || 0)
+    else if (sortMode === 'alpha') result = a.title.localeCompare(b.title)
+    else if (sortMode === 'priority') {
       const aRank = a.priority in PRIORITY_RANK ? PRIORITY_RANK[a.priority] : 3
       const bRank = b.priority in PRIORITY_RANK ? PRIORITY_RANK[b.priority] : 3
-      if (aRank !== bRank) return aRank - bRank
-      return a.title.localeCompare(b.title)
+      result = aRank !== bRank ? aRank - bRank : a.title.localeCompare(b.title)
+    } else {
+      if (!a.due_date && !b.due_date) result = 0
+      else if (!a.due_date) result = 1
+      else if (!b.due_date) result = -1
+      else result = a.due_date < b.due_date ? -1 : a.due_date > b.due_date ? 1 : 0
     }
-    if (!a.due_date && !b.due_date) return 0
-    if (!a.due_date) return 1
-    if (!b.due_date) return -1
-    return a.due_date < b.due_date ? -1 : a.due_date > b.due_date ? 1 : 0
+    return result * sortDir
   })
   return (
     <div className="flex flex-col h-full">
@@ -234,6 +236,7 @@ export default function Sidebar({ tasks, goalMap, goals, allTasks, onAddTask, on
   const [taskSearch, setTaskSearch] = useState('')
   const [showTaskSearch, setShowTaskSearch] = useState(false)
   const [taskSort, setTaskSort] = useState('manual')
+  const [taskSortDir, setTaskSortDir] = useState(1)
   const [taskCategoryFilter, setTaskCategoryFilter] = useState('all')
   const taskCategories = [...new Set(allTasks.map(t => t.category).filter(Boolean))].sort()
   return (
@@ -269,20 +272,34 @@ export default function Sidebar({ tasks, goalMap, goals, allTasks, onAddTask, on
               )}
               <button onClick={onAddTask} className="text-xs text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg px-2.5 py-1 font-medium" title="Add task">+</button>
             </div>
-            <div className="px-4 pb-2 flex gap-2 shrink-0 overflow-x-auto">
-              <select value={taskSort} onChange={e => setTaskSort(e.target.value)} style={{ width: '110px' }} className="shrink-0 overflow-hidden text-ellipsis whitespace-nowrap text-xs border border-gray-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-indigo-300" title="Sort tasks">
-                <option value="manual">Sort: Manual</option>
-                <option value="deadline">Sort: Deadline</option>
-                <option value="priority">Sort: Priority</option>
-                <option value="alpha">Sort: A-Z</option>
-                <option value="created">Sort: Date Created</option>
-              </select>
+            <div className="px-4 pb-2 flex items-end gap-2 shrink-0 overflow-x-auto">
+              <div className="flex flex-col gap-0.5 shrink-0">
+                <span className="text-[10px] text-gray-400 font-medium leading-none">Sort by</span>
+                <div className="flex items-center gap-1">
+                  <select value={taskSort} onChange={e => setTaskSort(e.target.value)} style={{ width: '100px' }} className="shrink-0 overflow-hidden text-ellipsis whitespace-nowrap text-xs border border-gray-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-indigo-300">
+                    <option value="manual">Manual</option>
+                    <option value="deadline">Deadline</option>
+                    <option value="priority">Priority</option>
+                    <option value="alpha">A-Z</option>
+                    <option value="created">Date Created</option>
+                  </select>
+                  <button
+                    onClick={() => setTaskSortDir(d => d * -1)}
+                    className="text-gray-400 hover:text-indigo-500 border border-gray-200 rounded-lg p-1 transition-colors shrink-0"
+                    title={taskSortDir === 1 ? 'Reverse order' : 'Reversed — click to restore'}
+                  >
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: taskSortDir === -1 ? 'scaleY(-1)' : 'none' }}>
+                      <path d="M12 19V5M5 12l7-7 7 7" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
               <select value={taskCategoryFilter} onChange={e => setTaskCategoryFilter(e.target.value)} style={{ width: '105px' }} className="shrink-0 overflow-hidden text-ellipsis whitespace-nowrap text-xs border border-gray-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-indigo-300" title="Filter by category">
                 <option value="all">All Categories</option>
                 {taskCategories.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
-            <Inbox tasks={tasks} goalMap={goalMap} onEdit={onEdit} onDelete={onDelete} search={taskSearch} sortMode={taskSort} categoryFilter={taskCategoryFilter} />
+            <Inbox tasks={tasks} goalMap={goalMap} onEdit={onEdit} onDelete={onDelete} search={taskSearch} sortMode={taskSort} sortDir={taskSortDir} categoryFilter={taskCategoryFilter} />
           </>
         ) : (
           <Assistant goals={goals} tasks={allTasks} onCreateTask={onCreateTask} onAddGoal={onAddGoal} />

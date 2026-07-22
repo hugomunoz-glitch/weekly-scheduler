@@ -482,24 +482,26 @@ function MobileDayView({ date, tasks, goalMap, onMarkDone, onRescheduleToTomorro
   )
 }
 
-function MobileInbox({ tasks, goalMap, onAddTask, onEdit, onDelete, search, sortMode, categoryFilter }) {
+function MobileInbox({ tasks, goalMap, onAddTask, onEdit, onDelete, search, sortMode, sortDir, categoryFilter }) {
   const [pressedTaskId, setPressedTaskId] = useState(null)
   const searched = search && search.trim() ? tasks.filter(t => t.title.toLowerCase().includes(search.trim().toLowerCase())) : tasks
   const filteredTasks = categoryFilter && categoryFilter !== 'all' ? searched.filter(t => t.category === categoryFilter) : searched
   const visibleTasks = [...filteredTasks].sort((a, b) => {
-    if (sortMode === 'manual') return (a.position || 0) - (b.position || 0)
-    if (sortMode === 'created') return new Date(b.created_at || 0) - new Date(a.created_at || 0)
-    if (sortMode === 'alpha') return a.title.localeCompare(b.title)
-    if (sortMode === 'priority') {
+    let result
+    if (sortMode === 'manual') result = (a.position || 0) - (b.position || 0)
+    else if (sortMode === 'created') result = new Date(b.created_at || 0) - new Date(a.created_at || 0)
+    else if (sortMode === 'alpha') result = a.title.localeCompare(b.title)
+    else if (sortMode === 'priority') {
       const aRank = a.priority in PRIORITY_RANK ? PRIORITY_RANK[a.priority] : 3
       const bRank = b.priority in PRIORITY_RANK ? PRIORITY_RANK[b.priority] : 3
-      if (aRank !== bRank) return aRank - bRank
-      return a.title.localeCompare(b.title)
+      result = aRank !== bRank ? aRank - bRank : a.title.localeCompare(b.title)
+    } else {
+      if (!a.due_date && !b.due_date) result = 0
+      else if (!a.due_date) result = 1
+      else if (!b.due_date) result = -1
+      else result = a.due_date < b.due_date ? -1 : a.due_date > b.due_date ? 1 : 0
     }
-    if (!a.due_date && !b.due_date) return 0
-    if (!a.due_date) return 1
-    if (!b.due_date) return -1
-    return a.due_date < b.due_date ? -1 : a.due_date > b.due_date ? 1 : 0
+    return result * sortDir
   })
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
@@ -733,6 +735,7 @@ export default function MobileLayout({
   const [taskSearch, setTaskSearch] = useState('')
   const [showTaskSearch, setShowTaskSearch] = useState(false)
   const [taskSort, setTaskSort] = useState('manual')
+  const [taskSortDir, setTaskSortDir] = useState(1)
   const [taskCategoryFilter, setTaskCategoryFilter] = useState('all')
   const taskCategories = [...new Set(tasks.map(t => t.category).filter(Boolean))].sort()
 
@@ -815,20 +818,34 @@ export default function MobileLayout({
               <button onClick={onAddTask} style={{ background: '#6366f1', color: 'white', border: 'none', borderRadius: '8px', padding: '6px 12px', fontSize: '12px', cursor: 'pointer' }} title="Add task">+</button>
             </div>
           </div>
-          <div style={{ padding: '0 16px 8px', display: 'flex', justifyContent: 'flex-end', gap: '8px', flexShrink: 0 }}>
-            <select value={taskSort} onChange={e => setTaskSort(e.target.value)} style={{ fontSize: '11px', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '5px 8px', outline: 'none' }}>
-              <option value="manual">Sort: Manual</option>
-              <option value="deadline">Sort: Deadline</option>
-              <option value="priority">Sort: Priority</option>
-              <option value="alpha">Sort: A-Z</option>
-              <option value="created">Sort: Date Created</option>
-            </select>
+          <div style={{ padding: '0 16px 8px', display: 'flex', justifyContent: 'flex-end', alignItems: 'flex-end', gap: '8px', flexShrink: 0 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              <span style={{ fontSize: '9px', color: '#9ca3af', fontWeight: 500, lineHeight: 1 }}>Sort by</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <select value={taskSort} onChange={e => setTaskSort(e.target.value)} style={{ fontSize: '11px', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '5px 8px', outline: 'none' }}>
+                  <option value="manual">Manual</option>
+                  <option value="deadline">Deadline</option>
+                  <option value="priority">Priority</option>
+                  <option value="alpha">A-Z</option>
+                  <option value="created">Date Created</option>
+                </select>
+                <button
+                  onClick={() => setTaskSortDir(d => d * -1)}
+                  style={{ background: 'none', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '5px', color: '#9ca3af', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  title={taskSortDir === 1 ? 'Reverse order' : 'Reversed — tap to restore'}
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: taskSortDir === -1 ? 'scaleY(-1)' : 'none' }}>
+                    <path d="M12 19V5M5 12l7-7 7 7" />
+                  </svg>
+                </button>
+              </div>
+            </div>
             <select value={taskCategoryFilter} onChange={e => setTaskCategoryFilter(e.target.value)} style={{ fontSize: '11px', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '5px 8px', outline: 'none', maxWidth: '130px' }}>
               <option value="all">All categories</option>
               {taskCategories.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
-          <MobileInbox tasks={loading ? [] : inboxTasks} goalMap={goalMap} onAddTask={onAddTask} onEdit={onEdit} onDelete={onDelete} search={taskSearch} sortMode={taskSort} categoryFilter={taskCategoryFilter} />
+          <MobileInbox tasks={loading ? [] : inboxTasks} goalMap={goalMap} onAddTask={onAddTask} onEdit={onEdit} onDelete={onDelete} search={taskSearch} sortMode={taskSort} sortDir={taskSortDir} categoryFilter={taskCategoryFilter} />
         </>
       )}
 
