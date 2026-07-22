@@ -6,6 +6,7 @@ import { useAuth } from './contexts/AuthContext'
 import Login from './components/Login'
 import CollaborationPanel from './components/CollaborationPanel'
 import SettingsDropdown from './components/SettingsDropdown'
+import ViewSwitcher from './components/ViewSwitcher'
 import { useIsMobile } from './hooks/useIsMobile'
 import WeekGrid from './components/WeekGrid'
 import Sidebar from './components/Sidebar'
@@ -452,16 +453,9 @@ export default function App() {
               <span className="text-sm font-medium text-gray-700 min-w-[200px] text-center">{format(weekStart, 'MMM d')} - {format(addDays(weekStart, 6), 'MMM d, yyyy')}</span>
               <button onClick={sharedProps.onNextWeek} className="px-2 py-1 text-sm text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded">Next</button>
               <button onClick={sharedProps.onThisWeek} className="px-3 py-1 text-xs text-indigo-600 border border-indigo-200 hover:bg-indigo-50 rounded">This week</button>
-              <select
-                value={activeView}
-                onChange={e => setActiveView(e.target.value)}
-                className="text-xs border border-gray-200 rounded-lg px-2 py-1.5 ml-1 focus:outline-none focus:ring-1 focus:ring-indigo-300"
-                title="Viewing"
-              >
-                <option value="all">Viewing: All</option>
-                <option value="personal">Viewing: Personal</option>
-                {collaborations.map(c => <option key={c.id} value={c.id}>Viewing: {c.name}</option>)}
-              </select>
+              <div className="ml-1">
+                <ViewSwitcher activeView={activeView} onChangeView={setActiveView} collaborations={collaborations} collabMap={collabMap} />
+              </div>
             </div>
             <div className="flex items-center gap-2">
               {overdueTasks.length > 0 && (

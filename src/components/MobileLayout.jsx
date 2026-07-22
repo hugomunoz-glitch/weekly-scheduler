@@ -7,6 +7,7 @@ import { resetViewportZoom } from '../lib/resetZoom'
 import { format, isToday } from 'date-fns'
 import { Droppable, Draggable } from '@hello-pangea/dnd'
 import TaskCard, { categoryBadge } from './TaskCard'
+import ViewSwitcher from './ViewSwitcher'
 
 function formatTime(t) {
   if (!t) return null
@@ -335,9 +336,8 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
         const done = linked.filter(t => t.status === 'done')
         const pct = linked.length > 0 ? Math.round((done.length / linked.length) * 100) : 0
       return (
-        <div key={goal.id} onClick={() => setViewingGoalId(goal.id)} style={{ border: '1px solid #e5e7eb', borderRadius: '10px', padding: '10px 12px', marginBottom: '8px', background: 'white', position: 'relative', cursor: 'pointer' }}>
+        <div key={goal.id} onClick={() => setViewingGoalId(goal.id)} style={{ border: '1px solid #e5e7eb', borderLeft: goal.priority && PRIORITY_BORDER[goal.priority] ? '4px solid ' + PRIORITY_BORDER[goal.priority] : '1px solid #e5e7eb', borderRadius: '10px', padding: '10px 12px', marginBottom: '8px', background: 'white', position: 'relative', cursor: 'pointer' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-            <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: goal.color, flexShrink: 0 }} />
             <span
               style={{ fontSize: "15px", fontWeight: 600, color: "#1f2937", flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: "pointer" }}
               onClick={(e) => { e.stopPropagation(); startEditGoal(goal) }}
@@ -345,19 +345,16 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
             >{goal.title}</span>
             {goal.collaboration_id && collabMap && collabMap[goal.collaboration_id] && (
               <span
-                style={{ fontSize: '9px', fontWeight: 500, padding: '1px 6px', borderRadius: '4px', flexShrink: 0, color: collabMap[goal.collaboration_id].color, background: collabMap[goal.collaboration_id].color + '1a' }}
-              >{collabMap[goal.collaboration_id].name}</span>
+                style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', flexShrink: 0, background: collabMap[goal.collaboration_id].color }}
+              />
             )}
           </div>
-          {(goal.priority || goal.category) && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px', paddingLeft: '18px' }}>
-              {goal.priority && PRIORITY_COLORS[goal.priority] && (
-                <span style={{ fontSize: '10px', fontWeight: 500, padding: '1px 6px', borderRadius: '4px', color: PRIORITY_COLORS[goal.priority], background: PRIORITY_COLORS[goal.priority] + '1a' }}>{PRIORITY_LABELS[goal.priority]}</span>
-              )}
-              {goal.category && <span style={{ fontSize: '11px', color: '#9ca3af' }}>{goal.category}</span>}
+          {goal.category && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px', paddingLeft: '2px' }}>
+              <span style={{ fontSize: '11px', color: '#9ca3af' }}>{goal.category}</span>
             </div>
           )}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingLeft: '18px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingLeft: '2px' }}>
             <div style={{ flex: 1, height: '4px', background: '#f3f4f6', borderRadius: '2px', overflow: 'hidden' }}>
               <div style={{ height: '100%', width: pct + '%', background: goal.color, borderRadius: '2px' }} />
             </div>
@@ -419,12 +416,9 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
                 >
                   &#10005;
                 </button>
-                <div onClick={(e) => e.stopPropagation()} style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '16px', maxHeight: '70vh', overflowY: 'auto', boxShadow: '0 8px 24px rgba(0,0,0,0.2)' }}>
+                <div onClick={(e) => e.stopPropagation()} style={{ background: 'white', border: '1px solid #e5e7eb', borderLeft: goal.priority && PRIORITY_BORDER[goal.priority] ? '4px solid ' + PRIORITY_BORDER[goal.priority] : '1px solid #e5e7eb', borderRadius: '12px', padding: '16px', maxHeight: '70vh', overflowY: 'auto', boxShadow: '0 8px 24px rgba(0,0,0,0.2)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
                     <p style={{ fontSize: '30px', fontWeight: 700, color: '#1f2937', margin: 0 }}>{goal.title}</p>
-                    {goal.priority && PRIORITY_COLORS[goal.priority] && (
-                      <span style={{ fontSize: '10px', fontWeight: 500, padding: '1px 6px', borderRadius: '4px', color: PRIORITY_COLORS[goal.priority], background: PRIORITY_COLORS[goal.priority] + '1a' }}>{PRIORITY_LABELS[goal.priority]}</span>
-                    )}
                   </div>
                   {goal.category && <p style={{ fontSize: '12px', color: '#9ca3af', marginTop: '2px', marginBottom: '8px' }}>{goal.category}</p>}
                   {(goal.smart_specific || goal.smart_measurable || goal.smart_achievable || goal.smart_relevant || goal.smart_timebound) && (
@@ -441,14 +435,11 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: '160px', overflowY: 'auto' }}>
                       {sortedLinked.map(t => (
-                        <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '20px', color: '#4b5563', padding: '6px 2px', minWidth: 0 }}>
+                        <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '20px', color: '#4b5563', padding: '6px 8px', minWidth: 0, borderLeft: t.priority && PRIORITY_BORDER[t.priority] ? '4px solid ' + PRIORITY_BORDER[t.priority] : undefined }}>
                           <span onClick={() => onMarkDone(t.id)} style={{ color: t.status === 'done' ? '#10b981' : '#d1d5db', fontSize: '22px', cursor: 'pointer', flexShrink: 0 }}>{t.status === 'done' ? '✓' : '○'}</span>
                           <span onClick={() => handleEditTask(t.id)} style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'pointer', textDecoration: t.status === 'done' ? 'line-through' : 'none', color: t.status === 'done' ? '#9ca3af' : '#4b5563' }}>{t.title}</span>
-                          {t.priority && PRIORITY_COLORS[t.priority] && (
-                            <span style={{ fontSize: '11px', fontWeight: 500, padding: '1px 5px', borderRadius: '4px', flexShrink: 0, color: PRIORITY_COLORS[t.priority], background: PRIORITY_COLORS[t.priority] + '1a' }}>{PRIORITY_LABELS[t.priority]}</span>
-                          )}
                           {t.collaboration_id && collabMap && collabMap[t.collaboration_id] && (
-                            <span style={{ fontSize: '11px', fontWeight: 500, padding: '1px 5px', borderRadius: '4px', flexShrink: 0, color: collabMap[t.collaboration_id].color, background: collabMap[t.collaboration_id].color + '1a' }}>{collabMap[t.collaboration_id].name}</span>
+                            <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', flexShrink: 0, background: collabMap[t.collaboration_id].color }} />
                           )}
                           {t.start_time && (
                             <span style={{ fontSize: '13px', color: '#a5b4fc', flexShrink: 0, whiteSpace: 'nowrap' }}>{formatTime(t.start_time)}</span>
@@ -600,16 +591,18 @@ function MobileInbox({ tasks, goalMap, collabMap, collabMembersMap, onAssignTask
                   <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}
                     style={{ ...provided.draggableProps.style, border: '1px solid ' + (snapshot.isDragging ? '#a5b4fc' : '#e5e7eb'), borderLeft: task.priority && PRIORITY_BORDER[task.priority] ? '4px solid ' + PRIORITY_BORDER[task.priority] : undefined, borderRadius: '10px', padding: '10px 12px', background: 'white', marginBottom: '8px', WebkitTouchCallout: 'none', WebkitUserSelect: 'none', userSelect: 'none', touchAction: 'manipulation' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
-                      <p style={{ fontSize: '14px', color: '#1f2937', flex: 1, margin: 0 }}>
-                        {task.title}
-                        {task.collaboration_id && collabMap && collabMap[task.collaboration_id] && (
-                          <span style={{ fontSize: '10px', fontWeight: 500, padding: '1px 6px', borderRadius: '4px', marginLeft: '6px', color: collabMap[task.collaboration_id].color, background: collabMap[task.collaboration_id].color + '1a' }}>{collabMap[task.collaboration_id].name}</span>
-                        )}
-                      </p>
-                      {categoryBadge(task.category) && (() => {
-                        const cb = categoryBadge(task.category)
-                        return <span style={{ fontSize: '9px', fontWeight: 500, padding: '2px 6px', borderRadius: '4px', flexShrink: 0, marginTop: '2px', color: cb.color, background: cb.color + '1a' }}>{cb.name}</span>
-                      })()}
+                      <div style={{ flex: 1 }}>
+                        <p style={{ fontSize: '14px', color: '#1f2937', margin: 0 }}>
+                          {task.title}
+                          {task.collaboration_id && collabMap && collabMap[task.collaboration_id] && (
+                            <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', marginLeft: '6px', verticalAlign: 'middle', background: collabMap[task.collaboration_id].color }} title={'Shared with: ' + collabMap[task.collaboration_id].name} />
+                          )}
+                        </p>
+                        {categoryBadge(task.category) && (() => {
+                          const cb = categoryBadge(task.category)
+                          return <span style={{ fontSize: '9px', fontWeight: 500, padding: '2px 6px', borderRadius: '4px', display: 'inline-block', marginTop: '4px', color: cb.color, background: cb.color + '1a' }}>{cb.name}</span>
+                        })()}
+                      </div>
                       {!snapshot.isDragging && (
                         <button
                           onClick={(e) => { e.stopPropagation(); setPressedTaskId(pressedTaskId === task.id ? null : task.id) }}
@@ -951,15 +944,7 @@ export default function MobileLayout({
           </div>
           <div style={{ border: '1px solid #e5e7eb', borderRadius: '10px', padding: '14px', marginBottom: '10px', background: 'white' }}>
             <p style={{ fontSize: '12px', color: '#9ca3af', margin: '0 0 6px' }}>Viewing</p>
-            <select
-              value={activeView}
-              onChange={e => onChangeView(e.target.value)}
-              style={{ width: '100%', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '8px', fontSize: '13px', outline: 'none' }}
-            >
-              <option value="all">All</option>
-              <option value="personal">Personal</option>
-              {collaborations && collaborations.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
+            <ViewSwitcher activeView={activeView} onChangeView={onChangeView} collaborations={collaborations || []} collabMap={collabMap || {}} fullWidth />
           </div>
           <button
             onClick={() => setShowCollab(true)}

@@ -12,6 +12,7 @@ const GOAL_CATEGORIES = [
 const PRIORITY_COLORS = { high: '#ef4444', medium: '#f59e0b', low: '#9ca3af' }
 const PRIORITY_RANK = { high: 0, medium: 1, low: 2 }
 const PRIORITY_LABELS = { high: 'High', medium: 'Medium', low: 'Low' }
+const PRIORITY_BORDER = { high: '#ef4444', medium: '#f59e0b', low: '#22c55e' }
 
 function formatTime(t) {
   if (!t) return null
@@ -312,8 +313,13 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
         const done = linked.filter(t => t.status === 'done')
         const pct = linked.length > 0 ? Math.round((done.length / linked.length) * 100) : 0
         return (
-          <div key={goal.id} className="flex items-start gap-2 border border-gray-200 rounded-lg px-3 py-1.5 shrink-0 min-w-[160px] group cursor-pointer relative" onClick={(e) => openPopup(goal.id, e)}>
-            <div className="w-2 h-2 rounded-full shrink-0 mt-1.5" style={{ background: goal.color }} />
+          <div
+            key={goal.id}
+            className="flex items-start gap-2 border border-gray-200 rounded-lg px-3 py-1.5 shrink-0 min-w-[160px] group cursor-pointer relative"
+            style={goal.priority && PRIORITY_BORDER[goal.priority] ? { borderLeft: '4px solid ' + PRIORITY_BORDER[goal.priority] } : undefined}
+            title={goal.priority ? PRIORITY_LABELS[goal.priority] + ' priority' : undefined}
+            onClick={(e) => openPopup(goal.id, e)}
+          >
             <div className="flex-1 min-w-0">
               {editingId === goal.id ? (
                 <form onSubmit={(e) => handleEditSubmit(e, goal.id)} className="space-y-1" onClick={(e) => e.stopPropagation()}>
@@ -373,16 +379,14 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
                     title="Click to edit"
                   >
                     {goal.title}
+                    {goal.collaboration_id && collabMap && collabMap[goal.collaboration_id] && (
+                      <span
+                        className="inline-block w-2 h-2 rounded-full ml-1.5 align-middle"
+                        style={{ background: collabMap[goal.collaboration_id].color }}
+                        title={'Shared with: ' + collabMap[goal.collaboration_id].name}
+                      />
+                    )}
                   </p>
-                  {goal.collaboration_id && collabMap && collabMap[goal.collaboration_id] && (
-                    <span
-                      className="text-[9px] font-medium px-1.5 py-0.5 rounded shrink-0"
-                      style={{ color: collabMap[goal.collaboration_id].color, background: collabMap[goal.collaboration_id].color + '1a' }}
-                      title={'Shared with: ' + collabMap[goal.collaboration_id].name}
-                    >
-                      {collabMap[goal.collaboration_id].name}
-                    </span>
-                  )}
                 </div>
               )}
               {editingId !== goal.id && (
@@ -394,10 +398,9 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
                   &#10005;
                 </span>
               )}
-              {(goal.priority || goal.category) && (
+              {goal.category && (
                 <div className="flex items-center gap-1 mt-0.5">
-                  <PriorityBadge priority={goal.priority} />
-                  {goal.category && <span className="text-[10px] text-gray-400 truncate">{goal.category}</span>}
+                  <span className="text-[10px] text-gray-400 truncate">{goal.category}</span>
                 </div>
               )}
               <div className="flex items-center gap-1.5 mt-1">
@@ -411,7 +414,8 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
                 <div
                   onClick={(e) => e.stopPropagation()}
                   className="fixed z-50 bg-white border border-gray-200 rounded-lg shadow-2xl w-[580px] max-w-[92vw]"
-                  style={{ top: popupPos.top, left: popupPos.left }}
+                  style={{ top: popupPos.top, left: popupPos.left, borderLeft: goal.priority && PRIORITY_BORDER[goal.priority] ? '4px solid ' + PRIORITY_BORDER[goal.priority] : undefined }}
+                  title={goal.priority ? PRIORITY_LABELS[goal.priority] + ' priority' : undefined}
                 >
                   <div
                     onMouseDown={startPopupDrag}
@@ -421,7 +425,6 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
                     <div className="flex items-center gap-2 min-w-0">
                       <span className="text-gray-400 text-sm">&#10021;</span>
                       <p className="text-3xl font-bold text-gray-800 truncate">{goal.title}</p>
-                      <PriorityBadge priority={goal.priority} />
                     </div>
                     <button
                       onClick={() => setViewingGoalId(null)}
@@ -458,20 +461,19 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
                                       {...dragProvided.draggableProps}
                                       {...dragProvided.dragHandleProps}
                                       className={'text-xl text-gray-600 flex items-center gap-2 group rounded px-2 py-1.5 -mx-2 ' + (dragSnapshot.isDragging ? 'bg-indigo-50 shadow-md' : 'hover:bg-gray-50')}
+                                      style={t.priority && PRIORITY_BORDER[t.priority] ? { borderLeft: '4px solid ' + PRIORITY_BORDER[t.priority] } : undefined}
+                                      title={t.priority ? PRIORITY_LABELS[t.priority] + ' priority' : undefined}
                                     >
                                       <span className="cursor-pointer shrink-0" onClick={() => onMarkDone(t.id)}>
                                         <span className={t.status === 'done' ? 'text-green-500' : 'text-gray-300'}>{t.status === 'done' ? '✓' : '○'}</span>
                                       </span>
                                       <span className={'flex-1 truncate cursor-pointer ' + (t.status === 'done' ? 'line-through text-gray-400' : '')} onClick={() => handleEditTask(t.id)}>{t.title}</span>
-                                      <PriorityBadge priority={t.priority} />
                                       {t.collaboration_id && collabMap && collabMap[t.collaboration_id] && (
                                         <span
-                                          className="text-[9px] font-medium px-1.5 py-0.5 rounded shrink-0"
-                                          style={{ color: collabMap[t.collaboration_id].color, background: collabMap[t.collaboration_id].color + '1a' }}
+                                          className="inline-block w-2 h-2 rounded-full shrink-0"
+                                          style={{ background: collabMap[t.collaboration_id].color }}
                                           title={'Shared with: ' + collabMap[t.collaboration_id].name}
-                                        >
-                                          {collabMap[t.collaboration_id].name}
-                                        </span>
+                                        />
                                       )}
                                       {t.start_time && (
                                         <span className="text-sm text-indigo-400 shrink-0 whitespace-nowrap">{formatTime(t.start_time)}</span>

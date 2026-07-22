@@ -67,28 +67,28 @@ export default function TaskCard({ task, isDone, isDragging, collabBadge, isDueC
           </span>
           {collabBadge && (
             <span
-              className="text-[9px] font-medium px-1.5 py-0.5 rounded ml-1.5"
-              style={{ color: collabBadge.color, background: collabBadge.color + '1a' }}
+              className="inline-block w-2 h-2 rounded-full ml-1.5 align-middle"
+              style={{ background: collabBadge.color }}
               title={'Shared with: ' + collabBadge.name}
-            >
-              {collabBadge.name}
-            </span>
+            />
           )}
           {task.start_time && !isDueCard && (
             <p className={'text-xs mt-0.5 ' + (isDone ? 'text-gray-300' : 'text-indigo-400 font-medium')}>
               {formatTime(task.start_time)}
             </p>
           )}
+          {catBadge && (
+            <div className="mt-1">
+              <span
+                className="text-[9px] font-medium px-1.5 py-0.5 rounded"
+                style={{ color: catBadge.color, background: catBadge.color + '1a' }}
+                title={'Category: ' + catBadge.name}
+              >
+                {catBadge.name}
+              </span>
+            </div>
+          )}
         </div>
-        {catBadge && (
-          <span
-            className="text-[9px] font-medium px-1.5 py-0.5 rounded shrink-0"
-            style={{ color: catBadge.color, background: catBadge.color + '1a' }}
-            title={'Category: ' + catBadge.name}
-          >
-            {catBadge.name}
-          </span>
-        )}
         {!isDragging && (
           <button
             onClick={(e) => { e.stopPropagation(); setShowActions(v => !v) }}

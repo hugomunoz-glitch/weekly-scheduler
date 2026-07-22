@@ -57,39 +57,41 @@ function Inbox({ tasks, goalMap, collabMap, collabMembersMap, onAssignTask, onEd
                         &#10005;
                       </button>
                     )}
-                    <div className="flex items-start justify-between gap-2">
-                      <p className="text-sm text-gray-800 leading-snug break-words flex-1">{task.title}</p>
-                      {categoryBadge(task.category) && (
+                    <p className="text-sm text-gray-800 leading-snug break-words">
+                      {task.title}
+                      {task.collaboration_id && collabMap && collabMap[task.collaboration_id] && (
                         <span
-                          className="text-[9px] font-medium px-1.5 py-0.5 rounded shrink-0"
-                          style={{ color: categoryBadge(task.category).color, background: categoryBadge(task.category).color + '1a' }}
-                          title={'Category: ' + categoryBadge(task.category).name}
-                        >
-                          {categoryBadge(task.category).name}
-                        </span>
+                          className="inline-block w-2 h-2 rounded-full ml-1.5 align-middle"
+                          style={{ background: collabMap[task.collaboration_id].color }}
+                          title={'Shared with: ' + collabMap[task.collaboration_id].name}
+                        />
                       )}
-                    </div>
-                    {task.collaboration_id && collabMap && collabMap[task.collaboration_id] && (
-                      <span
-                        className="text-[10px] font-medium px-1.5 py-0.5 rounded inline-block mt-1 ml-1"
-                        style={{ color: collabMap[task.collaboration_id].color, background: collabMap[task.collaboration_id].color + '1a' }}
-                        title={'Shared with: ' + collabMap[task.collaboration_id].name}
-                      >
-                        {collabMap[task.collaboration_id].name}
-                      </span>
-                    )}
-                    {task.collaboration_id && collabMembersMap && collabMembersMap[task.collaboration_id] && collabMembersMap[task.collaboration_id].length > 0 && (
-                      <select
-                        value={task.assigned_to || ''}
-                        onChange={(e) => { e.stopPropagation(); onAssignTask(task.id, e.target.value || null) }}
-                        onClick={(e) => e.stopPropagation()}
-                        onMouseDown={(e) => e.stopPropagation()}
-                        className="text-[10px] border border-gray-200 rounded px-1 py-0.5 mt-1 ml-1 focus:outline-none"
-                        title="Assign to"
-                      >
-                        <option value="">Unassigned</option>
-                        {collabMembersMap[task.collaboration_id].map(m => <option key={m.id} value={m.id}>{m.username}</option>)}
-                      </select>
+                    </p>
+                    {(categoryBadge(task.category) || (task.collaboration_id && collabMembersMap && collabMembersMap[task.collaboration_id] && collabMembersMap[task.collaboration_id].length > 0)) && (
+                      <div className="flex items-center gap-1.5 mt-1">
+                        {categoryBadge(task.category) && (
+                          <span
+                            className="text-[9px] font-medium px-1.5 py-0.5 rounded"
+                            style={{ color: categoryBadge(task.category).color, background: categoryBadge(task.category).color + '1a' }}
+                            title={'Category: ' + categoryBadge(task.category).name}
+                          >
+                            {categoryBadge(task.category).name}
+                          </span>
+                        )}
+                        {task.collaboration_id && collabMembersMap && collabMembersMap[task.collaboration_id] && collabMembersMap[task.collaboration_id].length > 0 && (
+                          <select
+                            value={task.assigned_to || ''}
+                            onChange={(e) => { e.stopPropagation(); onAssignTask(task.id, e.target.value || null) }}
+                            onClick={(e) => e.stopPropagation()}
+                            onMouseDown={(e) => e.stopPropagation()}
+                            className="text-[10px] border border-gray-200 rounded px-1 py-0.5 focus:outline-none"
+                            title="Assign to"
+                          >
+                            <option value="">Unassigned</option>
+                            {collabMembersMap[task.collaboration_id].map(m => <option key={m.id} value={m.id}>{m.username}</option>)}
+                          </select>
+                        )}
+                      </div>
                     )}
                     {task.notes && <p className="text-xs text-gray-400 mt-1 truncate">{task.notes}</p>}
                     {!snapshot.isDragging && hoverId === task.id && (
