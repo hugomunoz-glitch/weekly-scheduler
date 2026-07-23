@@ -501,6 +501,27 @@ export default function App() {
   }
 
   const [undoQueue, setUndoQueue] = useState([])
+  const [deleteScopePrompt, setDeleteScopePrompt] = useState(null) // { taskId, top, left } | null
+
+  function requestDeleteTask(taskId, e) {
+    const task = tasks.find(t => t.id === taskId)
+    if (task && task.recurrence_group_id) {
+      const rect = e && e.currentTarget ? e.currentTarget.getBoundingClientRect() : null
+      setDeleteScopePrompt({
+        taskId,
+        top: rect ? Math.min(rect.bottom + 6, window.innerHeight - 90) : window.innerHeight / 2,
+        left: rect ? Math.min(Math.max(rect.left - 90, 8), window.innerWidth - 230) : window.innerWidth / 2 - 110
+      })
+      return
+    }
+    deleteTask(taskId, null)
+  }
+
+  function resolveDeleteScope(scope) {
+    if (!deleteScopePrompt) return
+    deleteTask(deleteScopePrompt.taskId, scope)
+    setDeleteScopePrompt(null)
+  }
   const UNDO_MS = 6000
 
   async function performDeleteGoal(goalId) {
@@ -630,7 +651,7 @@ export default function App() {
     weekStart, weekDays, tasks: visibleTasks, goals: visibleGoals, goalMap, collabMap, collabMembersMap, profileMap, goalTasks: visibleGoalTasks, inboxTasks, loading,
     collaborations, activeView, onChangeView: setActiveView, defaultCollaborationId,
     overdueTasks, onMarkDone: markDone, onRescheduleToTomorrow: rescheduleToTomorrow,
-    onMoveToInbox: moveToInbox, onDelete: deleteTask, onEdit: setEditingTask, onAssignTask: assignTask,
+    onMoveToInbox: moveToInbox, onDelete: requestDeleteTask, onEdit: setEditingTask, onAssignTask: assignTask,
     onAddTask: () => setShowAdd(true), onAddTaskForDay: openAddForDay, onAddTaskForBucket: openAddForBucket, onCreateTask: addTask, onRollover: rolloverOverdue,
     onAddGoal: addGoal, onEditGoal: editGoal, onDeleteGoal: deleteGoal,
     onPrevWeek: () => setWeekStart(w => subWeeks(w, 1)),
@@ -676,16 +697,16 @@ export default function App() {
             </div>
           </header>
           <div className="mx-3 mt-3 rounded-xl border border-gray-200 shadow-sm overflow-hidden shrink-0">
-            <GoalsBar goals={visibleGoals} goalTasks={visibleGoalTasks} allTasks={visibleTasks} collabMap={collabMap} collaborations={collaborations} defaultCollaborationId={defaultCollaborationId} onAddGoal={addGoal} onEditGoal={editGoal} onDeleteGoal={deleteGoal} onMarkDone={markDone} onDelete={deleteTask} onCreateTask={addTask} onEditTask={setEditingTask} />
+            <GoalsBar goals={visibleGoals} goalTasks={visibleGoalTasks} allTasks={visibleTasks} collabMap={collabMap} collaborations={collaborations} defaultCollaborationId={defaultCollaborationId} onAddGoal={addGoal} onEditGoal={editGoal} onDeleteGoal={deleteGoal} onMarkDone={markDone} onDelete={requestDeleteTask} onCreateTask={addTask} onEditTask={setEditingTask} />
           </div>
           <div className="flex flex-1 overflow-hidden gap-3 p-3">
             <main className="flex-1 overflow-x-auto overflow-y-auto rounded-xl border border-gray-200 shadow-sm bg-white p-4">
               {loading ? <div className="flex items-center justify-center h-full text-sm text-gray-400">Loading</div> : (
-                <WeekGrid days={weekDays} tasksForDay={tasksForDay} dueCardsForDay={dueCardsForDay} goalMap={goalMap} collabMap={collabMap} profileMap={profileMap} onMarkDone={markDone} onRescheduleToTomorrow={rescheduleToTomorrow} onMoveToInbox={moveToInbox} onDelete={deleteTask} onEdit={setEditingTask} onAddTaskForDay={openAddForDay} onAddTaskForBucket={openAddForBucket} />
+                <WeekGrid days={weekDays} tasksForDay={tasksForDay} dueCardsForDay={dueCardsForDay} goalMap={goalMap} collabMap={collabMap} profileMap={profileMap} onMarkDone={markDone} onRescheduleToTomorrow={rescheduleToTomorrow} onMoveToInbox={moveToInbox} onDelete={requestDeleteTask} onEdit={setEditingTask} onAddTaskForDay={openAddForDay} onAddTaskForBucket={openAddForBucket} />
               )}
             </main>
             <div className="rounded-xl border border-gray-200 shadow-sm overflow-hidden shrink-0">
-              <Sidebar tasks={inboxTasks} goalMap={goalMap} collabMap={collabMap} collabMembersMap={collabMembersMap} profileMap={profileMap} onAssignTask={assignTask} onMarkDone={markDone} goals={visibleGoals} allTasks={visibleTasks} onAddTask={() => setShowAdd(true)} onCreateTask={addTask} onAddGoal={addGoal} onEdit={setEditingTask} onDelete={deleteTask} />
+              <Sidebar tasks={inboxTasks} goalMap={goalMap} collabMap={collabMap} collabMembersMap={collabMembersMap} profileMap={profileMap} onAssignTask={assignTask} onMarkDone={markDone} goals={visibleGoals} allTasks={visibleTasks} onAddTask={() => setShowAdd(true)} onCreateTask={addTask} onAddGoal={addGoal} onEdit={setEditingTask} onDelete={requestDeleteTask} />
             </div>
           </div>
         </div>
@@ -693,6 +714,21 @@ export default function App() {
       {showAdd && <AddTaskModal onAdd={addTask} onClose={() => { setShowAdd(false); setAddForDate(null); setAddForTime(null); setAddForBucket(null); setFollowUpPrefill(null) }} goals={visibleGoals} onAddGoal={addGoal} initialScheduledDate={addForDate} initialStartTime={addForTime} initialBucket={addForBucket} existingTaskCategories={taskCategories} collaborations={collaborations} collabMembersMap={collabMembersMap} defaultCollaborationId={defaultCollaborationId} followUpPrefill={followUpPrefill} />}
       {editingTask && <AddTaskModal editingTask={editingTask} onEdit={editTask} onClose={() => setEditingTask(null)} goals={visibleGoals} onAddGoal={addGoal} existingTaskCategories={taskCategories} collaborations={collaborations} collabMembersMap={collabMembersMap} defaultCollaborationId={defaultCollaborationId} onCreateFollowUp={(prefill) => { setEditingTask(null); setFollowUpPrefill(prefill); setShowAdd(true) }} />}
       {showCollab && <CollaborationPanel onClose={() => setShowCollab(false)} />}
+      {deleteScopePrompt && (
+        <>
+          <div className="fixed inset-0 z-[1999]" onClick={() => setDeleteScopePrompt(null)} />
+          <div
+            className="fixed z-[2000] bg-white border border-gray-200 rounded-lg shadow-xl p-3 w-[220px]"
+            style={{ top: deleteScopePrompt.top, left: deleteScopePrompt.left }}
+          >
+            <p className="text-xs text-gray-500 mb-2">Delete this repeating task</p>
+            <div className="flex gap-2">
+              <button onClick={() => resolveDeleteScope('this')} className="flex-1 text-xs border border-gray-200 rounded px-2 py-1.5 hover:bg-gray-50">Just this one</button>
+              <button onClick={() => resolveDeleteScope('future')} className="flex-1 text-xs text-white bg-red-500 hover:bg-red-600 rounded px-2 py-1.5">This and future</button>
+            </div>
+          </div>
+        </>
+      )}
       {undoQueue.length > 0 && (
         <div className={'fixed left-1/2 -translate-x-1/2 z-[2000] flex flex-col gap-2 items-center ' + (isMobile ? 'bottom-20' : 'bottom-4')}>
           {undoQueue.map(u => (
