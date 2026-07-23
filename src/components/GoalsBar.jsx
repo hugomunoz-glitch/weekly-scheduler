@@ -63,6 +63,7 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
 
   function openPopup(goalId, e) {
     setViewingGoalId(goalId)
+    setAddTaskToGoalError('')
     const rect = e.currentTarget.getBoundingClientRect()
     const left = Math.min(Math.max(rect.left, 12), window.innerWidth - 600)
     const top = Math.min(rect.bottom + 8, window.innerHeight - 200)
@@ -138,12 +139,25 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
     if (full) { setViewingGoalId(null); onEditTask(full) }
   }
 
-  function handleAddTaskToGoal(e, goalId) {
+  const [addTaskToGoalError, setAddTaskToGoalError] = useState('')
+  const [addingTaskToGoal, setAddingTaskToGoal] = useState(false)
+
+  async function handleAddTaskToGoal(e, goalId) {
     e.preventDefault()
     if (!newTaskTitle.trim()) return
     const goal = goals.find(g => g.id === goalId)
-    onCreateTask(newTaskTitle.trim(), '', goalId, null, null, null, null, null, goal?.collaboration_id || null)
-    setNewTaskTitle('')
+    const title = newTaskTitle.trim()
+    setAddingTaskToGoal(true)
+    setAddTaskToGoalError('')
+    try {
+      await onCreateTask(title, '', goalId, null, null, null, null, null, goal?.collaboration_id || null)
+      setNewTaskTitle('')
+    } catch (err) {
+      console.error('Add task to goal failed:', err)
+      setAddTaskToGoalError('Couldn\'t save "' + title + '": ' + (err?.message || 'unknown error') + '. Try again.')
+    } finally {
+      setAddingTaskToGoal(false)
+    }
   }
 
   const [addGoalError, setAddGoalError] = useState('')
@@ -552,10 +566,12 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
                         value={newTaskTitle}
                         onChange={e => setNewTaskTitle(e.target.value)}
                         placeholder="Add a task to this goal"
-                        className="flex-1 text-base border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-indigo-300 focus:border-indigo-400"
+                        disabled={addingTaskToGoal}
+                        className="flex-1 text-base border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-indigo-300 focus:border-indigo-400 disabled:opacity-50"
                       />
-                      <button type="submit" className="text-base text-white bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded-lg shrink-0">Add</button>
+                      <button type="submit" disabled={addingTaskToGoal || !newTaskTitle.trim()} className="text-base text-white bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded-lg shrink-0 disabled:opacity-40 disabled:cursor-not-allowed">{addingTaskToGoal ? 'Adding...' : 'Add'}</button>
                     </form>
+                    {addTaskToGoalError && <p className="text-xs text-red-500 mt-1.5">{addTaskToGoalError}</p>}
                   </div>
                 </div>
               )}
