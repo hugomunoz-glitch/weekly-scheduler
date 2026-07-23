@@ -498,7 +498,22 @@ export default function App() {
     // anchored to this occurrence's own date. Anything in the past, and
     // anything already marked done regardless of date, is left alone.
     let deletedIds = []
-    if (patternChangeRule && existing && existing.recurrence_group_id && data.scheduled_date) {
+    const patternUnchanged = existing && existing.recurrence_group_id && patternChangeRule &&
+      patternChangeRule.freq === (existing.recurrence_freq || 'weekly') &&
+      (patternChangeRule.interval || 1) === (existing.recurrence_interval || 1) &&
+      (patternChangeRule.freq === 'weekly' && patternChangeRule.byDay && patternChangeRule.byDay.length > 0 ? patternChangeRule.byDay.join(',') : '') === (existing.recurrence_byday || '') &&
+      patternChangeRule.endType === (existing.recurrence_end_type || 'never') &&
+      (patternChangeRule.endType !== 'count' || (patternChangeRule.endCount || 1) === (existing.recurrence_end_count || 1)) &&
+      (patternChangeRule.endType !== 'until' || (patternChangeRule.endDate || '') === (existing.recurrence_end_date || ''))
+    const hasFutureSiblings = existing && existing.recurrence_group_id
+      ? tasks.some(t => t.recurrence_group_id === existing.recurrence_group_id && t.id !== taskId && t.scheduled_date > existing.scheduled_date)
+      : false
+    // Regenerate whenever the pattern actually changed, or whenever the
+    // series has no future rows at all -- the latter recovers a series
+    // whose generation previously failed partway through (e.g. a prior
+    // insert error), without the person needing to "change" anything
+    // that looks the same to them.
+    if (patternChangeRule && existing && existing.recurrence_group_id && data.scheduled_date && !(patternUnchanged && hasFutureSiblings)) {
       const groupId = existing.recurrence_group_id
       const recurrenceFields = {
         recurrence_freq: patternChangeRule.freq,
