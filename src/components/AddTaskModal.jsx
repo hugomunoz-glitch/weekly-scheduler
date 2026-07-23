@@ -92,15 +92,15 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState('')
   const [duration, setDuration] = useState(editingTask && editingTask.end_time && editingTask.start_time ? String(minutesBetween(editingTask.start_time, editingTask.end_time)) : '')
-  const [repeatOpen, setRepeatOpen] = useState(false)
-  const [recurFreq, setRecurFreq] = useState('weekly')
-  const [recurInterval, setRecurInterval] = useState(1)
-  const [recurByDay, setRecurByDay] = useState([])
-  const [recurEndType, setRecurEndType] = useState('never')
-  const [recurEndCount, setRecurEndCount] = useState(10)
-  const [recurEndDate, setRecurEndDate] = useState('')
-  const [showScopeChoice, setShowScopeChoice] = useState(false)
   const isRecurring = !!(editingTask && editingTask.recurrence_group_id)
+  const [repeatOpen, setRepeatOpen] = useState(isRecurring)
+  const [recurFreq, setRecurFreq] = useState(isRecurring ? (editingTask.recurrence_freq || 'weekly') : 'weekly')
+  const [recurInterval, setRecurInterval] = useState(isRecurring ? (editingTask.recurrence_interval || 1) : 1)
+  const [recurByDay, setRecurByDay] = useState(isRecurring && editingTask.recurrence_byday ? editingTask.recurrence_byday.split(',').filter(Boolean) : [])
+  const [recurEndType, setRecurEndType] = useState(isRecurring ? (editingTask.recurrence_end_type || 'never') : 'never')
+  const [recurEndCount, setRecurEndCount] = useState(isRecurring && editingTask.recurrence_end_count ? editingTask.recurrence_end_count : 10)
+  const [recurEndDate, setRecurEndDate] = useState(isRecurring ? (editingTask.recurrence_end_date || '') : '')
+  const [showScopeChoice, setShowScopeChoice] = useState(false)
   const inputRef = useRef(null)
 
   useEffect(() => { inputRef.current?.focus() }, [])
@@ -159,11 +159,19 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
       endCount: recurEndType === 'count' ? Math.max(1, Number(recurEndCount) || 1) : null,
       endDate: recurEndType === 'until' ? (recurEndDate || null) : null
     } : null
+    const patternChanged = isRecurring && repeatOpen && (
+      recurFreq !== (editingTask.recurrence_freq || 'weekly') ||
+      Number(recurInterval) !== (editingTask.recurrence_interval || 1) ||
+      (recurFreq === 'weekly' ? recurByDay.join(',') : '') !== (editingTask.recurrence_byday || '') ||
+      recurEndType !== (editingTask.recurrence_end_type || 'never') ||
+      (recurEndType === 'count' && Number(recurEndCount) !== (editingTask.recurrence_end_count || 1)) ||
+      (recurEndType === 'until' && recurEndDate !== (editingTask.recurrence_end_date || ''))
+    )
     setSubmitError('')
     setSubmitting(true)
     try {
       if (editingTask) {
-        await onEdit(editingTask.id, title.trim(), notes.trim(), goalId || null, startTime || null, dueDate || null, scheduledDate || null, priority || null, category, collaborationId || null, assignedTo || null, category === 'Family' ? familyMember.trim() || null : null, endTime, scope || null, !isRecurring ? recurrenceRule : null)
+        await onEdit(editingTask.id, title.trim(), notes.trim(), goalId || null, startTime || null, dueDate || null, scheduledDate || null, priority || null, category, collaborationId || null, assignedTo || null, category === 'Family' ? familyMember.trim() || null : null, endTime, scope || null, !isRecurring ? recurrenceRule : null, patternChanged ? recurrenceRule : null)
         closeModal()
         return
       }
@@ -420,9 +428,12 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
             </div>
             <p className="text-[11px] text-gray-400 mt-1">Leave blank to keep in Task List. Clearing this later sends it back to Task List.</p>
           </div>
-          {((!editingTask && !bulkMode) || (editingTask && !isRecurring)) && scheduledDate && (
+          {!bulkMode && scheduledDate && (
             <div>
               <label className="block text-xs font-medium text-gray-500 mb-1">Repeat</label>
+              {isRecurring && (
+                <p className="text-[11px] text-gray-400 mb-1">Changes here only affect this occurrence and ones after it — nothing in the past, and nothing already done.</p>
+              )}
               <button
                 type="button"
                 onClick={() => setRepeatOpen(o => !o)}
@@ -512,9 +523,6 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
                 </div>
               )}
             </div>
-          )}
-          {isRecurring && (
-            <p className="text-[11px] text-gray-400 -mt-1">Part of a repeating series. You can change its own details or move it, but the repeat pattern itself is set when it's created.</p>
           )}
           <div>
             <label className="block text-xs font-medium text-gray-500 mb-1">Deadline (optional)</label>
