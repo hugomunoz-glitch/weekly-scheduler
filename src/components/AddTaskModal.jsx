@@ -151,22 +151,22 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
 
     const category = (customTaskCategory ? taskCategoryCustom.trim() : taskCategory) || null
     const endTime = duration ? addMinutesToTime(startTime, duration) : null
+    const recurrenceRule = repeatOpen ? {
+      freq: recurFreq,
+      interval: Math.max(1, Number(recurInterval) || 1),
+      byDay: recurFreq === 'weekly' ? recurByDay : null,
+      endType: recurEndType,
+      endCount: recurEndType === 'count' ? Math.max(1, Number(recurEndCount) || 1) : null,
+      endDate: recurEndType === 'until' ? (recurEndDate || null) : null
+    } : null
     setSubmitError('')
     setSubmitting(true)
     try {
       if (editingTask) {
-        await onEdit(editingTask.id, title.trim(), notes.trim(), goalId || null, startTime || null, dueDate || null, scheduledDate || null, priority || null, category, collaborationId || null, assignedTo || null, category === 'Family' ? familyMember.trim() || null : null, endTime, scope || null)
+        await onEdit(editingTask.id, title.trim(), notes.trim(), goalId || null, startTime || null, dueDate || null, scheduledDate || null, priority || null, category, collaborationId || null, assignedTo || null, category === 'Family' ? familyMember.trim() || null : null, endTime, scope || null, !isRecurring ? recurrenceRule : null)
         closeModal()
         return
       }
-      const recurrenceRule = repeatOpen ? {
-        freq: recurFreq,
-        interval: Math.max(1, Number(recurInterval) || 1),
-        byDay: recurFreq === 'weekly' ? recurByDay : null,
-        endType: recurEndType,
-        endCount: recurEndType === 'count' ? Math.max(1, Number(recurEndCount) || 1) : null,
-        endDate: recurEndType === 'until' ? (recurEndDate || null) : null
-      } : null
       await onAdd(title.trim(), notes.trim(), goalId || null, startTime || null, dueDate || null, scheduledDate || null, priority || null, category, collaborationId || null, assignedTo || null, initialBucket || null, category === 'Family' ? familyMember.trim() || null : null, endTime, recurrenceRule)
       if (keepOpen) {
         setTitle('')
@@ -420,7 +420,7 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
             </div>
             <p className="text-[11px] text-gray-400 mt-1">Leave blank to keep in Task List. Clearing this later sends it back to Task List.</p>
           </div>
-          {!editingTask && !bulkMode && scheduledDate && (
+          {((!editingTask && !bulkMode) || (editingTask && !isRecurring)) && scheduledDate && (
             <div>
               <label className="block text-xs font-medium text-gray-500 mb-1">Repeat</label>
               <button
