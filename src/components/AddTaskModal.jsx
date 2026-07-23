@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { resetViewportZoom } from '../lib/resetZoom'
 
 const GOAL_CATEGORIES = [
-  'Career/Professional', 'Financial', 'Intellectual',
+  'Career/Professional', 'Family', 'Financial', 'Intellectual',
   'Physical (Health/Wellness)', 'Relationships',
   'Social (Community/Volunteering)', 'Spiritual (Prayer/Church)'
 ]
@@ -26,6 +26,8 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
   const [taskCategory, setTaskCategory] = useState(initialCategory && !allTaskCategories.includes(initialCategory) ? '' : (initialCategory || ''))
   const [customTaskCategory, setCustomTaskCategory] = useState(!!(initialCategory && !allTaskCategories.includes(initialCategory)))
   const [taskCategoryCustom, setTaskCategoryCustom] = useState(initialCategory && !allTaskCategories.includes(initialCategory) ? initialCategory : '')
+  const [familyMember, setFamilyMember] = useState(editingTask ? (editingTask.family_member || '') : '')
+  const [newGoalFamilyMember, setNewGoalFamilyMember] = useState('')
   const [addingGoal, setAddingGoal] = useState(false)
   const [newGoalTitle, setNewGoalTitle] = useState('')
   const [showGoalDetails, setShowGoalDetails] = useState(false)
@@ -61,6 +63,7 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
       const created = await onAddGoal(newGoalTitle.trim(), colors[(goals || []).length % colors.length], {
         category: (customCategory ? newGoalCategoryCustom.trim() : newGoalCategory) || null,
         priority: newGoalPriority || null,
+        familyMember: newGoalCategory === 'Family' ? newGoalFamilyMember.trim() || null : null,
         smartSpecific: smartSpecific.trim() || null,
         smartMeasurable: smartMeasurable.trim() || null,
         smartAchievable: smartAchievable.trim() || null,
@@ -72,6 +75,7 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
       setNewGoalCategory('')
       setCustomCategory(false)
       setNewGoalCategoryCustom('')
+      setNewGoalFamilyMember('')
       setNewGoalPriority('')
       setSmartSpecific(''); setSmartMeasurable(''); setSmartAchievable(''); setSmartRelevant(''); setSmartTimebound('')
       setShowGoalDetails(false)
@@ -90,11 +94,11 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
     setSubmitting(true)
     try {
       if (editingTask) {
-        await onEdit(editingTask.id, title.trim(), notes.trim(), goalId || null, startTime || null, dueDate || null, scheduledDate || null, priority || null, category, collaborationId || null, assignedTo || null)
+        await onEdit(editingTask.id, title.trim(), notes.trim(), goalId || null, startTime || null, dueDate || null, scheduledDate || null, priority || null, category, collaborationId || null, assignedTo || null, category === 'Family' ? familyMember.trim() || null : null)
         closeModal()
         return
       }
-      await onAdd(title.trim(), notes.trim(), goalId || null, startTime || null, dueDate || null, scheduledDate || null, priority || null, category, collaborationId || null, assignedTo || null, initialBucket || null)
+      await onAdd(title.trim(), notes.trim(), goalId || null, startTime || null, dueDate || null, scheduledDate || null, priority || null, category, collaborationId || null, assignedTo || null, initialBucket || null, category === 'Family' ? familyMember.trim() || null : null)
       if (keepOpen) {
         setTitle('')
         setNotes('')
@@ -120,7 +124,7 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
     let addedCount = 0
     try {
       for (const line of lines) {
-        await onAdd(line, '', goalId || null, startTime || null, dueDate || null, scheduledDate || null, priority || null, category, collaborationId || null, assignedTo || null, initialBucket || null)
+        await onAdd(line, '', goalId || null, startTime || null, dueDate || null, scheduledDate || null, priority || null, category, collaborationId || null, assignedTo || null, initialBucket || null, category === 'Family' ? familyMember.trim() || null : null)
         addedCount++
       }
       closeModal()
@@ -197,7 +201,7 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
                 className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 text-gray-700"
               >
                 <option value="">No goal</option>
-                {(goals || []).map(g => (
+                {[...(goals || [])].sort((a, b) => a.title.localeCompare(b.title)).map(g => (
                   <option key={g.id} value={g.id}>{g.title}</option>
                 ))}
                 {onAddGoal && <option value="__new__">+ New goal…</option>}
@@ -286,6 +290,15 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
                   <option value="low">Low</option>
                 </select>
               </div>
+              {newGoalCategory === 'Family' && (
+                <input
+                  type="text"
+                  placeholder="Who's this about?"
+                  value={newGoalFamilyMember}
+                  onChange={e => setNewGoalFamilyMember(e.target.value)}
+                  className="w-full border border-gray-200 rounded-lg px-2 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-300"
+                />
+              )}
               {!showGoalDetails ? (
                 <button type="button" onClick={() => setShowGoalDetails(true)} className="text-xs text-indigo-500 hover:text-indigo-700">+ Make it a SMART goal (optional)</button>
               ) : (
@@ -368,6 +381,15 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
                 {allTaskCategories.map(c => <option key={c} value={c}>{c}</option>)}
                 <option value="__custom__">+ New category…</option>
               </select>
+            )}
+            {taskCategory === 'Family' && (
+              <input
+                type="text"
+                placeholder="Who's this about?"
+                value={familyMember}
+                onChange={e => setFamilyMember(e.target.value)}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 text-gray-700 mt-1.5"
+              />
             )}
           </div>
           {bulkMode && bulkError && <p className="text-xs text-red-500">{bulkError}</p>}
