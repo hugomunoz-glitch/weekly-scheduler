@@ -7,6 +7,50 @@ const GOAL_CATEGORIES = [
   'Social (Community/Volunteering)', 'Spiritual (Prayer/Church)'
 ]
 
+const DURATION_OPTIONS = [
+  { minutes: 15, label: '15 minutes' },
+  { minutes: 30, label: '30 minutes' },
+  { minutes: 45, label: '45 minutes' },
+  { minutes: 60, label: '1 hour' },
+  { minutes: 90, label: '1.5 hours' },
+  { minutes: 120, label: '2 hours' },
+  { minutes: 180, label: '3 hours' },
+  { minutes: 240, label: '4 hours' }
+]
+
+const WEEKDAYS = [
+  { code: 'SU', label: 'S' }, { code: 'MO', label: 'M' }, { code: 'TU', label: 'T' },
+  { code: 'WE', label: 'W' }, { code: 'TH', label: 'T' }, { code: 'FR', label: 'F' }, { code: 'SA', label: 'S' }
+]
+
+function timeToMinutes(t) {
+  if (!t) return null
+  const [h, m] = t.split(':').map(Number)
+  return h * 60 + (m || 0)
+}
+
+function minutesBetween(startTime, endTime) {
+  const s = timeToMinutes(startTime), e = timeToMinutes(endTime)
+  if (s === null || e === null) return 0
+  return e >= s ? e - s : (1440 - s) + e
+}
+
+function addMinutesToTime(startTime, minutes) {
+  const s = timeToMinutes(startTime)
+  if (s === null || !minutes) return ''
+  const total = (s + Number(minutes)) % 1440
+  const h = Math.floor(total / 60), m = total % 60
+  return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0')
+}
+
+function formatTimeShort(t) {
+  if (!t) return ''
+  const [h, m] = t.split(':').map(Number)
+  const ampm = h >= 12 ? 'PM' : 'AM'
+  const display = h % 12 === 0 ? 12 : h % 12
+  return display + ':' + String(m).padStart(2, '0') + ' ' + ampm
+}
+
 export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTask, onAddGoal, initialScheduledDate, initialStartTime, initialBucket, existingTaskCategories, collaborations, collabMembersMap, defaultCollaborationId, onCreateFollowUp, followUpPrefill }) {
   function closeModal() {
     resetViewportZoom()
@@ -47,6 +91,16 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
   const [bulkError, setBulkError] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState('')
+  const [duration, setDuration] = useState(editingTask && editingTask.end_time && editingTask.start_time ? String(minutesBetween(editingTask.start_time, editingTask.end_time)) : '')
+  const [repeatOpen, setRepeatOpen] = useState(false)
+  const [recurFreq, setRecurFreq] = useState('weekly')
+  const [recurInterval, setRecurInterval] = useState(1)
+  const [recurByDay, setRecurByDay] = useState([])
+  const [recurEndType, setRecurEndType] = useState('never')
+  const [recurEndCount, setRecurEndCount] = useState(10)
+  const [recurEndDate, setRecurEndDate] = useState('')
+  const [showScopeChoice, setShowScopeChoice] = useState(false)
+  const isRecurring = !!(editingTask && editingTask.recurrence_group_id)
   const inputRef = useRef(null)
 
   useEffect(() => { inputRef.current?.focus() }, [])
@@ -86,19 +140,34 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
     }
   }
 
-  async function handleSubmitCore(e, keepOpen) {
+  async function handleSubmitCore(e, keepOpen, scope) {
     e.preventDefault()
     if (!title.trim()) return
+
+    if (editingTask && isRecurring && scope === undefined && !showScopeChoice) {
+      setShowScopeChoice(true)
+      return
+    }
+
     const category = (customTaskCategory ? taskCategoryCustom.trim() : taskCategory) || null
+    const endTime = duration ? addMinutesToTime(startTime, duration) : null
     setSubmitError('')
     setSubmitting(true)
     try {
       if (editingTask) {
-        await onEdit(editingTask.id, title.trim(), notes.trim(), goalId || null, startTime || null, dueDate || null, scheduledDate || null, priority || null, category, collaborationId || null, assignedTo || null, category === 'Family' ? familyMember.trim() || null : null)
+        await onEdit(editingTask.id, title.trim(), notes.trim(), goalId || null, startTime || null, dueDate || null, scheduledDate || null, priority || null, category, collaborationId || null, assignedTo || null, category === 'Family' ? familyMember.trim() || null : null, endTime, scope || null)
         closeModal()
         return
       }
-      await onAdd(title.trim(), notes.trim(), goalId || null, startTime || null, dueDate || null, scheduledDate || null, priority || null, category, collaborationId || null, assignedTo || null, initialBucket || null, category === 'Family' ? familyMember.trim() || null : null)
+      const recurrenceRule = repeatOpen ? {
+        freq: recurFreq,
+        interval: Math.max(1, Number(recurInterval) || 1),
+        byDay: recurFreq === 'weekly' ? recurByDay : null,
+        endType: recurEndType,
+        endCount: recurEndType === 'count' ? Math.max(1, Number(recurEndCount) || 1) : null,
+        endDate: recurEndType === 'until' ? (recurEndDate || null) : null
+      } : null
+      await onAdd(title.trim(), notes.trim(), goalId || null, startTime || null, dueDate || null, scheduledDate || null, priority || null, category, collaborationId || null, assignedTo || null, initialBucket || null, category === 'Family' ? familyMember.trim() || null : null, endTime, recurrenceRule)
       if (keepOpen) {
         setTitle('')
         setNotes('')
@@ -223,6 +292,22 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
                 )}
               </div>
             </div>
+            {startTime && (
+              <div className="shrink-0">
+                <label className="block text-xs font-medium text-gray-500 mb-1">Duration (optional)</label>
+                <select
+                  value={duration}
+                  onChange={e => setDuration(e.target.value)}
+                  className="border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 text-gray-700"
+                >
+                  <option value="">No end time</option>
+                  {DURATION_OPTIONS.map(d => <option key={d.minutes} value={d.minutes}>{d.label}</option>)}
+                </select>
+                {duration && (
+                  <p className="text-[11px] text-gray-400 mt-1">Ends at {formatTimeShort(addMinutesToTime(startTime, duration))}</p>
+                )}
+              </div>
+            )}
           </div>
           {collaborations && collaborations.length > 0 && (
             <div>
@@ -335,6 +420,102 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
             </div>
             <p className="text-[11px] text-gray-400 mt-1">Leave blank to keep in Task List. Clearing this later sends it back to Task List.</p>
           </div>
+          {!editingTask && !bulkMode && scheduledDate && (
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Repeat</label>
+              <button
+                type="button"
+                onClick={() => setRepeatOpen(o => !o)}
+                className="w-full flex items-center justify-between border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 focus:outline-none"
+              >
+                <span>
+                  {!repeatOpen ? 'Does not repeat' : (
+                    'Every ' + (Number(recurInterval) > 1 ? recurInterval + ' ' : '') +
+                    (recurFreq === 'daily' ? (Number(recurInterval) > 1 ? 'days' : 'day')
+                      : recurFreq === 'weekly' ? (Number(recurInterval) > 1 ? 'weeks' : 'week') + (recurByDay.length > 0 ? ' on ' + recurByDay.join(', ') : '')
+                      : recurFreq === 'monthly' ? (Number(recurInterval) > 1 ? 'months' : 'month')
+                      : (Number(recurInterval) > 1 ? 'years' : 'year'))
+                  )}
+                </span>
+                <span className="text-gray-400">{repeatOpen ? '\u25B2' : '\u25BC'}</span>
+              </button>
+              {repeatOpen && (
+                <div className="border border-indigo-300 rounded-lg p-3 mt-1.5 space-y-2.5 bg-gray-50">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-500">Every</span>
+                    <input
+                      type="number"
+                      min="1"
+                      value={recurInterval}
+                      onChange={e => setRecurInterval(e.target.value)}
+                      className="w-14 border border-gray-200 rounded-lg px-2 py-1.5 text-xs text-center focus:outline-none"
+                    />
+                    <select
+                      value={recurFreq}
+                      onChange={e => setRecurFreq(e.target.value)}
+                      className="flex-1 border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none"
+                    >
+                      <option value="daily">day(s)</option>
+                      <option value="weekly">week(s)</option>
+                      <option value="monthly">month(s)</option>
+                      <option value="yearly">year(s)</option>
+                    </select>
+                  </div>
+                  {recurFreq === 'weekly' && (
+                    <div>
+                      <p className="text-[11px] text-gray-400 mb-1">On these days</p>
+                      <div className="flex gap-1">
+                        {WEEKDAYS.map(wd => (
+                          <button
+                            key={wd.code}
+                            type="button"
+                            onClick={() => setRecurByDay(prev => prev.includes(wd.code) ? prev.filter(c => c !== wd.code) : [...prev, wd.code])}
+                            className={'w-7 h-7 rounded-full text-[10px] flex items-center justify-center border ' + (recurByDay.includes(wd.code) ? 'bg-indigo-600 text-white border-indigo-600' : 'border-gray-200 text-gray-500')}
+                          >
+                            {wd.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-[11px] text-gray-400 mb-1">Ends</p>
+                    <div className="space-y-1.5">
+                      <label className="flex items-center gap-2 text-xs text-gray-600">
+                        <input type="radio" name="recurEnd" checked={recurEndType === 'never'} onChange={() => setRecurEndType('never')} />
+                        Never
+                      </label>
+                      <label className="flex items-center gap-2 text-xs text-gray-600">
+                        <input type="radio" name="recurEnd" checked={recurEndType === 'count'} onChange={() => setRecurEndType('count')} />
+                        After
+                        <input
+                          type="number"
+                          min="1"
+                          value={recurEndCount}
+                          onChange={e => { setRecurEndCount(e.target.value); setRecurEndType('count') }}
+                          className="w-14 border border-gray-200 rounded-lg px-2 py-1 text-xs text-center focus:outline-none"
+                        />
+                        occurrences
+                      </label>
+                      <label className="flex items-center gap-2 text-xs text-gray-600">
+                        <input type="radio" name="recurEnd" checked={recurEndType === 'until'} onChange={() => setRecurEndType('until')} />
+                        On date
+                        <input
+                          type="date"
+                          value={recurEndDate}
+                          onChange={e => { setRecurEndDate(e.target.value); setRecurEndType('until') }}
+                          className="border border-gray-200 rounded-lg px-2 py-1 text-xs focus:outline-none"
+                        />
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          {isRecurring && (
+            <p className="text-[11px] text-gray-400 -mt-1">Part of a repeating series. You can change its own details or move it, but the repeat pattern itself is set when it's created.</p>
+          )}
           <div>
             <label className="block text-xs font-medium text-gray-500 mb-1">Deadline (optional)</label>
             <div className="flex items-center gap-1">
@@ -395,26 +576,35 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
           {bulkMode && bulkError && <p className="text-xs text-red-500">{bulkError}</p>}
           {!bulkMode && submitError && <p className="text-xs text-red-500">{submitError}</p>}
           <div className="flex gap-2 pt-1">
-            <button type="button" onClick={closeModal} className="flex-1 py-2 text-sm text-gray-500 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">Cancel</button>
-            {bulkMode ? (
-              <button type="submit" disabled={bulkCount === 0 || bulkSubmitting} className="flex-1 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
-                {bulkSubmitting ? 'Adding...' : bulkCount > 0 ? 'Add ' + bulkCount + ' tasks' : 'Add tasks'}
-              </button>
-            ) : editingTask ? (
+            {showScopeChoice ? (
               <>
-                <button
-                  type="button"
-                  onClick={() => onCreateFollowUp && onCreateFollowUp({ title: editingTask.title, goalId: editingTask.goal_id, category: editingTask.category, priority: editingTask.priority, collaborationId: editingTask.collaboration_id })}
-                  className="flex-1 py-2 text-sm font-medium text-indigo-600 border border-indigo-200 rounded-lg hover:bg-indigo-50 transition-colors"
-                >
-                  Follow-up
-                </button>
-                <button type="submit" disabled={!title.trim() || submitting} className="flex-1 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">{submitting ? 'Saving...' : 'Save changes'}</button>
+                <button type="button" onClick={(e) => handleSubmitCore(e, false, 'this')} disabled={submitting} className="flex-1 py-2 text-sm font-medium text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-40 transition-colors">Just this one</button>
+                <button type="button" onClick={(e) => handleSubmitCore(e, false, 'future')} disabled={submitting} className="flex-1 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-40 transition-colors">{submitting ? 'Saving...' : 'This and future'}</button>
               </>
             ) : (
               <>
-                <button type="button" onClick={(e) => handleSubmitCore(e, true)} disabled={!title.trim() || submitting} className="flex-1 py-2 text-sm font-medium text-indigo-600 border border-indigo-200 rounded-lg hover:bg-indigo-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">Add another</button>
-                <button type="submit" disabled={!title.trim() || submitting} className="flex-1 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">{submitting ? 'Adding...' : 'Add'}</button>
+                <button type="button" onClick={closeModal} className="flex-1 py-2 text-sm text-gray-500 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">Cancel</button>
+                {bulkMode ? (
+                  <button type="submit" disabled={bulkCount === 0 || bulkSubmitting} className="flex-1 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+                    {bulkSubmitting ? 'Adding...' : bulkCount > 0 ? 'Add ' + bulkCount + ' tasks' : 'Add tasks'}
+                  </button>
+                ) : editingTask ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => onCreateFollowUp && onCreateFollowUp({ title: editingTask.title, goalId: editingTask.goal_id, category: editingTask.category, priority: editingTask.priority, collaborationId: editingTask.collaboration_id })}
+                      className="flex-1 py-2 text-sm font-medium text-indigo-600 border border-indigo-200 rounded-lg hover:bg-indigo-50 transition-colors"
+                    >
+                      Follow-up
+                    </button>
+                    <button type="submit" disabled={!title.trim() || submitting} className="flex-1 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">{submitting ? 'Saving...' : 'Save changes'}</button>
+                  </>
+                ) : (
+                  <>
+                    <button type="button" onClick={(e) => handleSubmitCore(e, true)} disabled={!title.trim() || submitting} className="flex-1 py-2 text-sm font-medium text-indigo-600 border border-indigo-200 rounded-lg hover:bg-indigo-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">Add another</button>
+                    <button type="submit" disabled={!title.trim() || submitting} className="flex-1 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">{submitting ? 'Adding...' : 'Add'}</button>
+                  </>
+                )}
               </>
             )}
           </div>
