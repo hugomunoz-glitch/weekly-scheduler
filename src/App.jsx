@@ -62,6 +62,7 @@ export default function App() {
   const [showAdd, setShowAdd] = useState(false)
   const [addForDate, setAddForDate] = useState(null)
   const [addForTime, setAddForTime] = useState(null)
+  const [addForBucket, setAddForBucket] = useState(null)
   const [editingTask, setEditingTask] = useState(null)
   const [followUpPrefill, setFollowUpPrefill] = useState(null)
   const [showCollab, setShowCollab] = useState(false)
@@ -210,12 +211,12 @@ export default function App() {
     }
   }
 
-  async function addTask(title, notes, goalId, startTime, dueDate, scheduledDate, priority, category, collaborationId, assignedTo) {
+  async function addTask(title, notes, goalId, startTime, dueDate, scheduledDate, priority, category, collaborationId, assignedTo, explicitBucket) {
     const { data, error } = await supabase.from('tasks').insert({
       title, notes: notes || null, goal_id: goalId || null, start_time: startTime || null, due_date: dueDate || null,
       status: scheduledDate ? 'scheduled' : 'inbox',
       scheduled_date: scheduledDate || null,
-      bucket: scheduledDate ? bucketFromTime(startTime) : null,
+      bucket: scheduledDate ? (startTime ? bucketFromTime(startTime) : (explicitBucket || 'morning')) : null,
       priority: priority || null,
       category: category || null,
       owner_id: user.id,
@@ -403,11 +404,11 @@ export default function App() {
   const taskCategories = [...new Set(visibleTasks.map(t => t.category).filter(Boolean))].sort()
   const tasksForDay = (date) => visibleTasks.filter(t => t.scheduled_date === format(date, 'yyyy-MM-dd'))
   const dueCardsForDay = (date) => visibleTasks.filter(t => t.due_date_card_date === format(date, 'yyyy-MM-dd') && t.scheduled_date !== t.due_date_card_date)
-  const openAddForDay = (date) => { setAddForDate(format(date, 'yyyy-MM-dd')); setAddForTime(null); setShowAdd(true) }
-  const BUCKET_DEFAULT_TIME = { morning: '09:00', midday: '13:00', afternoon: '18:00' }
+  const openAddForDay = (date) => { setAddForDate(format(date, 'yyyy-MM-dd')); setAddForTime(null); setAddForBucket(null); setShowAdd(true) }
   const openAddForBucket = (date, bucketId) => {
     setAddForDate(format(date, 'yyyy-MM-dd'))
-    setAddForTime(BUCKET_DEFAULT_TIME[bucketId] || '09:00')
+    setAddForTime(null)
+    setAddForBucket(bucketId)
     setShowAdd(true)
   }
 
@@ -475,7 +476,7 @@ export default function App() {
           </div>
         </div>
       )}
-      {showAdd && <AddTaskModal onAdd={addTask} onClose={() => { setShowAdd(false); setAddForDate(null); setAddForTime(null); setFollowUpPrefill(null) }} goals={visibleGoals} onAddGoal={addGoal} initialScheduledDate={addForDate} initialStartTime={addForTime} existingTaskCategories={taskCategories} collaborations={collaborations} collabMembersMap={collabMembersMap} defaultCollaborationId={defaultCollaborationId} followUpPrefill={followUpPrefill} />}
+      {showAdd && <AddTaskModal onAdd={addTask} onClose={() => { setShowAdd(false); setAddForDate(null); setAddForTime(null); setAddForBucket(null); setFollowUpPrefill(null) }} goals={visibleGoals} onAddGoal={addGoal} initialScheduledDate={addForDate} initialStartTime={addForTime} initialBucket={addForBucket} existingTaskCategories={taskCategories} collaborations={collaborations} collabMembersMap={collabMembersMap} defaultCollaborationId={defaultCollaborationId} followUpPrefill={followUpPrefill} />}
       {editingTask && <AddTaskModal editingTask={editingTask} onEdit={editTask} onClose={() => setEditingTask(null)} goals={visibleGoals} onAddGoal={addGoal} existingTaskCategories={taskCategories} collaborations={collaborations} collabMembersMap={collabMembersMap} defaultCollaborationId={defaultCollaborationId} onCreateFollowUp={(prefill) => { setEditingTask(null); setFollowUpPrefill(prefill); setShowAdd(true) }} />}
       {showCollab && <CollaborationPanel onClose={() => setShowCollab(false)} />}
       {undoQueue.length > 0 && (
