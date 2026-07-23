@@ -370,7 +370,7 @@ export default function App() {
     ])
   }
 
-  async function editTask(taskId, title, notes, goalId, startTime, dueDate, scheduledDate, priority, category, collaborationId, assignedTo, familyMember, endTime, scope, newRecurrenceRule) {
+  async function editTask(taskId, title, notes, goalId, startTime, dueDate, scheduledDate, priority, category, collaborationId, assignedTo, familyMember, endTime, scope, newRecurrenceRule, patternChangeRule) {
     const existing = tasks.find(t => t.id === taskId)
     const wasScheduled = existing && existing.scheduled_date
     const updates = { title, notes: notes || null, goal_id: goalId || null, start_time: startTime || null, end_time: endTime || null, due_date: dueDate || null, priority: priority || null, category: category || null, family_member: familyMember || null }
@@ -492,12 +492,68 @@ export default function App() {
       }
     }
 
+    // Changing the pattern of an already-recurring task only ever looks
+    // forward: it clears out not-yet-completed future occurrences and
+    // replaces them with a fresh set computed from the new pattern,
+    // anchored to this occurrence's own date. Anything in the past, and
+    // anything already marked done regardless of date, is left alone.
+    let deletedIds = []
+    if (patternChangeRule && existing && existing.recurrence_group_id && data.scheduled_date) {
+      const groupId = existing.recurrence_group_id
+      const recurrenceFields = {
+        recurrence_freq: patternChangeRule.freq,
+        recurrence_interval: patternChangeRule.interval || 1,
+        recurrence_byday: patternChangeRule.byDay && patternChangeRule.byDay.length > 0 ? patternChangeRule.byDay.join(',') : null,
+        recurrence_end_type: patternChangeRule.endType,
+        recurrence_end_count: patternChangeRule.endType === 'count' ? (patternChangeRule.endCount || 1) : null,
+        recurrence_end_date: patternChangeRule.endType === 'until' ? (patternChangeRule.endDate || null) : null
+      }
+      const { data: selfUpdated, error: selfError } = await supabase.from('tasks').update(recurrenceFields).eq('id', taskId).select().single()
+      if (selfError) {
+        console.error('editTask: updating this occurrence\'s pattern failed:', selfError)
+      } else {
+        updatedRows = updatedRows.map(r => r.id === taskId ? selfUpdated : r)
+        const toRemove = tasks.filter(t => t.recurrence_group_id === groupId && t.id !== taskId && t.scheduled_date > data.scheduled_date && t.status !== 'done')
+        const removeIds = toRemove.map(t => t.id)
+        if (removeIds.length > 0) {
+          const { error: deleteError } = await supabase.from('tasks').delete().in('id', removeIds)
+          if (deleteError) console.error('editTask: clearing old future occurrences failed:', deleteError)
+          else deletedIds = removeIds
+        }
+        const todayStr = format(startOfDay(new Date()), 'yyyy-MM-dd')
+        const futureDates = generateOccurrenceDates(data.scheduled_date, patternChangeRule).filter(d => d !== data.scheduled_date && d >= todayStr)
+        if (futureDates.length > 0) {
+          const moreRows = futureDates.map((d, i) => ({
+            title: selfUpdated.title, notes: selfUpdated.notes, goal_id: selfUpdated.goal_id, start_time: selfUpdated.start_time, end_time: selfUpdated.end_time, due_date: null,
+            status: 'scheduled',
+            scheduled_date: d,
+            bucket: selfUpdated.bucket,
+            priority: selfUpdated.priority,
+            category: selfUpdated.category,
+            owner_id: user.id,
+            collaboration_id: selfUpdated.collaboration_id,
+            assigned_to: selfUpdated.assigned_to,
+            family_member: selfUpdated.family_member,
+            position: Date.now() + i,
+            due_date_card_position: null,
+            due_date_card_date: null,
+            due_date_card_bucket: null,
+            recurrence_group_id: groupId,
+            ...recurrenceFields
+          }))
+          const { data: insertedMore, error: moreError } = await supabase.from('tasks').insert(moreRows).select()
+          if (moreError) console.error('editTask: generating new pattern occurrences failed:', moreError)
+          else newlyGeneratedRows = [...newlyGeneratedRows, ...insertedMore]
+        }
+      }
+    }
+
     setTasks(prev => {
-      const updated = prev.map(t => updatedRows.find(r => r.id === t.id) || t)
+      const updated = prev.filter(t => !deletedIds.includes(t.id)).map(t => updatedRows.find(r => r.id === t.id) || t)
       return newlyGeneratedRows.length > 0 ? [...updated, ...newlyGeneratedRows] : updated
     })
     setGoalTasks(prev => {
-      let next = prev
+      let next = prev.filter(t => !deletedIds.includes(t.id))
       for (const row of [...updatedRows, ...newlyGeneratedRows]) {
         next = next.filter(t => t.id !== row.id)
         if (row.goal_id) next = [...next, { id: row.id, title: row.title, goal_id: row.goal_id, status: row.status, due_date: row.due_date, start_time: row.start_time, priority: row.priority, collaboration_id: row.collaboration_id, assigned_to: row.assigned_to }]
