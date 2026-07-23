@@ -44,7 +44,7 @@ export default function TaskCard({ task, isDone, isDragging, collabBadge, assign
     >
       {!isDragging && (
         <button
-          onClick={(e) => { e.stopPropagation(); onDelete(task.id) }}
+          onClick={(e) => { e.stopPropagation(); onDelete(task.id, e) }}
           className="hidden md:flex absolute -top-2 -right-2 w-4 h-4 rounded-full bg-red-500 hover:bg-red-600 text-white text-[9px] font-semibold items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm z-10"
           title="Delete task"
         >
@@ -110,7 +110,7 @@ export default function TaskCard({ task, isDone, isDragging, collabBadge, assign
       </div>
       {isDone && showActions && (
         <div className="flex justify-end gap-2 mt-1">
-          <button onClick={() => onDelete(task.id)} className="md:hidden text-base text-red-500 hover:text-red-700 transition-colors px-1" title="Delete">&#128465;</button>
+          <button onClick={(e) => onDelete(task.id, e)} className="md:hidden text-base text-red-500 hover:text-red-700 transition-colors px-1" title="Delete">&#128465;</button>
         </div>
       )}
       {!isDone && !isDragging && showActions && (
@@ -128,7 +128,7 @@ export default function TaskCard({ task, isDone, isDragging, collabBadge, assign
             </svg>
           </button>
           )}
-          <button onClick={() => onDelete(task.id)} className="md:hidden text-base text-red-500 hover:text-red-700 px-1 py-0.5 rounded transition-colors ml-auto" title="Delete">&#128465;</button>
+          <button onClick={(e) => onDelete(task.id, e)} className="md:hidden text-base text-red-500 hover:text-red-700 px-1 py-0.5 rounded transition-colors ml-auto" title="Delete">&#128465;</button>
         </div>
       )}
     </div>

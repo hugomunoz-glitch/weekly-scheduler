@@ -629,7 +629,7 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
                                         <span className="text-sm text-indigo-400 shrink-0 whitespace-nowrap">{formatTime(t.start_time)}</span>
                                       )}
                                       <button
-                                        onClick={(e) => { e.stopPropagation(); onDelete(t.id) }}
+                                        onClick={(e) => { e.stopPropagation(); onDelete(t.id, e) }}
                                         className="w-5 h-5 rounded-full bg-red-500 hover:bg-red-600 text-white text-[11px] font-semibold flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
                                         title="Delete task"
                                       >

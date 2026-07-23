@@ -566,7 +566,7 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
                           {t.start_time && (
                             <span style={{ fontSize: '13px', color: '#a5b4fc', flexShrink: 0, whiteSpace: 'nowrap' }}>{formatTime(t.start_time)}</span>
                           )}
-                          <span onClick={(e) => { e.stopPropagation(); onDelete(t.id) }} style={{ color: '#ef4444', fontSize: '17px', fontWeight: 500, cursor: 'pointer', padding: '2px 4px', flexShrink: 0, lineHeight: 1 }}>&#10005;</span>
+                          <span onClick={(e) => { e.stopPropagation(); onDelete(t.id, e) }} style={{ color: '#ef4444', fontSize: '17px', fontWeight: 500, cursor: 'pointer', padding: '2px 4px', flexShrink: 0, lineHeight: 1 }}>&#10005;</span>
                         </div>
                       ))}
                     </div>
@@ -764,7 +764,7 @@ function MobileInbox({ tasks, goalMap, collabMap, collabMembersMap, profileMap, 
                             {collabMembersMap[task.collaboration_id].map(m => <option key={m.id} value={m.id}>{m.username}</option>)}
                           </select>
                         )}
-                        <button onClick={(e) => { e.stopPropagation(); onDelete(task.id) }} style={{ fontSize: '17px', color: '#ef4444', background: 'none', border: 'none', padding: 0, cursor: 'pointer', marginLeft: 'auto', lineHeight: 1 }} title="Delete">&#128465;</button>
+                        <button onClick={(e) => { e.stopPropagation(); onDelete(task.id, e) }} style={{ fontSize: '17px', color: '#ef4444', background: 'none', border: 'none', padding: 0, cursor: 'pointer', marginLeft: 'auto', lineHeight: 1 }} title="Delete">&#128465;</button>
                       </div>
                     )}
                     {!snapshot.isDragging && pressedTaskId === task.id && task.scheduled_date && (
