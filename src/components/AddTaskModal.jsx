@@ -42,6 +42,9 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
   const [bulkMode, setBulkMode] = useState(false)
   const [bulkTitles, setBulkTitles] = useState('')
   const [bulkSubmitting, setBulkSubmitting] = useState(false)
+  const [bulkError, setBulkError] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState('')
   const inputRef = useRef(null)
 
   useEffect(() => { inputRef.current?.focus() }, [])
@@ -79,22 +82,31 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
     }
   }
 
-  function handleSubmitCore(e, keepOpen) {
+  async function handleSubmitCore(e, keepOpen) {
     e.preventDefault()
     if (!title.trim()) return
     const category = (customTaskCategory ? taskCategoryCustom.trim() : taskCategory) || null
-    if (editingTask) {
-      onEdit(editingTask.id, title.trim(), notes.trim(), goalId || null, startTime || null, dueDate || null, scheduledDate || null, priority || null, category, collaborationId || null, assignedTo || null)
-      closeModal()
-      return
-    }
-    onAdd(title.trim(), notes.trim(), goalId || null, startTime || null, dueDate || null, scheduledDate || null, priority || null, category, collaborationId || null, assignedTo || null, initialBucket || null)
-    if (keepOpen) {
-      setTitle('')
-      setNotes('')
-      inputRef.current?.focus()
-    } else {
-      closeModal()
+    setSubmitError('')
+    setSubmitting(true)
+    try {
+      if (editingTask) {
+        await onEdit(editingTask.id, title.trim(), notes.trim(), goalId || null, startTime || null, dueDate || null, scheduledDate || null, priority || null, category, collaborationId || null, assignedTo || null)
+        closeModal()
+        return
+      }
+      await onAdd(title.trim(), notes.trim(), goalId || null, startTime || null, dueDate || null, scheduledDate || null, priority || null, category, collaborationId || null, assignedTo || null, initialBucket || null)
+      if (keepOpen) {
+        setTitle('')
+        setNotes('')
+        inputRef.current?.focus()
+      } else {
+        closeModal()
+      }
+    } catch (err) {
+      console.error('Task save failed:', err)
+      setSubmitError('Couldn\'t save: ' + (err?.message || 'unknown error') + '. Nothing was lost — try again.')
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -104,11 +116,24 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
     if (lines.length === 0) return
     const category = (customTaskCategory ? taskCategoryCustom.trim() : taskCategory) || null
     setBulkSubmitting(true)
+    setBulkError('')
+    let addedCount = 0
     try {
       for (const line of lines) {
         await onAdd(line, '', goalId || null, startTime || null, dueDate || null, scheduledDate || null, priority || null, category, collaborationId || null, assignedTo || null, initialBucket || null)
+        addedCount++
       }
       closeModal()
+    } catch (err) {
+      console.error('Bulk add failed:', err)
+      setBulkTitles(lines.slice(addedCount).join('\n'))
+      setBulkError(
+        (addedCount > 0
+          ? 'Added ' + addedCount + ' of ' + lines.length + ' tasks, then hit an error: '
+          : 'Couldn\'t save any tasks: ') +
+        (err?.message || 'unknown error') +
+        '. The rest are still in the box below — fix the issue and try again.'
+      )
     } finally {
       setBulkSubmitting(false)
     }
@@ -345,6 +370,8 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
               </select>
             )}
           </div>
+          {bulkMode && bulkError && <p className="text-xs text-red-500">{bulkError}</p>}
+          {!bulkMode && submitError && <p className="text-xs text-red-500">{submitError}</p>}
           <div className="flex gap-2 pt-1">
             <button type="button" onClick={closeModal} className="flex-1 py-2 text-sm text-gray-500 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">Cancel</button>
             {bulkMode ? (
@@ -360,12 +387,12 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
                 >
                   Follow-up
                 </button>
-                <button type="submit" disabled={!title.trim()} className="flex-1 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">Save changes</button>
+                <button type="submit" disabled={!title.trim() || submitting} className="flex-1 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">{submitting ? 'Saving...' : 'Save changes'}</button>
               </>
             ) : (
               <>
-                <button type="button" onClick={(e) => handleSubmitCore(e, true)} disabled={!title.trim()} className="flex-1 py-2 text-sm font-medium text-indigo-600 border border-indigo-200 rounded-lg hover:bg-indigo-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">Add another</button>
-                <button type="submit" disabled={!title.trim()} className="flex-1 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">Add</button>
+                <button type="button" onClick={(e) => handleSubmitCore(e, true)} disabled={!title.trim() || submitting} className="flex-1 py-2 text-sm font-medium text-indigo-600 border border-indigo-200 rounded-lg hover:bg-indigo-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">Add another</button>
+                <button type="submit" disabled={!title.trim() || submitting} className="flex-1 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">{submitting ? 'Adding...' : 'Add'}</button>
               </>
             )}
           </div>
