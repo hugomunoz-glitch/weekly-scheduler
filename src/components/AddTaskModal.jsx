@@ -7,7 +7,7 @@ const GOAL_CATEGORIES = [
   'Social (Community/Volunteering)', 'Spiritual (Prayer/Church)'
 ]
 
-export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTask, onAddGoal, initialScheduledDate, initialStartTime, existingTaskCategories, collaborations, collabMembersMap, defaultCollaborationId, onCreateFollowUp, followUpPrefill }) {
+export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTask, onAddGoal, initialScheduledDate, initialStartTime, initialBucket, existingTaskCategories, collaborations, collabMembersMap, defaultCollaborationId, onCreateFollowUp, followUpPrefill }) {
   function closeModal() {
     resetViewportZoom()
     onClose()
@@ -88,7 +88,7 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
       closeModal()
       return
     }
-    onAdd(title.trim(), notes.trim(), goalId || null, startTime || null, dueDate || null, scheduledDate || null, priority || null, category, collaborationId || null, assignedTo || null)
+    onAdd(title.trim(), notes.trim(), goalId || null, startTime || null, dueDate || null, scheduledDate || null, priority || null, category, collaborationId || null, assignedTo || null, initialBucket || null)
     if (keepOpen) {
       setTitle('')
       setNotes('')
@@ -106,7 +106,7 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
     setBulkSubmitting(true)
     try {
       for (const line of lines) {
-        await onAdd(line, '', goalId || null, startTime || null, dueDate || null, scheduledDate || null, priority || null, category, collaborationId || null, assignedTo || null)
+        await onAdd(line, '', goalId || null, startTime || null, dueDate || null, scheduledDate || null, priority || null, category, collaborationId || null, assignedTo || null, initialBucket || null)
       }
       closeModal()
     } finally {
@@ -282,22 +282,36 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
           )}
           <div>
             <label className="block text-xs font-medium text-gray-500 mb-1">Soft deadline (optional)</label>
-            <input
-              type="date"
-              value={scheduledDate}
-              onChange={e => setScheduledDate(e.target.value)}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 text-gray-700"
-            />
+            <div className="flex items-center gap-1">
+              <input
+                type="date"
+                value={scheduledDate}
+                onChange={e => setScheduledDate(e.target.value)}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 text-gray-700"
+              />
+              {scheduledDate && (
+                <button type="button" onClick={() => setScheduledDate('')} className="text-gray-400 hover:text-gray-600 text-xs px-1" title="Clear date">
+                  &#10005;
+                </button>
+              )}
+            </div>
             <p className="text-[11px] text-gray-400 mt-1">Leave blank to keep in Task List. Clearing this later sends it back to Task List.</p>
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-500 mb-1">Deadline (optional)</label>
-            <input
-              type="date"
-              value={dueDate}
-              onChange={e => setDueDate(e.target.value)}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 text-gray-700"
-            />
+            <div className="flex items-center gap-1">
+              <input
+                type="date"
+                value={dueDate}
+                onChange={e => setDueDate(e.target.value)}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 text-gray-700"
+              />
+              {dueDate && (
+                <button type="button" onClick={() => setDueDate('')} className="text-gray-400 hover:text-gray-600 text-xs px-1" title="Clear date">
+                  &#10005;
+                </button>
+              )}
+            </div>
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-500 mb-1">Priority (optional)</label>
