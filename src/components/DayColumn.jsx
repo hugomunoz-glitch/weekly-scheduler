@@ -15,9 +15,10 @@ export default function DayColumn({ date, tasks, dueCards, goalMap, collabMap, o
   const today = isToday(date)
   const isPast = isBefore(date, startOfDay(new Date())) && !today
   const dateStr = format(date, 'yyyy-MM-dd')
-  const activeTasks = tasks.filter(t => t.status !== 'done')
-  const doneTasks = tasks.filter(t => t.status === 'done')
-  const donePct = tasks.length > 0 ? Math.round((doneTasks.length / tasks.length) * 100) : 0
+  const allDayItems = [...tasks, ...(dueCards || [])]
+  const activeTasks = allDayItems.filter(t => t.status !== 'done')
+  const doneTasks = allDayItems.filter(t => t.status === 'done')
+  const donePct = allDayItems.length > 0 ? Math.round((doneTasks.length / allDayItems.length) * 100) : 0
   const overloadBorder = activeTasks.length === 0 ? null : activeTasks.length >= OVERLOAD_CAP ? 'border-red-400' : activeTasks.length >= 3 ? 'border-amber-400' : 'border-emerald-400'
 
   return (
@@ -33,11 +34,12 @@ export default function DayColumn({ date, tasks, dueCards, goalMap, collabMap, o
           </div>
           <span className="text-xs text-gray-400 shrink-0">{donePct}%</span>
         </div>
-        <p className="text-xs text-gray-300 mt-0.5">{doneTasks.length}/{tasks.length}</p>
+        <p className="text-xs text-gray-300 mt-0.5">{doneTasks.length}/{allDayItems.length}</p>
       </div>
       <div className="flex-1 flex flex-col">
         {BUCKETS.map(bucket => {
-          const bucketTasks = activeTasks.filter(t => (t.bucket || 'morning') === bucket.id).sort((a, b) => (a.position || 0) - (b.position || 0))
+          const bucketActiveCount = tasks.filter(t => t.status !== 'done' && (t.bucket || 'morning') === bucket.id).length
+            + (dueCards || []).filter(t => t.status !== 'done' && (t.due_date_card_bucket || 'morning') === bucket.id).length
           const bucketAll = tasks.filter(t => (t.bucket || 'morning') === bucket.id).sort((a, b) => {
             if (a.start_time && b.start_time) return a.start_time < b.start_time ? -1 : a.start_time > b.start_time ? 1 : 0
             if (a.start_time && !b.start_time) return -1
@@ -51,7 +53,7 @@ export default function DayColumn({ date, tasks, dueCards, goalMap, collabMap, o
             <div key={bucket.id} className="group relative flex-1 flex flex-col border-b border-gray-50 last:border-0">
               <div className="px-3 py-1.5 flex items-center gap-1.5 shrink-0">
                 <span className="text-sm font-medium text-gray-700 uppercase tracking-wide">{bucket.label}</span>
-                {bucketTasks.length > 0 && <span className="text-xs text-gray-300">{bucketTasks.length}</span>}
+                {bucketActiveCount > 0 && <span className="text-xs text-gray-300">{bucketActiveCount}</span>}
                 <button
                   onClick={() => onAddTaskForBucket(date, bucket.id)}
                   className="ml-auto w-5 h-5 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
