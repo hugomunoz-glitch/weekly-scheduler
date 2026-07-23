@@ -592,7 +592,7 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
   )
 }
 
-function MobileDayView({ date, tasks, dueCards, goalMap, collabMap, onMarkDone, onRescheduleToTomorrow, onMoveToInbox, onDelete, onEdit, onAddTaskForBucket }) {
+function MobileDayView({ date, tasks, dueCards, goalMap, collabMap, profileMap, onMarkDone, onRescheduleToTomorrow, onMoveToInbox, onDelete, onEdit, onAddTaskForBucket }) {
   const activeTasks = tasks.filter(t => t.status !== 'done')
   const doneTasks = tasks.filter(t => t.status === 'done')
   const dateStr = format(date, 'yyyy-MM-dd')
@@ -600,7 +600,8 @@ function MobileDayView({ date, tasks, dueCards, goalMap, collabMap, onMarkDone, 
   return (
     <div style={{ flex: 1, overflowY: 'auto', padding: '12px' }}>
       {BUCKETS.map(bucket => {
-        const bucketTasks = activeTasks.filter(t => (t.bucket || 'morning') === bucket.id).sort((a, b) => (a.position || 0) - (b.position || 0))
+        const bucketActiveCount = tasks.filter(t => t.status !== 'done' && (t.bucket || 'morning') === bucket.id).length
+          + (dueCards || []).filter(t => t.status !== 'done' && (t.due_date_card_bucket || 'morning') === bucket.id).length
         const bucketAll = tasks.filter(t => (t.bucket || 'morning') === bucket.id).sort((a, b) => {
           if (a.start_time && b.start_time) return a.start_time < b.start_time ? -1 : a.start_time > b.start_time ? 1 : 0
           if (a.start_time && !b.start_time) return -1
@@ -614,7 +615,7 @@ function MobileDayView({ date, tasks, dueCards, goalMap, collabMap, onMarkDone, 
           <div key={bucket.id} style={{ marginBottom: '16px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
               <span style={{ fontSize: '11px', fontWeight: 500, color: '#374151', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{bucket.label}</span>
-              {bucketTasks.length > 0 && <span style={{ fontSize: '11px', color: '#d1d5db' }}>{bucketTasks.length}</span>}
+              {bucketActiveCount > 0 && <span style={{ fontSize: '11px', color: '#d1d5db' }}>{bucketActiveCount}</span>}
               <button onClick={() => onAddTaskForBucket(date, bucket.id)} style={{ background: '#6366f1', color: 'white', border: 'none', borderRadius: '50%', width: '20px', height: '20px', fontSize: '13px', cursor: 'pointer', marginLeft: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1 }} title={'Add task to ' + bucket.label}>+</button>
             </div>
             <Droppable droppableId={droppableId}>
@@ -626,7 +627,7 @@ function MobileDayView({ date, tasks, dueCards, goalMap, collabMap, onMarkDone, 
                       {(provided, snapshot) => {
                         const card = (
                           <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps} style={{ ...provided.draggableProps.style, marginBottom: '6px', WebkitTouchCallout: 'none', WebkitUserSelect: 'none', userSelect: 'none', touchAction: 'manipulation' }}>
-                            <TaskCard task={task} isDone={task.status === 'done'} isDragging={snapshot.isDragging} collabBadge={task.collaboration_id && collabMap ? collabMap[task.collaboration_id] : null} onMarkDone={onMarkDone} onRescheduleToTomorrow={onRescheduleToTomorrow} onMoveToInbox={onMoveToInbox} onDelete={onDelete} onEdit={onEdit} />
+                            <TaskCard task={task} isDone={task.status === 'done'} isDragging={snapshot.isDragging} collabBadge={task.collaboration_id && collabMap ? collabMap[task.collaboration_id] : null} assigneeName={task.assigned_to && profileMap ? profileMap[task.assigned_to] : null} onMarkDone={onMarkDone} onRescheduleToTomorrow={onRescheduleToTomorrow} onMoveToInbox={onMoveToInbox} onDelete={onDelete} onEdit={onEdit} />
                           </div>
                         )
                         return snapshot.isDragging ? createPortal(card, document.body) : card
@@ -647,7 +648,7 @@ function MobileDayView({ date, tasks, dueCards, goalMap, collabMap, onMarkDone, 
                         {(provided, snapshot) => {
                           const card = (
                             <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps} style={{ ...provided.draggableProps.style, marginBottom: '6px', WebkitTouchCallout: 'none', WebkitUserSelect: 'none', userSelect: 'none', touchAction: 'manipulation' }}>
-                              <TaskCard task={task} isDone={task.status === 'done'} isDragging={snapshot.isDragging} isDueCard collabBadge={task.collaboration_id && collabMap ? collabMap[task.collaboration_id] : null} onMarkDone={onMarkDone} onRescheduleToTomorrow={onRescheduleToTomorrow} onMoveToInbox={onMoveToInbox} onDelete={onDelete} onEdit={onEdit} />
+                              <TaskCard task={task} isDone={task.status === 'done'} isDragging={snapshot.isDragging} isDueCard collabBadge={task.collaboration_id && collabMap ? collabMap[task.collaboration_id] : null} assigneeName={task.assigned_to && profileMap ? profileMap[task.assigned_to] : null} onMarkDone={onMarkDone} onRescheduleToTomorrow={onRescheduleToTomorrow} onMoveToInbox={onMoveToInbox} onDelete={onDelete} onEdit={onEdit} />
                             </div>
                           )
                           return snapshot.isDragging ? createPortal(card, document.body) : card
@@ -666,7 +667,7 @@ function MobileDayView({ date, tasks, dueCards, goalMap, collabMap, onMarkDone, 
   )
 }
 
-function MobileInbox({ tasks, goalMap, collabMap, collabMembersMap, onAssignTask, onMarkDone, onAddTask, onEdit, onDelete, search, sortMode, sortDir, categoryFilter }) {
+function MobileInbox({ tasks, goalMap, collabMap, collabMembersMap, profileMap, onAssignTask, onMarkDone, onAddTask, onEdit, onDelete, search, sortMode, sortDir, categoryFilter }) {
   const [pressedTaskId, setPressedTaskId] = useState(null)
   const searched = search && search.trim() ? tasks.filter(t => t.title.toLowerCase().includes(search.trim().toLowerCase())) : tasks
   const filteredTasks = categoryFilter && categoryFilter !== 'all' ? searched.filter(t => t.category === categoryFilter) : searched
@@ -732,6 +733,10 @@ function MobileInbox({ tasks, goalMap, collabMap, collabMembersMap, onAssignTask
                         {categoryBadge(task.category) && (() => {
                           const cb = categoryBadge(task.category)
                           return <span style={{ fontSize: '9px', fontWeight: 500, padding: '2px 6px', borderRadius: '4px', display: 'inline-block', marginTop: '4px', color: cb.color, background: cb.color + '1a' }}>{cb.name}</span>
+                        })()}
+                        {task.assigned_to && profileMap && profileMap[task.assigned_to] && (() => {
+                          const c = collabMap && task.collaboration_id && collabMap[task.collaboration_id] ? collabMap[task.collaboration_id].color : '#6366f1'
+                          return <span style={{ fontSize: '9px', fontWeight: 500, padding: '2px 6px', borderRadius: '4px', display: 'inline-block', marginTop: '4px', marginLeft: '4px', color: c, background: c + '1a' }} title={'Assigned to: ' + profileMap[task.assigned_to]}>{profileMap[task.assigned_to]}</span>
                         })()}
                       </div>
                       {!snapshot.isDragging && (
@@ -929,7 +934,7 @@ function MobileAssistant({ goals, tasks, onCreateTask, onAddGoal }) {
 }
 
 export default function MobileLayout({
-  weekStart, weekDays, tasks, goals, goalMap, collabMap, collabMembersMap, goalTasks, inboxTasks, loading,
+  weekStart, weekDays, tasks, goals, goalMap, collabMap, collabMembersMap, profileMap, goalTasks, inboxTasks, loading,
   collaborations, activeView, onChangeView, defaultCollaborationId,
   overdueTasks, onPrevWeek, onNextWeek, onMarkDone,
   onRescheduleToTomorrow, onMoveToInbox, onDelete, onEdit, onAddTask, onAddTaskForBucket, onCreateTask,
@@ -1047,7 +1052,7 @@ export default function MobileLayout({
             <span style={{ fontSize: '11px', color: '#9ca3af' }}>Tap, Drag &amp; Drop to move</span>
           </div>
           {(() => {
-            const dayTasks = tasksForDay(selectedDay)
+            const dayTasks = [...tasksForDay(selectedDay), ...dueCardsForDay(selectedDay)]
             const dayDone = dayTasks.filter(t => t.status === 'done').length
             const dayPct = dayTasks.length > 0 ? Math.round((dayDone / dayTasks.length) * 100) : 0
             return (
@@ -1065,7 +1070,7 @@ export default function MobileLayout({
           {loading ? (
             <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af', fontSize: '13px' }}>Loading</div>
           ) : (
-            <MobileDayView date={selectedDay} tasks={tasksForDay(selectedDay)} dueCards={dueCardsForDay(selectedDay)} goalMap={goalMap} collabMap={collabMap} onMarkDone={onMarkDone} onRescheduleToTomorrow={onRescheduleToTomorrow} onMoveToInbox={onMoveToInbox} onDelete={onDelete} onEdit={onEdit} onAddTaskForBucket={onAddTaskForBucket} />
+            <MobileDayView date={selectedDay} tasks={tasksForDay(selectedDay)} dueCards={dueCardsForDay(selectedDay)} goalMap={goalMap} collabMap={collabMap} profileMap={profileMap} onMarkDone={onMarkDone} onRescheduleToTomorrow={onRescheduleToTomorrow} onMoveToInbox={onMoveToInbox} onDelete={onDelete} onEdit={onEdit} onAddTaskForBucket={onAddTaskForBucket} />
           )}
         </>
       )}
@@ -1129,7 +1134,7 @@ export default function MobileLayout({
               {taskCategories.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
-          <MobileInbox tasks={loading ? [] : inboxTasks} goalMap={goalMap} collabMap={collabMap} collabMembersMap={collabMembersMap} onAssignTask={onAssignTask} onMarkDone={onMarkDone} onAddTask={onAddTask} onEdit={onEdit} onDelete={onDelete} search={taskSearch} sortMode={taskSort} sortDir={taskSortDir} categoryFilter={taskCategoryFilter} />
+          <MobileInbox tasks={loading ? [] : inboxTasks} goalMap={goalMap} collabMap={collabMap} collabMembersMap={collabMembersMap} profileMap={profileMap} onAssignTask={onAssignTask} onMarkDone={onMarkDone} onAddTask={onAddTask} onEdit={onEdit} onDelete={onDelete} search={taskSearch} sortMode={taskSort} sortDir={taskSortDir} categoryFilter={taskCategoryFilter} />
         </>
       )}
 

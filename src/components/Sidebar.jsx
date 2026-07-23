@@ -9,7 +9,7 @@ const PRIORITY_COLORS = { high: '#ef4444', medium: '#f59e0b', low: '#9ca3af' }
 const PRIORITY_LABELS = { high: 'High', medium: 'Medium', low: 'Low' }
 const PRIORITY_BORDER = { high: '#ef4444', medium: '#f59e0b', low: '#22c55e' }
 
-function Inbox({ tasks, goalMap, collabMap, collabMembersMap, onAssignTask, onMarkDone, onEdit, onDelete, search, sortMode, sortDir, categoryFilter }) {
+function Inbox({ tasks, goalMap, collabMap, collabMembersMap, profileMap, onAssignTask, onMarkDone, onEdit, onDelete, search, sortMode, sortDir, categoryFilter }) {
   const [hoverId, setHoverId] = useState(null)
   const searched = search && search.trim() ? tasks.filter(t => t.title.toLowerCase().includes(search.trim().toLowerCase())) : tasks
   const filteredTasks = categoryFilter && categoryFilter !== 'all' ? searched.filter(t => t.category === categoryFilter) : searched
@@ -79,7 +79,7 @@ function Inbox({ tasks, goalMap, collabMap, collabMembersMap, onAssignTask, onMa
                         {task.title}
                       </p>
                     </div>
-                    {(categoryBadge(task.category) || (task.collaboration_id && collabMembersMap && collabMembersMap[task.collaboration_id] && collabMembersMap[task.collaboration_id].length > 0)) && (
+                    {(categoryBadge(task.category) || (task.assigned_to && profileMap && profileMap[task.assigned_to]) || (task.collaboration_id && collabMembersMap && collabMembersMap[task.collaboration_id] && collabMembersMap[task.collaboration_id].length > 0)) && (
                       <div className="flex items-center gap-1.5 mt-1">
                         {categoryBadge(task.category) && (
                           <span
@@ -88,6 +88,15 @@ function Inbox({ tasks, goalMap, collabMap, collabMembersMap, onAssignTask, onMa
                             title={'Category: ' + categoryBadge(task.category).name}
                           >
                             {categoryBadge(task.category).name}
+                          </span>
+                        )}
+                        {task.assigned_to && profileMap && profileMap[task.assigned_to] && (
+                          <span
+                            className="text-[9px] font-medium px-1.5 py-0.5 rounded"
+                            style={{ color: collabMap && task.collaboration_id && collabMap[task.collaboration_id] ? collabMap[task.collaboration_id].color : '#6366f1', background: (collabMap && task.collaboration_id && collabMap[task.collaboration_id] ? collabMap[task.collaboration_id].color : '#6366f1') + '1a' }}
+                            title={'Assigned to: ' + profileMap[task.assigned_to]}
+                          >
+                            {profileMap[task.assigned_to]}
                           </span>
                         )}
                         {task.collaboration_id && collabMembersMap && collabMembersMap[task.collaboration_id] && collabMembersMap[task.collaboration_id].length > 0 && (
@@ -278,7 +287,7 @@ function Assistant({ goals, tasks, onCreateTask, onAddGoal }) {
   )
 }
 
-export default function Sidebar({ tasks, goalMap, collabMap, collabMembersMap, onAssignTask, onMarkDone, goals, allTasks, onAddTask, onCreateTask, onAddGoal, onEdit, onDelete }) {
+export default function Sidebar({ tasks, goalMap, collabMap, collabMembersMap, profileMap, onAssignTask, onMarkDone, goals, allTasks, onAddTask, onCreateTask, onAddGoal, onEdit, onDelete }) {
   const [tab, setTab] = useState('inbox')
   const [taskSearch, setTaskSearch] = useState('')
   const [showTaskSearch, setShowTaskSearch] = useState(false)
@@ -350,7 +359,7 @@ export default function Sidebar({ tasks, goalMap, collabMap, collabMembersMap, o
                 {taskCategories.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
-            <Inbox tasks={tasks} goalMap={goalMap} collabMap={collabMap} collabMembersMap={collabMembersMap} onAssignTask={onAssignTask} onMarkDone={onMarkDone} onEdit={onEdit} onDelete={onDelete} search={taskSearch} sortMode={taskSort} sortDir={taskSortDir} categoryFilter={taskCategoryFilter} />
+            <Inbox tasks={tasks} goalMap={goalMap} collabMap={collabMap} collabMembersMap={collabMembersMap} profileMap={profileMap} onAssignTask={onAssignTask} onMarkDone={onMarkDone} onEdit={onEdit} onDelete={onDelete} search={taskSearch} sortMode={taskSort} sortDir={taskSortDir} categoryFilter={taskCategoryFilter} />
           </>
         ) : (
           <Assistant goals={goals} tasks={allTasks} onCreateTask={onCreateTask} onAddGoal={onAddGoal} />

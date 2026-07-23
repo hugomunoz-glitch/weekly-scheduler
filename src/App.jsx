@@ -517,7 +517,7 @@ export default function App() {
           <div className="flex flex-1 overflow-hidden gap-3 p-3">
             <main className="flex-1 overflow-x-auto overflow-y-auto rounded-xl border border-gray-200 shadow-sm bg-white p-4">
               {loading ? <div className="flex items-center justify-center h-full text-sm text-gray-400">Loading</div> : (
-                <WeekGrid days={weekDays} tasksForDay={tasksForDay} dueCardsForDay={dueCardsForDay} goalMap={goalMap} collabMap={collabMap} onMarkDone={markDone} onRescheduleToTomorrow={rescheduleToTomorrow} onMoveToInbox={moveToInbox} onDelete={deleteTask} onEdit={setEditingTask} onAddTaskForDay={openAddForDay} onAddTaskForBucket={openAddForBucket} />
+                <WeekGrid days={weekDays} tasksForDay={tasksForDay} dueCardsForDay={dueCardsForDay} goalMap={goalMap} collabMap={collabMap} profileMap={profileMap} onMarkDone={markDone} onRescheduleToTomorrow={rescheduleToTomorrow} onMoveToInbox={moveToInbox} onDelete={deleteTask} onEdit={setEditingTask} onAddTaskForDay={openAddForDay} onAddTaskForBucket={openAddForBucket} />
               )}
             </main>
             <div className="rounded-xl border border-gray-200 shadow-sm overflow-hidden shrink-0">

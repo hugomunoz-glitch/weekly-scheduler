@@ -29,7 +29,7 @@ export function categoryBadge(category) {
   return { name: clean, color: CATEGORY_COLORS[hash % CATEGORY_COLORS.length] }
 }
 
-export default function TaskCard({ task, isDone, isDragging, collabBadge, isDueCard, onMarkDone, onRescheduleToTomorrow, onMoveToInbox, onDelete, onEdit }) {
+export default function TaskCard({ task, isDone, isDragging, collabBadge, assigneeName, isDueCard, onMarkDone, onRescheduleToTomorrow, onMoveToInbox, onDelete, onEdit }) {
   const [showActions, setShowActions] = useState(false)
   const canHover = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(hover: hover)').matches
   const catBadge = categoryBadge(task.category)
@@ -68,6 +68,15 @@ export default function TaskCard({ task, isDone, isDragging, collabBadge, isDueC
               style={{ background: collabBadge.color }}
               title={'Shared with: ' + collabBadge.name}
             />
+          )}
+          {assigneeName && (
+            <span
+              className="text-[9px] font-medium px-1.5 py-0.5 rounded mr-1.5 align-middle"
+              style={{ color: collabBadge ? collabBadge.color : '#6366f1', background: (collabBadge ? collabBadge.color : '#6366f1') + '1a' }}
+              title={'Assigned to: ' + assigneeName}
+            >
+              {assigneeName}
+            </span>
           )}
           <span className={'leading-snug break-words ' + (isDone ? 'line-through text-gray-400' : 'text-gray-800')}>
             {task.title}
