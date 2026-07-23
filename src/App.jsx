@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import { startOfWeek, addWeeks, subWeeks, addDays, format, parseISO, isBefore, startOfDay } from 'date-fns'
+import { startOfWeek, addWeeks, subWeeks, addDays, addMonths, addYears, format, parseISO, isBefore, isAfter, getDay, startOfDay } from 'date-fns'
 import { DragDropContext } from '@hello-pangea/dnd'
 import { supabase } from './lib/supabase'
 import { useAuth } from './contexts/AuthContext'
@@ -62,6 +62,58 @@ function sortBucketTasks(list) {
     if (!a.start_time && b.start_time) return 1
     return (a.position || 0) - (b.position || 0)
   })
+}
+
+// Hard ceilings so a "daily, forever" rule can't generate an unbounded
+// number of rows. A "never ending" rule is generated out to this many
+// days from its first occurrence; count/until rules are additionally
+// capped at this many rows regardless of what the person entered.
+const RECURRENCE_SAFETY_CAP = 400
+const RECURRENCE_NEVER_HORIZON_DAYS = 730
+
+const WEEKDAY_CODES = { SU: 0, MO: 1, TU: 2, WE: 3, TH: 4, FR: 5, SA: 6 }
+
+// Returns an array of 'yyyy-MM-dd' date strings for every occurrence of
+// `rule`, starting from and including startDateStr. Order is always
+// chronological. `rule` = { freq, interval, byDay, endType, endCount, endDate }.
+function generateOccurrenceDates(startDateStr, rule) {
+  const start = startOfDay(parseISO(startDateStr))
+  const interval = Math.max(1, rule.interval || 1)
+  const dates = []
+
+  function pastEnd(candidate) {
+    if (dates.length >= RECURRENCE_SAFETY_CAP) return true
+    if (rule.endType === 'count') return dates.length >= Math.max(1, rule.endCount || 1)
+    if (rule.endType === 'until' && rule.endDate) return isAfter(candidate, parseISO(rule.endDate))
+    return isAfter(candidate, addDays(start, RECURRENCE_NEVER_HORIZON_DAYS))
+  }
+
+  if (rule.freq === 'weekly') {
+    const byDay = (rule.byDay && rule.byDay.length > 0
+      ? rule.byDay.map(c => WEEKDAY_CODES[c]).filter(n => n !== undefined)
+      : [getDay(start)]
+    ).sort((a, b) => a - b)
+    const anchorWeekStart = addDays(start, -getDay(start))
+    outer:
+    for (let w = 0; w < 3000; w += interval) {
+      const weekStart = addDays(anchorWeekStart, w * 7)
+      for (const wd of byDay) {
+        const candidate = addDays(weekStart, wd)
+        if (isBefore(candidate, start)) continue
+        if (pastEnd(candidate)) break outer
+        dates.push(candidate)
+      }
+    }
+  } else {
+    for (let i = 0; i < 3000; i++) {
+      const candidate = rule.freq === 'monthly' ? addMonths(start, i * interval)
+        : rule.freq === 'yearly' ? addYears(start, i * interval)
+        : addDays(start, i * interval) // daily (default)
+      if (pastEnd(candidate)) break
+      dates.push(candidate)
+    }
+  }
+  return dates.map(d => format(d, 'yyyy-MM-dd'))
 }
 
 export default function App() {
@@ -243,14 +295,24 @@ export default function App() {
     }
   }
 
-  async function addTask(title, notes, goalId, startTime, dueDate, scheduledDate, priority, category, collaborationId, assignedTo, explicitBucket, familyMember) {
+  async function addTask(title, notes, goalId, startTime, dueDate, scheduledDate, priority, category, collaborationId, assignedTo, explicitBucket, familyMember, endTime, recurrenceRule) {
     const bucketValue = scheduledDate ? (startTime ? bucketFromTime(startTime) : (explicitBucket || 'morning')) : null
     const bucketSiblings = scheduledDate ? tasks.filter(t => t.scheduled_date === scheduledDate && (t.bucket || 'morning') === bucketValue) : []
     const newPosition = nextPosition(bucketSiblings, 'position')
     const dueCardSiblings = dueDate ? tasks.filter(t => t.due_date_card_date === dueDate) : []
     const newDueCardPosition = nextPosition(dueCardSiblings, 'due_date_card_position')
+
+    const recurrenceFields = recurrenceRule ? {
+      recurrence_freq: recurrenceRule.freq,
+      recurrence_interval: recurrenceRule.interval || 1,
+      recurrence_byday: recurrenceRule.byDay && recurrenceRule.byDay.length > 0 ? recurrenceRule.byDay.join(',') : null,
+      recurrence_end_type: recurrenceRule.endType,
+      recurrence_end_count: recurrenceRule.endType === 'count' ? (recurrenceRule.endCount || 1) : null,
+      recurrence_end_date: recurrenceRule.endType === 'until' ? (recurrenceRule.endDate || null) : null
+    } : { recurrence_freq: null, recurrence_interval: null, recurrence_byday: null, recurrence_end_type: null, recurrence_end_count: null, recurrence_end_date: null }
+
     const { data, error } = await supabase.from('tasks').insert({
-      title, notes: notes || null, goal_id: goalId || null, start_time: startTime || null, due_date: dueDate || null,
+      title, notes: notes || null, goal_id: goalId || null, start_time: startTime || null, end_time: endTime || null, due_date: dueDate || null,
       status: scheduledDate ? 'scheduled' : 'inbox',
       scheduled_date: scheduledDate || null,
       bucket: bucketValue,
@@ -263,17 +325,55 @@ export default function App() {
       position: newPosition,
       due_date_card_position: newDueCardPosition,
       due_date_card_date: dueDate || null,
-      due_date_card_bucket: dueDate ? 'morning' : null
+      due_date_card_bucket: dueDate ? 'morning' : null,
+      recurrence_group_id: null,
+      ...recurrenceFields
     }).select().single()
     if (error) { console.error('addTask failed:', error); throw error }
-    setTasks(prev => [data, ...prev])
-    if (data.goal_id) setGoalTasks(prev => [...prev, { id: data.id, title: data.title, goal_id: data.goal_id, status: data.status, due_date: data.due_date, start_time: data.start_time, priority: data.priority, collaboration_id: data.collaboration_id, assigned_to: data.assigned_to }])
+
+    let allNew = [data]
+
+    if (recurrenceRule && scheduledDate) {
+      const groupId = data.id
+      const futureDates = generateOccurrenceDates(scheduledDate, recurrenceRule).slice(1) // first is already inserted
+      if (futureDates.length > 0) {
+        const moreRows = futureDates.map((d, i) => ({
+          title, notes: notes || null, goal_id: goalId || null, start_time: startTime || null, end_time: endTime || null, due_date: null,
+          status: 'scheduled',
+          scheduled_date: d,
+          bucket: bucketValue,
+          priority: priority || null,
+          category: category || null,
+          owner_id: user.id,
+          collaboration_id: collaborationId || null,
+          assigned_to: assignedTo || null,
+          family_member: familyMember || null,
+          position: Date.now() + i,
+          due_date_card_position: null,
+          due_date_card_date: null,
+          due_date_card_bucket: null,
+          recurrence_group_id: groupId,
+          ...recurrenceFields
+        }))
+        const { data: insertedMore, error: moreError } = await supabase.from('tasks').insert(moreRows).select()
+        if (moreError) console.error('addTask: recurrence generation failed:', moreError)
+        else allNew = [...allNew, ...insertedMore]
+      }
+      const { data: selfLinked } = await supabase.from('tasks').update({ recurrence_group_id: groupId }).eq('id', groupId).select().single()
+      if (selfLinked) allNew[0] = selfLinked
+    }
+
+    setTasks(prev => [...allNew, ...prev])
+    setGoalTasks(prev => [
+      ...prev,
+      ...allNew.filter(row => row.goal_id).map(row => ({ id: row.id, title: row.title, goal_id: row.goal_id, status: row.status, due_date: row.due_date, start_time: row.start_time, priority: row.priority, collaboration_id: row.collaboration_id, assigned_to: row.assigned_to }))
+    ])
   }
 
-  async function editTask(taskId, title, notes, goalId, startTime, dueDate, scheduledDate, priority, category, collaborationId, assignedTo, familyMember) {
+  async function editTask(taskId, title, notes, goalId, startTime, dueDate, scheduledDate, priority, category, collaborationId, assignedTo, familyMember, endTime, scope) {
     const existing = tasks.find(t => t.id === taskId)
     const wasScheduled = existing && existing.scheduled_date
-    const updates = { title, notes: notes || null, goal_id: goalId || null, start_time: startTime || null, due_date: dueDate || null, priority: priority || null, category: category || null, family_member: familyMember || null }
+    const updates = { title, notes: notes || null, goal_id: goalId || null, start_time: startTime || null, end_time: endTime || null, due_date: dueDate || null, priority: priority || null, category: category || null, family_member: familyMember || null }
     if (collaborationId !== undefined) updates.collaboration_id = collaborationId || null
     if (assignedTo !== undefined) updates.assigned_to = assignedTo || null
     const oldDueDate = existing ? existing.due_date : null
@@ -307,15 +407,51 @@ export default function App() {
       updates.bucket = null
       updates.status = existing && existing.status === 'done' ? 'done' : 'inbox'
     }
-    const { data, error } = await supabase.from('tasks').update(updates).eq('id', taskId).select().single()
-    if (!error) {
-      setTasks(prev => prev.map(t => t.id === taskId ? data : t))
-      setGoalTasks(prev => {
-        const filtered = prev.filter(t => t.id !== taskId)
-        if (data.goal_id) return [...filtered, { id: data.id, title: data.title, goal_id: data.goal_id, status: data.status, due_date: data.due_date, start_time: data.start_time, priority: data.priority, collaboration_id: data.collaboration_id, assigned_to: data.assigned_to }]
-        return filtered
-      })
+
+    // "Just this one" detaches the row from its recurrence series entirely --
+    // it becomes an independent task and is no longer touched by a later
+    // "this and future" edit or delete made from a sibling occurrence.
+    if (scope === 'this' && existing && existing.recurrence_group_id) {
+      updates.recurrence_group_id = null
+      updates.recurrence_freq = null
+      updates.recurrence_interval = null
+      updates.recurrence_byday = null
+      updates.recurrence_end_type = null
+      updates.recurrence_end_count = null
+      updates.recurrence_end_date = null
     }
+
+    const { data, error } = await supabase.from('tasks').update(updates).eq('id', taskId).select().single()
+    if (error) return
+
+    let updatedRows = [data]
+
+    // "This and future" only propagates content fields -- never dates,
+    // position, or status -- to every sibling occurrence scheduled on or
+    // after this one. Completion is never shared between occurrences.
+    if (scope === 'future' && existing && existing.recurrence_group_id) {
+      const futureFields = { title, notes: notes || null, goal_id: goalId || null, start_time: startTime || null, end_time: endTime || null, priority: priority || null, category: category || null, family_member: familyMember || null }
+      if (collaborationId !== undefined) futureFields.collaboration_id = collaborationId || null
+      if (assignedTo !== undefined) futureFields.assigned_to = assignedTo || null
+      const { data: futureRows, error: futureError } = await supabase.from('tasks')
+        .update(futureFields)
+        .eq('recurrence_group_id', existing.recurrence_group_id)
+        .neq('id', taskId)
+        .gte('scheduled_date', existing.scheduled_date)
+        .select()
+      if (futureError) console.error('editTask: propagating to future occurrences failed:', futureError)
+      else if (futureRows) updatedRows = [...updatedRows, ...futureRows]
+    }
+
+    setTasks(prev => prev.map(t => updatedRows.find(r => r.id === t.id) || t))
+    setGoalTasks(prev => {
+      let next = prev
+      for (const row of updatedRows) {
+        next = next.filter(t => t.id !== row.id)
+        if (row.goal_id) next = [...next, { id: row.id, title: row.title, goal_id: row.goal_id, status: row.status, due_date: row.due_date, start_time: row.start_time, priority: row.priority, collaboration_id: row.collaboration_id, assigned_to: row.assigned_to }]
+      }
+      return next
+    })
   }
 
   async function assignTask(taskId, assigneeId) {
@@ -377,6 +513,11 @@ export default function App() {
     if (error) console.error('deleteTask failed:', error)
   }
 
+  async function performDeleteTasks(taskIds) {
+    const { error } = await supabase.from('tasks').delete().in('id', taskIds)
+    if (error) console.error('deleteTask (batch) failed:', error)
+  }
+
   function deleteGoal(goalId) {
     const goal = goals.find(g => g.id === goalId)
     if (!goal) return
@@ -393,9 +534,32 @@ export default function App() {
     } }])
   }
 
-  function deleteTask(taskId) {
+  function deleteTask(taskId, scope) {
     const task = tasks.find(t => t.id === taskId)
     if (!task) return
+
+    if (scope === 'future' && task.recurrence_group_id) {
+      const toDelete = tasks.filter(t => t.recurrence_group_id === task.recurrence_group_id && t.scheduled_date >= task.scheduled_date)
+      const ids = toDelete.map(t => t.id)
+      const relatedGoalTasks = goalTasks.filter(t => ids.includes(t.id))
+      setTasks(prev => prev.filter(t => !ids.includes(t.id)))
+      setGoalTasks(prev => prev.filter(t => !ids.includes(t.id)))
+      const timerId = setTimeout(() => {
+        performDeleteTasks(ids)
+        setUndoQueue(prev => prev.filter(u => u.id !== taskId))
+      }, UNDO_MS)
+      setUndoQueue(prev => [...prev, {
+        id: taskId, type: 'task',
+        label: task.title + (toDelete.length > 1 ? ' (+' + (toDelete.length - 1) + ' more)' : ''),
+        timerId,
+        restore: () => {
+          setTasks(prev => [...prev, ...toDelete])
+          setGoalTasks(prev => [...prev, ...relatedGoalTasks])
+        }
+      }])
+      return
+    }
+
     const relatedGoalTask = goalTasks.find(t => t.id === taskId)
     setTasks(prev => prev.filter(t => t.id !== taskId))
     setGoalTasks(prev => prev.filter(t => t.id !== taskId))
