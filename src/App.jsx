@@ -45,6 +45,14 @@ function bucketFromTime(startTime) {
   return 'afternoon'
 }
 
+// Small integer, one past the current max in `list` for the given field.
+// Keeps new items sorting after existing siblings without risking overflow
+// the way a raw Date.now() timestamp would in an `integer` column.
+function nextPosition(list, key) {
+  if (!list.length) return 0
+  return Math.max(...list.map(t => t[key] || 0)) + 1
+}
+
 // Must match DayColumn.jsx / MobileDayView's render sort exactly, or drag
 // source/destination indices won't line up with the array this reorders.
 function sortBucketTasks(list) {
@@ -236,18 +244,23 @@ export default function App() {
   }
 
   async function addTask(title, notes, goalId, startTime, dueDate, scheduledDate, priority, category, collaborationId, assignedTo, explicitBucket) {
+    const bucketValue = scheduledDate ? (startTime ? bucketFromTime(startTime) : (explicitBucket || 'morning')) : null
+    const bucketSiblings = scheduledDate ? tasks.filter(t => t.scheduled_date === scheduledDate && (t.bucket || 'morning') === bucketValue) : []
+    const newPosition = nextPosition(bucketSiblings, 'position')
+    const dueCardSiblings = dueDate ? tasks.filter(t => t.due_date_card_date === dueDate) : []
+    const newDueCardPosition = nextPosition(dueCardSiblings, 'due_date_card_position')
     const { data, error } = await supabase.from('tasks').insert({
       title, notes: notes || null, goal_id: goalId || null, start_time: startTime || null, due_date: dueDate || null,
       status: scheduledDate ? 'scheduled' : 'inbox',
       scheduled_date: scheduledDate || null,
-      bucket: scheduledDate ? (startTime ? bucketFromTime(startTime) : (explicitBucket || 'morning')) : null,
+      bucket: bucketValue,
       priority: priority || null,
       category: category || null,
       owner_id: user.id,
       collaboration_id: collaborationId || null,
       assigned_to: assignedTo || null,
-      position: Date.now(),
-      due_date_card_position: Date.now(),
+      position: newPosition,
+      due_date_card_position: newDueCardPosition,
       due_date_card_date: dueDate || null,
       due_date_card_bucket: dueDate ? 'morning' : null
     }).select().single()
@@ -271,7 +284,10 @@ export default function App() {
     } else if (stillFollowingDueDate) {
       updates.due_date_card_date = dueDate
       updates.due_date_card_bucket = existing && existing.due_date_card_bucket ? existing.due_date_card_bucket : 'morning'
-      if (!oldDueCardDate) updates.due_date_card_position = Date.now()
+      if (!oldDueCardDate) {
+        const dueCardSiblings = tasks.filter(t => t.id !== taskId && t.due_date_card_date === dueDate)
+        updates.due_date_card_position = nextPosition(dueCardSiblings, 'due_date_card_position')
+      }
     }
     if (scheduledDate) {
       updates.scheduled_date = scheduledDate
@@ -281,7 +297,10 @@ export default function App() {
       } else if (!wasScheduled) {
         updates.bucket = 'morning'
       }
-      if (!wasScheduled) updates.position = Date.now()
+      if (!wasScheduled) {
+        const bucketSiblings = tasks.filter(t => t.id !== taskId && t.scheduled_date === scheduledDate && (t.bucket || 'morning') === (updates.bucket || existing?.bucket || 'morning'))
+        updates.position = nextPosition(bucketSiblings, 'position')
+      }
     } else {
       updates.scheduled_date = null
       updates.bucket = null
