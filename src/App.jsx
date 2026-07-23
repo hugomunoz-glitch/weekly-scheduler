@@ -45,6 +45,17 @@ function bucketFromTime(startTime) {
   return 'afternoon'
 }
 
+// Must match DayColumn.jsx / MobileDayView's render sort exactly, or drag
+// source/destination indices won't line up with the array this reorders.
+function sortBucketTasks(list) {
+  return [...list].sort((a, b) => {
+    if (a.start_time && b.start_time) return a.start_time < b.start_time ? -1 : a.start_time > b.start_time ? 1 : 0
+    if (a.start_time && !b.start_time) return -1
+    if (!a.start_time && b.start_time) return 1
+    return (a.position || 0) - (b.position || 0)
+  })
+}
+
 export default function App() {
   const isMobile = useIsMobile()
   const { user, profile, loading: authLoading, signOut } = useAuth()
@@ -182,7 +193,7 @@ export default function App() {
         const parts = destination.droppableId.split('-')
         const bucket = parts[0]
         const dateStr = parts.slice(1).join('-')
-        const bucketTasks = visibleTasks.filter(t => t.scheduled_date === dateStr && (t.bucket || 'morning') === bucket).sort((a, b) => (a.position || 0) - (b.position || 0))
+        const bucketTasks = sortBucketTasks(visibleTasks.filter(t => t.scheduled_date === dateStr && (t.bucket || 'morning') === bucket))
         const reordered = Array.from(bucketTasks)
         const [moved] = reordered.splice(source.index, 1)
         if (!moved) { fetchTasks(); return }
@@ -200,10 +211,23 @@ export default function App() {
         const parts = destination.droppableId.split('-')
         const bucket = parts[0]
         const dateStr = parts.slice(1).join('-')
-        const newPosition = destination.index
-        requestAnimationFrame(() => setTasks(prev => prev.map(t => t.id === taskId ? { ...t, scheduled_date: dateStr, status: 'scheduled', bucket, position: newPosition } : t)))
-        const { error } = await supabase.from('tasks').update({ scheduled_date: dateStr, status: 'scheduled', bucket, position: newPosition }).eq('id', taskId)
-        if (error) fetchTasks()
+        const destSiblings = sortBucketTasks(visibleTasks.filter(t => t.id !== taskId && t.scheduled_date === dateStr && (t.bucket || 'morning') === bucket))
+        const movedTask = visibleTasks.find(t => t.id === taskId)
+        const reordered = Array.from(destSiblings)
+        reordered.splice(destination.index, 0, movedTask || { id: taskId })
+        const updatedPositions = Object.fromEntries(reordered.filter(Boolean).map((t, i) => [t.id, i]))
+        requestAnimationFrame(() => setTasks(prev => prev.map(t => {
+          if (t.id === taskId) return { ...t, scheduled_date: dateStr, status: 'scheduled', bucket, position: updatedPositions[t.id] }
+          if (updatedPositions[t.id] !== undefined) return { ...t, position: updatedPositions[t.id] }
+          return t
+        })))
+        const results = await Promise.all(reordered.filter(Boolean).map((t, i) =>
+          t.id === taskId
+            ? supabase.from('tasks').update({ scheduled_date: dateStr, status: 'scheduled', bucket, position: i }).eq('id', t.id)
+            : supabase.from('tasks').update({ position: i }).eq('id', t.id)
+        ))
+        const failedMove = results.find(r => r.error)
+        if (failedMove) { console.error('onDragEnd: cross-bucket move save failed:', failedMove.error); fetchTasks() }
       }
     } catch (e) {
       console.error('onDragEnd failed, resyncing from server:', e)
@@ -222,6 +246,8 @@ export default function App() {
       owner_id: user.id,
       collaboration_id: collaborationId || null,
       assigned_to: assignedTo || null,
+      position: Date.now(),
+      due_date_card_position: Date.now(),
       due_date_card_date: dueDate || null,
       due_date_card_bucket: dueDate ? 'morning' : null
     }).select().single()
@@ -245,6 +271,7 @@ export default function App() {
     } else if (stillFollowingDueDate) {
       updates.due_date_card_date = dueDate
       updates.due_date_card_bucket = existing && existing.due_date_card_bucket ? existing.due_date_card_bucket : 'morning'
+      if (!oldDueCardDate) updates.due_date_card_position = Date.now()
     }
     if (scheduledDate) {
       updates.scheduled_date = scheduledDate
@@ -254,6 +281,7 @@ export default function App() {
       } else if (!wasScheduled) {
         updates.bucket = 'morning'
       }
+      if (!wasScheduled) updates.position = Date.now()
     } else {
       updates.scheduled_date = null
       updates.bucket = null
