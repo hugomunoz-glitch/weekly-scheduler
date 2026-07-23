@@ -159,19 +159,11 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
       endCount: recurEndType === 'count' ? Math.max(1, Number(recurEndCount) || 1) : null,
       endDate: recurEndType === 'until' ? (recurEndDate || null) : null
     } : null
-    const patternChanged = isRecurring && repeatOpen && (
-      recurFreq !== (editingTask.recurrence_freq || 'weekly') ||
-      Number(recurInterval) !== (editingTask.recurrence_interval || 1) ||
-      (recurFreq === 'weekly' ? recurByDay.join(',') : '') !== (editingTask.recurrence_byday || '') ||
-      recurEndType !== (editingTask.recurrence_end_type || 'never') ||
-      (recurEndType === 'count' && Number(recurEndCount) !== (editingTask.recurrence_end_count || 1)) ||
-      (recurEndType === 'until' && recurEndDate !== (editingTask.recurrence_end_date || ''))
-    )
     setSubmitError('')
     setSubmitting(true)
     try {
       if (editingTask) {
-        await onEdit(editingTask.id, title.trim(), notes.trim(), goalId || null, startTime || null, dueDate || null, scheduledDate || null, priority || null, category, collaborationId || null, assignedTo || null, category === 'Family' ? familyMember.trim() || null : null, endTime, scope || null, !isRecurring ? recurrenceRule : null, patternChanged ? recurrenceRule : null)
+        await onEdit(editingTask.id, title.trim(), notes.trim(), goalId || null, startTime || null, dueDate || null, scheduledDate || null, priority || null, category, collaborationId || null, assignedTo || null, category === 'Family' ? familyMember.trim() || null : null, endTime, scope || null, !isRecurring ? recurrenceRule : null, isRecurring && repeatOpen ? recurrenceRule : null)
         closeModal()
         return
       }
