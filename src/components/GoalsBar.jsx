@@ -5,7 +5,7 @@ import { categoryBadge } from './TaskCard'
 const COLORS = ['#6366f1', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316']
 
 const GOAL_CATEGORIES = [
-  'Career/Professional', 'Financial', 'Intellectual',
+  'Career/Professional', 'Family', 'Financial', 'Intellectual',
   'Physical (Health/Wellness)', 'Relationships',
   'Social (Community/Volunteering)', 'Spiritual (Prayer/Church)'
 ]
@@ -40,6 +40,10 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
   const [customCategory, setCustomCategory] = useState(false)
   const [newCategoryCustom, setNewCategoryCustom] = useState('')
   const [newPriority, setNewPriority] = useState('')
+  const [newFamilyMember, setNewFamilyMember] = useState('')
+  const [bulkGoalMode, setBulkGoalMode] = useState(false)
+  const [bulkGoalTitles, setBulkGoalTitles] = useState('')
+  const [bulkGoalSubmitting, setBulkGoalSubmitting] = useState(false)
   const [newGoalCollaborationId, setNewGoalCollaborationId] = useState(defaultCollaborationId || '')
   const [showSmart, setShowSmart] = useState(false)
   const [smartSpecific, setSmartSpecific] = useState('')
@@ -162,7 +166,7 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
 
   const [addGoalError, setAddGoalError] = useState('')
 
-  async function handleAdd(e) {
+  async function handleAdd(e, keepOpen) {
     e.preventDefault()
     if (!newTitle.trim()) return
     const color = COLORS[goals.length % COLORS.length]
@@ -170,28 +174,63 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
       await onAddGoal(newTitle.trim(), color, {
         category: (customCategory ? newCategoryCustom.trim() : newCategory) || null,
         priority: newPriority || null,
+        familyMember: newCategory === 'Family' ? newFamilyMember.trim() || null : null,
         smartSpecific: smartSpecific.trim() || null,
         smartMeasurable: smartMeasurable.trim() || null,
         smartAchievable: smartAchievable.trim() || null,
         smartRelevant: smartRelevant.trim() || null,
         smartTimebound: smartTimebound.trim() || null
       }, newGoalCollaborationId || null)
-      setNewTitle(''); setNewCategory(''); setNewPriority(''); setCustomCategory(false); setNewCategoryCustom('')
-      setSmartSpecific(''); setSmartMeasurable(''); setSmartAchievable(''); setSmartRelevant(''); setSmartTimebound('')
-      setNewGoalCollaborationId(defaultCollaborationId || '')
-      setShowSmart(false)
-      setAdding(false)
       setAddGoalError('')
+      if (keepOpen) {
+        setNewTitle('')
+      } else {
+        setNewTitle(''); setNewCategory(''); setNewPriority(''); setCustomCategory(false); setNewCategoryCustom(''); setNewFamilyMember('')
+        setSmartSpecific(''); setSmartMeasurable(''); setSmartAchievable(''); setSmartRelevant(''); setSmartTimebound('')
+        setNewGoalCollaborationId(defaultCollaborationId || '')
+        setShowSmart(false)
+        setAdding(false)
+      }
     } catch {
       setAddGoalError('Could not save. Check the category isn\'t blocked by an old rule, then try again.')
     }
   }
+
+  async function handleBulkGoalSubmit(e) {
+    e.preventDefault()
+    const lines = bulkGoalTitles.split('\n').map(l => l.trim()).filter(Boolean)
+    if (lines.length === 0) return
+    setBulkGoalSubmitting(true)
+    try {
+      for (const line of lines) {
+        const color = COLORS[goals.length % COLORS.length]
+        await onAddGoal(line, color, {
+          category: (customCategory ? newCategoryCustom.trim() : newCategory) || null,
+          priority: newPriority || null,
+          familyMember: newCategory === 'Family' ? newFamilyMember.trim() || null : null
+        }, newGoalCollaborationId || null)
+      }
+      setBulkGoalTitles('')
+      setBulkGoalMode(false)
+      setNewCategory(''); setNewPriority(''); setCustomCategory(false); setNewCategoryCustom(''); setNewFamilyMember('')
+      setNewGoalCollaborationId(defaultCollaborationId || '')
+      setAdding(false)
+      setAddGoalError('')
+    } catch {
+      setAddGoalError('Could not save one or more goals. Try again.')
+    } finally {
+      setBulkGoalSubmitting(false)
+    }
+  }
+
+  const bulkGoalCount = bulkGoalTitles.split('\n').map(l => l.trim()).filter(Boolean).length
 
   const [editingCategory, setEditingCategory] = useState('')
   const [editingCustomCategory, setEditingCustomCategory] = useState(false)
   const [editingCategoryCustom, setEditingCategoryCustom] = useState('')
   const [editingPriority, setEditingPriority] = useState('')
   const [editingCollaborationId, setEditingCollaborationId] = useState('')
+  const [editFamilyMember, setEditFamilyMember] = useState('')
   const [editShowSmart, setEditShowSmart] = useState(false)
   const [editSmartSpecific, setEditSmartSpecific] = useState('')
   const [editSmartMeasurable, setEditSmartMeasurable] = useState('')
@@ -214,6 +253,7 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
     }
     setEditingPriority(goal.priority || '')
     setEditingCollaborationId(goal.collaboration_id || '')
+    setEditFamilyMember(goal.family_member || '')
     setEditSmartSpecific(goal.smart_specific || '')
     setEditSmartMeasurable(goal.smart_measurable || '')
     setEditSmartAchievable(goal.smart_achievable || '')
@@ -231,6 +271,7 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
       await onEditGoal(goalId, editingTitle.trim(), {
         category: category || null,
         priority: editingPriority || null,
+        familyMember: category === 'Family' ? editFamilyMember.trim() || null : null,
         smartSpecific: editSmartSpecific.trim() || null,
         smartMeasurable: editSmartMeasurable.trim() || null,
         smartAchievable: editSmartAchievable.trim() || null,
@@ -253,15 +294,31 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
         </div>
         {adding ? (
           <div className="border border-gray-200 rounded-lg p-3 space-y-2 bg-gray-50 shrink-0 w-72">
-            <form onSubmit={handleAdd} className="space-y-2">
-              <input
-                autoFocus
-                type="text"
-                placeholder="Goal name"
-                value={newTitle}
-                onChange={e => setNewTitle(e.target.value)}
-                className="w-full border border-indigo-300 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-300"
-              />
+            <div className="flex justify-end -mb-1">
+              <button type="button" onClick={() => setBulkGoalMode(m => !m)} className="text-xs text-indigo-500 hover:text-indigo-700">
+                {bulkGoalMode ? 'Switch to single goal' : 'Add multiple goals at once'}
+              </button>
+            </div>
+            <form onSubmit={bulkGoalMode ? handleBulkGoalSubmit : (e) => handleAdd(e, false)} className="space-y-2">
+              {bulkGoalMode ? (
+                <textarea
+                  autoFocus
+                  placeholder={'One goal per line, e.g.\nRun a 5K\nRead 12 books\nSave $5,000'}
+                  value={bulkGoalTitles}
+                  onChange={e => setBulkGoalTitles(e.target.value)}
+                  rows={4}
+                  className="w-full border border-indigo-300 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-300 resize-none"
+                />
+              ) : (
+                <input
+                  autoFocus
+                  type="text"
+                  placeholder="Goal name"
+                  value={newTitle}
+                  onChange={e => setNewTitle(e.target.value)}
+                  className="w-full border border-indigo-300 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-300"
+                />
+              )}
               <div className="flex gap-2">
                 {customCategory ? (
                   <input
@@ -290,13 +347,22 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
                   <option value="low">Low</option>
                 </select>
               </div>
+              {newCategory === 'Family' && (
+                <input
+                  type="text"
+                  placeholder="Who's this about?"
+                  value={newFamilyMember}
+                  onChange={e => setNewFamilyMember(e.target.value)}
+                  className="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-300"
+                />
+              )}
               {collaborations && collaborations.length > 0 && (
                 <select value={newGoalCollaborationId} onChange={e => setNewGoalCollaborationId(e.target.value)} className="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-300">
                   <option value="">Save to: Personal</option>
                   {collaborations.map(c => <option key={c.id} value={c.id}>Save to: {c.name}</option>)}
                 </select>
               )}
-              {!showSmart ? (
+              {!bulkGoalMode && (!showSmart ? (
                 <button type="button" onClick={() => setShowSmart(true)} className="text-xs text-indigo-500 hover:text-indigo-700">+ Make it a SMART goal (optional)</button>
               ) : (
                 <div className="space-y-1.5 pt-1 border-t border-gray-200">
@@ -306,10 +372,19 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
                   <input type="text" placeholder="Relevant: why does it matter?" value={smartRelevant} onChange={e => setSmartRelevant(e.target.value)} className="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-300" />
                   <input type="text" placeholder="Time-bound: target deadline?" value={smartTimebound} onChange={e => setSmartTimebound(e.target.value)} className="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-300" />
                 </div>
-              )}
+              ))}
               <div className="flex gap-2">
-                <button type="submit" className="text-sm text-white bg-indigo-600 px-3 py-1.5 rounded-lg hover:bg-indigo-700">Add</button>
-                <button type="button" onClick={() => { setAdding(false); setShowSmart(false) }} className="text-sm text-gray-400 hover:text-gray-600">Cancel</button>
+                {bulkGoalMode ? (
+                  <button type="submit" disabled={bulkGoalCount === 0 || bulkGoalSubmitting} className="text-sm text-white bg-indigo-600 px-3 py-1.5 rounded-lg hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed">
+                    {bulkGoalSubmitting ? 'Adding...' : bulkGoalCount > 0 ? 'Add ' + bulkGoalCount + ' goals' : 'Add goals'}
+                  </button>
+                ) : (
+                  <>
+                    <button type="button" onClick={(e) => handleAdd(e, true)} className="text-sm text-indigo-600 border border-indigo-200 px-3 py-1.5 rounded-lg hover:bg-indigo-50">Add another</button>
+                    <button type="submit" className="text-sm text-white bg-indigo-600 px-3 py-1.5 rounded-lg hover:bg-indigo-700">Add</button>
+                  </>
+                )}
+                <button type="button" onClick={() => { setAdding(false); setShowSmart(false); setBulkGoalMode(false) }} className="text-sm text-gray-400 hover:text-gray-600">Cancel</button>
               </div>
               {addGoalError && <p className="text-xs text-red-500">{addGoalError}</p>}
             </form>
@@ -402,6 +477,15 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
                     <option value="medium">Medium</option>
                     <option value="low">Low</option>
                   </select>
+                  {editingCategory === 'Family' && (
+                    <input
+                      type="text"
+                      placeholder="Who's this about?"
+                      value={editFamilyMember}
+                      onChange={e => setEditFamilyMember(e.target.value)}
+                      className="text-xs border border-gray-200 rounded px-1.5 py-1 w-full focus:outline-none"
+                    />
+                  )}
                   {collaborations && collaborations.length > 0 && (
                     <select value={editingCollaborationId} onChange={e => setEditingCollaborationId(e.target.value)} className="text-xs border border-gray-200 rounded px-1 py-0.5 w-full focus:outline-none">
                       <option value="">Save to: Personal</option>
