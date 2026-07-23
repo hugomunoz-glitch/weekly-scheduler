@@ -370,7 +370,7 @@ export default function App() {
     ])
   }
 
-  async function editTask(taskId, title, notes, goalId, startTime, dueDate, scheduledDate, priority, category, collaborationId, assignedTo, familyMember, endTime, scope) {
+  async function editTask(taskId, title, notes, goalId, startTime, dueDate, scheduledDate, priority, category, collaborationId, assignedTo, familyMember, endTime, scope, newRecurrenceRule) {
     const existing = tasks.find(t => t.id === taskId)
     const wasScheduled = existing && existing.scheduled_date
     const updates = { title, notes: notes || null, goal_id: goalId || null, start_time: startTime || null, end_time: endTime || null, due_date: dueDate || null, priority: priority || null, category: category || null, family_member: familyMember || null }
@@ -425,6 +425,7 @@ export default function App() {
     if (error) return
 
     let updatedRows = [data]
+    let newlyGeneratedRows = []
 
     // "This and future" only propagates content fields -- never dates,
     // position, or status -- to every sibling occurrence scheduled on or
@@ -443,10 +444,61 @@ export default function App() {
       else if (futureRows) updatedRows = [...updatedRows, ...futureRows]
     }
 
-    setTasks(prev => prev.map(t => updatedRows.find(r => r.id === t.id) || t))
+    // Retroactively turning a plain, non-recurring task into the start of a
+    // new series. The pattern is anchored to its original scheduled_date
+    // (so a weekly rule keeps landing on the same weekday it always would
+    // have), but only occurrences from today onward are actually created --
+    // no backfilling rows for dates that have already passed.
+    if (newRecurrenceRule && existing && !existing.recurrence_group_id && data.scheduled_date) {
+      const groupId = taskId
+      const recurrenceFields = {
+        recurrence_freq: newRecurrenceRule.freq,
+        recurrence_interval: newRecurrenceRule.interval || 1,
+        recurrence_byday: newRecurrenceRule.byDay && newRecurrenceRule.byDay.length > 0 ? newRecurrenceRule.byDay.join(',') : null,
+        recurrence_end_type: newRecurrenceRule.endType,
+        recurrence_end_count: newRecurrenceRule.endType === 'count' ? (newRecurrenceRule.endCount || 1) : null,
+        recurrence_end_date: newRecurrenceRule.endType === 'until' ? (newRecurrenceRule.endDate || null) : null
+      }
+      const { data: anchorLinked, error: anchorError } = await supabase.from('tasks').update({ recurrence_group_id: groupId, ...recurrenceFields }).eq('id', taskId).select().single()
+      if (anchorError) {
+        console.error('editTask: linking recurrence anchor failed:', anchorError)
+      } else {
+        updatedRows = [anchorLinked]
+        const todayStr = format(startOfDay(new Date()), 'yyyy-MM-dd')
+        const futureDates = generateOccurrenceDates(data.scheduled_date, newRecurrenceRule).filter(d => d !== data.scheduled_date && d >= todayStr)
+        if (futureDates.length > 0) {
+          const moreRows = futureDates.map((d, i) => ({
+            title: data.title, notes: data.notes, goal_id: data.goal_id, start_time: data.start_time, end_time: data.end_time, due_date: null,
+            status: 'scheduled',
+            scheduled_date: d,
+            bucket: data.bucket,
+            priority: data.priority,
+            category: data.category,
+            owner_id: user.id,
+            collaboration_id: data.collaboration_id,
+            assigned_to: data.assigned_to,
+            family_member: data.family_member,
+            position: Date.now() + i,
+            due_date_card_position: null,
+            due_date_card_date: null,
+            due_date_card_bucket: null,
+            recurrence_group_id: groupId,
+            ...recurrenceFields
+          }))
+          const { data: insertedMore, error: moreError } = await supabase.from('tasks').insert(moreRows).select()
+          if (moreError) console.error('editTask: generating future occurrences failed:', moreError)
+          else newlyGeneratedRows = insertedMore
+        }
+      }
+    }
+
+    setTasks(prev => {
+      const updated = prev.map(t => updatedRows.find(r => r.id === t.id) || t)
+      return newlyGeneratedRows.length > 0 ? [...updated, ...newlyGeneratedRows] : updated
+    })
     setGoalTasks(prev => {
       let next = prev
-      for (const row of updatedRows) {
+      for (const row of [...updatedRows, ...newlyGeneratedRows]) {
         next = next.filter(t => t.id !== row.id)
         if (row.goal_id) next = [...next, { id: row.id, title: row.title, goal_id: row.goal_id, status: row.status, due_date: row.due_date, start_time: row.start_time, priority: row.priority, collaboration_id: row.collaboration_id, assigned_to: row.assigned_to }]
       }
