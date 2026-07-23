@@ -243,7 +243,7 @@ export default function App() {
     }
   }
 
-  async function addTask(title, notes, goalId, startTime, dueDate, scheduledDate, priority, category, collaborationId, assignedTo, explicitBucket) {
+  async function addTask(title, notes, goalId, startTime, dueDate, scheduledDate, priority, category, collaborationId, assignedTo, explicitBucket, familyMember) {
     const bucketValue = scheduledDate ? (startTime ? bucketFromTime(startTime) : (explicitBucket || 'morning')) : null
     const bucketSiblings = scheduledDate ? tasks.filter(t => t.scheduled_date === scheduledDate && (t.bucket || 'morning') === bucketValue) : []
     const newPosition = nextPosition(bucketSiblings, 'position')
@@ -259,6 +259,7 @@ export default function App() {
       owner_id: user.id,
       collaboration_id: collaborationId || null,
       assigned_to: assignedTo || null,
+      family_member: familyMember || null,
       position: newPosition,
       due_date_card_position: newDueCardPosition,
       due_date_card_date: dueDate || null,
@@ -269,10 +270,10 @@ export default function App() {
     if (data.goal_id) setGoalTasks(prev => [...prev, { id: data.id, title: data.title, goal_id: data.goal_id, status: data.status, due_date: data.due_date, start_time: data.start_time, priority: data.priority, collaboration_id: data.collaboration_id, assigned_to: data.assigned_to }])
   }
 
-  async function editTask(taskId, title, notes, goalId, startTime, dueDate, scheduledDate, priority, category, collaborationId, assignedTo) {
+  async function editTask(taskId, title, notes, goalId, startTime, dueDate, scheduledDate, priority, category, collaborationId, assignedTo, familyMember) {
     const existing = tasks.find(t => t.id === taskId)
     const wasScheduled = existing && existing.scheduled_date
-    const updates = { title, notes: notes || null, goal_id: goalId || null, start_time: startTime || null, due_date: dueDate || null, priority: priority || null, category: category || null }
+    const updates = { title, notes: notes || null, goal_id: goalId || null, start_time: startTime || null, due_date: dueDate || null, priority: priority || null, category: category || null, family_member: familyMember || null }
     if (collaborationId !== undefined) updates.collaboration_id = collaborationId || null
     if (assignedTo !== undefined) updates.assigned_to = assignedTo || null
     const oldDueDate = existing ? existing.due_date : null
@@ -332,6 +333,7 @@ export default function App() {
     if (extra) {
       if (extra.category) payload.category = extra.category
       if (extra.priority) payload.priority = extra.priority
+      if (extra.familyMember) payload.family_member = extra.familyMember
       if (extra.smartSpecific) payload.smart_specific = extra.smartSpecific
       if (extra.smartMeasurable) payload.smart_measurable = extra.smartMeasurable
       if (extra.smartAchievable) payload.smart_achievable = extra.smartAchievable
@@ -350,6 +352,7 @@ export default function App() {
     if (extra) {
       if ('category' in extra) payload.category = extra.category || null
       if ('priority' in extra) payload.priority = extra.priority || null
+      if ('familyMember' in extra) payload.family_member = extra.familyMember || null
       if ('smartSpecific' in extra) payload.smart_specific = extra.smartSpecific || null
       if ('smartMeasurable' in extra) payload.smart_measurable = extra.smartMeasurable || null
       if ('smartAchievable' in extra) payload.smart_achievable = extra.smartAchievable || null
