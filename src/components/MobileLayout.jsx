@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { useAssistantHistory } from '../hooks/useAssistantHistory'
 import { useAuth } from '../contexts/AuthContext'
 import CollaborationPanel from './CollaborationPanel'
+import DailyReflection from './DailyReflection'
 import { resetViewportZoom } from '../lib/resetZoom'
 import { format, isToday, parseISO } from 'date-fns'
 import { Droppable, Draggable } from '@hello-pangea/dnd'
@@ -1138,6 +1139,10 @@ export default function MobileLayout({
         </>
       )}
 
+      {activeTab === 'reflect' && (
+        <DailyReflection isMobile={true} />
+      )}
+
       {activeTab === 'assistant' && (
         <>
           <div style={{ padding: '10px 16px 6px', flexShrink: 0 }}>
@@ -1234,6 +1239,7 @@ export default function MobileLayout({
           { id: 'day', label: 'Today', emoji: '&#128197;' },
           { id: 'goals', label: 'Goals', emoji: '&#127919;' },
           { id: 'inbox', label: 'Task List', emoji: '&#128221;', badge: inboxTasks.filter(t => t.status !== 'done').length },
+          { id: 'reflect', label: 'Reflect', emoji: '&#129488;' },
           { id: 'assistant', label: 'Assistant', emoji: '&#129302;' },
           { id: 'settings', label: 'Settings', emoji: '&#9881;' }
         ].map(tab => (
