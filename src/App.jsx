@@ -14,6 +14,7 @@ import AddTaskModal from './components/AddTaskModal'
 import GoalsBar from './components/GoalsBar'
 import MobileLayout from './components/MobileLayout'
 import DailyReflection from './components/DailyReflection'
+import ExportMenu from './components/ExportMenu'
 
 function useWarmupSensor(api) {
   useEffect(() => {
@@ -840,6 +841,7 @@ export default function App() {
               {overdueTasks.length > 0 && (
                 <button onClick={rolloverOverdue} className="px-3 py-1.5 text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100">Roll over {overdueTasks.length} overdue</button>
               )}
+              <ExportMenu tasks={visibleTasks} goals={visibleGoals} weekStart={weekStart} />
               <button onClick={() => setShowReflect(true)} className="px-3 py-1.5 text-sm font-medium text-indigo-600 border border-indigo-200 rounded-lg hover:bg-indigo-50">Reflect</button>
               <button onClick={() => setShowAdd(true)} className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700">+ Add task</button>
               <SettingsDropdown onOpenCollaborations={() => setShowCollab(true)} />

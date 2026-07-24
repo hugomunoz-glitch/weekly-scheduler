@@ -4,6 +4,7 @@ import { useAssistantHistory } from '../hooks/useAssistantHistory'
 import { useAuth } from '../contexts/AuthContext'
 import CollaborationPanel from './CollaborationPanel'
 import DailyReflection from './DailyReflection'
+import ExportMenu from './ExportMenu'
 import { resetViewportZoom } from '../lib/resetZoom'
 import { format, isToday, parseISO } from 'date-fns'
 import { Droppable, Draggable } from '@hello-pangea/dnd'
@@ -1156,6 +1157,10 @@ export default function MobileLayout({
         <div style={{ flex: 1, overflowY: 'auto', padding: '16px' }}>
           <div style={{ padding: '4px 0 12px' }}>
             <span style={{ fontSize: '15px', fontWeight: 500, color: '#111827' }}>&#9881; Settings</span>
+          </div>
+          <div style={{ border: '1px solid #e5e7eb', borderRadius: '10px', padding: '14px', marginBottom: '10px', background: 'white' }}>
+            <p style={{ margin: '0 0 10px', fontSize: '13px', fontWeight: 600, color: '#374151' }}>Export</p>
+            <ExportMenu tasks={tasks} goals={goals} weekStart={weekDays[0]} isMobile />
           </div>
           <div style={{ border: '1px solid #e5e7eb', borderRadius: '10px', padding: '14px', marginBottom: '10px', background: 'white' }}>
             <p style={{ fontSize: '12px', color: '#9ca3af', margin: '0 0 2px' }}>Signed in as</p>
