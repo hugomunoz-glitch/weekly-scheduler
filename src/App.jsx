@@ -758,7 +758,30 @@ export default function App() {
     await supabase.from('tasks').update({ scheduled_date: todayStr }).in('id', ids)
   }
 
-  const inboxTasks = visibleTasks
+  // The Task List shows every task regardless of scheduling so nothing gets
+  // lost -- but a recurring series can generate dozens of near-identical
+  // rows, which would otherwise all show up separately here. Collapse each
+  // series down to whichever occurrence is next up and not yet done (or,
+  // if the whole series is done, the most recent one). The calendar is
+  // unaffected -- it still shows every individual occurrence on its own date.
+  const inboxTasks = (() => {
+    const groups = {}
+    const standalone = []
+    for (const t of visibleTasks) {
+      if (t.recurrence_group_id) {
+        if (!groups[t.recurrence_group_id]) groups[t.recurrence_group_id] = []
+        groups[t.recurrence_group_id].push(t)
+      } else {
+        standalone.push(t)
+      }
+    }
+    const representatives = Object.values(groups).map(occurrences => {
+      const notDone = occurrences.filter(t => t.status !== 'done').sort((a, b) => (a.scheduled_date || '').localeCompare(b.scheduled_date || ''))
+      if (notDone.length > 0) return notDone[0]
+      return [...occurrences].sort((a, b) => (b.scheduled_date || '').localeCompare(a.scheduled_date || ''))[0]
+    })
+    return [...standalone, ...representatives]
+  })()
   const taskCategories = [...new Set(visibleTasks.map(t => t.category).filter(Boolean))].sort()
   const tasksForDay = (date) => visibleTasks.filter(t => t.scheduled_date === format(date, 'yyyy-MM-dd'))
   const dueCardsForDay = (date) => visibleTasks.filter(t => t.due_date_card_date === format(date, 'yyyy-MM-dd') && t.scheduled_date !== t.due_date_card_date)
