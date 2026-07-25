@@ -1314,7 +1314,7 @@ export default function MobileLayout({
           { id: 'assistant', label: 'Assistant', emoji: '&#129302;' },
           { id: 'settings', label: 'Settings', emoji: '&#9881;' }
         ].map(tab => (
-          <button key={tab.id} onClick={() => { setActiveTab(tab.id); if (tab.id === 'goals' || tab.id === 'inbox') setMobileCalView('week') }}
+          <button key={tab.id} onClick={() => { setActiveTab(tab.id); setMobileCalView('week') }}
             style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0', position: 'relative' }}>
             <div style={{ width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               {tab.id === 'day' ? (
