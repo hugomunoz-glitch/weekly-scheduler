@@ -1052,7 +1052,7 @@ export default function MobileLayout({
       )}
       {mobileCalView === 'year' && activeTab === 'day' && (
         <div style={{ flex: 1, overflow: 'hidden' }}>
-          <YearView tasks={tasks} onMonthClick={() => setMobileCalView('month')} />
+          <YearView tasks={tasks} onMonthClick={() => setMobileCalView('month')} onDayClick={(day) => { setSelectedDay(format(day, 'yyyy-MM-dd')); setMobileCalView('week') }} />
         </div>
       )}
 

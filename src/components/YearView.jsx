@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { format, startOfYear, eachMonthOfInterval, endOfYear, getDaysInMonth, startOfMonth, getDay, isToday, addYears, subYears } from 'date-fns'
 
-export default function YearView({ tasks, onMonthClick }) {
+export default function YearView({ tasks, onMonthClick, onDayClick }) {
   const [currentYear, setCurrentYear] = useState(new Date())
   const months = eachMonthOfInterval({ start: startOfYear(currentYear), end: endOfYear(currentYear) })
 
@@ -49,14 +49,26 @@ export default function YearView({ tasks, onMonthClick }) {
                   const dateStr = `${monthStr}-${String(dayNum).padStart(2, '0')}`
                   const cnt = taskCountForDay(dateStr)
                   const todayMatch = isToday(new Date(dateStr + 'T12:00:00'))
+                  const bg = todayMatch ? '#6366f1'
+                    : cnt >= 5 ? '#ef4444'
+                    : cnt >= 3 ? '#f59e0b'
+                    : cnt >= 1 ? '#22c55e'
+                    : 'transparent'
+                  const color = todayMatch ? 'white'
+                    : cnt >= 1 ? 'white'
+                    : '#d1d5db'
                   return (
-                    <div key={dayNum} style={{
-                      width: '16px', height: '16px', borderRadius: '50%', fontSize: '8px',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1px',
-                      background: todayMatch ? '#6366f1' : cnt > 0 ? '#eef2ff' : 'transparent',
-                      color: todayMatch ? 'white' : cnt > 0 ? '#6366f1' : '#9ca3af',
-                      fontWeight: todayMatch || cnt > 0 ? 700 : 400,
-                    }}>{dayNum}</div>
+                    <div
+                      key={dayNum}
+                      onClick={(e) => { e.stopPropagation(); onDayClick && onDayClick(new Date(dateStr + 'T12:00:00')) }}
+                      title={cnt > 0 ? `${cnt} task${cnt !== 1 ? 's' : ''}` : undefined}
+                      style={{
+                        width: '16px', height: '16px', borderRadius: '50%', fontSize: '8px',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1px',
+                        background: bg, color, fontWeight: todayMatch || cnt > 0 ? 700 : 400,
+                        cursor: onDayClick ? 'pointer' : 'default',
+                      }}
+                    >{dayNum}</div>
                   )
                 })}
               </div>

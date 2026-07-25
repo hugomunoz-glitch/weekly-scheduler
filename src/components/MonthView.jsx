@@ -63,16 +63,17 @@ export default function MonthView({ tasks, onDayClick }) {
                   width: '20px', height: '20px', borderRadius: '50%',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
                 }}>{format(day, 'd')}</span>
-                {active.length > 0 && (
-                  <span style={{ fontSize: '9px', color: active.length >= 5 ? '#ef4444' : active.length >= 3 ? '#f59e0b' : '#6366f1', fontWeight: 600 }}>{active.length}</span>
-                )}
               </div>
-              {active.slice(0, 3).map(t => (
-                <div key={t.id} style={{ fontSize: '10px', color: '#374151', background: '#eef2ff', borderRadius: '3px', padding: '1px 4px', marginBottom: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {t.title}
+              {active.length > 0 && (
+                <div style={{
+                  fontSize: '11px', fontWeight: 700, textAlign: 'center', marginTop: '2px',
+                  color: active.length >= 5 ? '#ef4444' : active.length >= 3 ? '#f59e0b' : '#6366f1',
+                  background: active.length >= 5 ? '#fef2f2' : active.length >= 3 ? '#fffbeb' : '#eef2ff',
+                  borderRadius: '4px', padding: '2px 4px'
+                }}>
+                  {active.length} task{active.length !== 1 ? 's' : ''}
                 </div>
-              ))}
-              {active.length > 3 && <div style={{ fontSize: '9px', color: '#9ca3af' }}>+{active.length - 3} more</div>}
+              )}
             </div>
           )
         })}

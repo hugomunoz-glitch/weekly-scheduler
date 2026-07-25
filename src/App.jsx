@@ -871,7 +871,7 @@ export default function App() {
                   {calView === 'week' && <WeekGrid days={weekDays} tasksForDay={tasksForDay} dueCardsForDay={dueCardsForDay} goalMap={goalMap} collabMap={collabMap} profileMap={profileMap} onMarkDone={markDone} onRescheduleToTomorrow={rescheduleToTomorrow} onMoveToInbox={moveToInbox} onDelete={requestDeleteTask} onEdit={setEditingTask} onAddTaskForDay={openAddForDay} onAddTaskForBucket={openAddForBucket} />}
                   {calView === 'month' && <MonthView tasks={visibleTasks} onDayClick={(day) => { setCalView('week'); setWeekStart(startOfWeek(day, { weekStartsOn: 1 })) }} />}
                   {calView === 'day' && <DayView tasks={visibleTasks} goalMap={goalMap} collabMap={collabMap} profileMap={profileMap} onMarkDone={markDone} onRescheduleToTomorrow={rescheduleToTomorrow} onMoveToInbox={moveToInbox} onDelete={requestDeleteTask} onEdit={setEditingTask} onAddTaskForBucket={openAddForBucket} />}
-                  {calView === 'year' && <YearView tasks={visibleTasks} onMonthClick={() => setCalView('month')} />}
+                  {calView === 'year' && <YearView tasks={visibleTasks} onMonthClick={() => setCalView('month')} onDayClick={(day) => { setCalView('week'); setWeekStart(startOfWeek(day, { weekStartsOn: 1 })) }} />}
                 </>
               )}
             </main>

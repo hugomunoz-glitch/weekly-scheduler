@@ -36,6 +36,7 @@ function PriorityBadge({ priority }) {
 export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations, defaultCollaborationId, onAddGoal, onEditGoal, onDeleteGoal, onMarkDone, onDelete, onCreateTask, onEditTask }) {
   const [adding, setAdding] = useState(false)
   const [newTitle, setNewTitle] = useState('')
+  const [newGoalTasks, setNewGoalTasks] = useState([''])
   const [newCategory, setNewCategory] = useState('')
   const [customCategory, setCustomCategory] = useState(false)
   const [newCategoryCustom, setNewCategoryCustom] = useState('')
@@ -145,20 +146,29 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
 
   const [addTaskToGoalError, setAddTaskToGoalError] = useState('')
   const [addingTaskToGoal, setAddingTaskToGoal] = useState(false)
+  const [bulkPopupMode, setBulkPopupMode] = useState(false)
+  const [bulkPopupText, setBulkPopupText] = useState('')
 
   async function handleAddTaskToGoal(e, goalId) {
     e.preventDefault()
-    if (!newTaskTitle.trim()) return
     const goal = goals.find(g => g.id === goalId)
-    const title = newTaskTitle.trim()
     setAddingTaskToGoal(true)
     setAddTaskToGoalError('')
     try {
-      await onCreateTask(title, '', goalId, null, null, null, null, null, goal?.collaboration_id || null)
-      setNewTaskTitle('')
+      if (bulkPopupMode) {
+        const titles = bulkPopupText.split('\n').map(l => l.trim()).filter(Boolean)
+        for (const title of titles) {
+          await onCreateTask(title, '', goalId, null, null, null, null, null, goal?.collaboration_id || null)
+        }
+        setBulkPopupText('')
+        setBulkPopupMode(false)
+      } else {
+        if (!newTaskTitle.trim()) return
+        await onCreateTask(newTaskTitle.trim(), '', goalId, null, null, null, null, null, goal?.collaboration_id || null)
+        setNewTaskTitle('')
+      }
     } catch (err) {
-      console.error('Add task to goal failed:', err)
-      setAddTaskToGoalError('Couldn\'t save "' + title + '": ' + (err?.message || 'unknown error') + '. Try again.')
+      setAddTaskToGoalError('Couldn\'t save task: ' + (err?.message || 'unknown error'))
     } finally {
       setAddingTaskToGoal(false)
     }
@@ -171,7 +181,7 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
     if (!newTitle.trim()) return
     const color = COLORS[goals.length % COLORS.length]
     try {
-      await onAddGoal(newTitle.trim(), color, {
+      const savedGoal = await onAddGoal(newTitle.trim(), color, {
         category: (customCategory ? newCategoryCustom.trim() : newCategory) || null,
         priority: newPriority || null,
         familyMember: newCategory === 'Family' ? newFamilyMember.trim() || null : null,
@@ -182,13 +192,20 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
         smartTimebound: smartTimebound.trim() || null
       }, newGoalCollaborationId || null)
       setAddGoalError('')
+      // Create any initial tasks the user entered
+      const taskTitles = newGoalTasks.map(t => t.trim()).filter(Boolean)
+      for (const title of taskTitles) {
+        try { await onCreateTask(title, '', savedGoal?.id, null, null, null, null, null, newGoalCollaborationId || null) } catch {}
+      }
       if (keepOpen) {
         setNewTitle('')
+        setNewGoalTasks([''])
       } else {
         setNewTitle(''); setNewCategory(''); setNewPriority(''); setCustomCategory(false); setNewCategoryCustom(''); setNewFamilyMember('')
         setSmartSpecific(''); setSmartMeasurable(''); setSmartAchievable(''); setSmartRelevant(''); setSmartTimebound('')
         setNewGoalCollaborationId(defaultCollaborationId || '')
         setShowSmart(false)
+        setNewGoalTasks([''])
         setAdding(false)
       }
     } catch {
@@ -361,6 +378,28 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
                   <option value="">Save to: Personal</option>
                   {collaborations.map(c => <option key={c.id} value={c.id}>Save to: {c.name}</option>)}
                 </select>
+              )}
+              {!bulkGoalMode && (
+                <div className="space-y-1.5 pt-1 border-t border-gray-200">
+                  <p className="text-xs font-medium text-gray-500">Tasks (optional)</p>
+                  {newGoalTasks.map((t, i) => (
+                    <div key={i} className="flex gap-1.5 items-center">
+                      <input
+                        type="text"
+                        placeholder={i === 0 ? 'First task…' : 'Another task…'}
+                        value={t}
+                        onChange={e => setNewGoalTasks(prev => prev.map((v, j) => j === i ? e.target.value : v))}
+                        className="flex-1 border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-300"
+                      />
+                      {newGoalTasks.length > 1 && (
+                        <button type="button" onClick={() => setNewGoalTasks(prev => prev.filter((_, j) => j !== i))}
+                          className="text-gray-300 hover:text-red-400 text-sm leading-none">×</button>
+                      )}
+                    </div>
+                  ))}
+                  <button type="button" onClick={() => setNewGoalTasks(prev => [...prev, ''])}
+                    className="text-xs text-indigo-500 hover:text-indigo-700">+ Add another task</button>
+                </div>
               )}
               {!bulkGoalMode && (!showSmart ? (
                 <button type="button" onClick={() => setShowSmart(true)} className="text-xs text-indigo-500 hover:text-indigo-700">+ Make it a SMART goal (optional)</button>
@@ -652,15 +691,39 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
                         )}
                       </Droppable>
                     )}
-                    <form onSubmit={(e) => handleAddTaskToGoal(e, goal.id)} className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-100">
-                      <input
-                        value={newTaskTitle}
-                        onChange={e => setNewTaskTitle(e.target.value)}
-                        placeholder="Add a task to this goal"
-                        disabled={addingTaskToGoal}
-                        className="flex-1 text-base border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-indigo-300 focus:border-indigo-400 disabled:opacity-50"
-                      />
-                      <button type="submit" disabled={addingTaskToGoal || !newTaskTitle.trim()} className="text-base text-white bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded-lg shrink-0 disabled:opacity-40 disabled:cursor-not-allowed">{addingTaskToGoal ? 'Adding...' : 'Add'}</button>
+                    <form onSubmit={(e) => handleAddTaskToGoal(e, goal.id)} className="mt-3 pt-3 border-t border-gray-100 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs font-medium text-gray-500">Add task</p>
+                        <button type="button" onClick={() => { setBulkPopupMode(m => !m); setNewTaskTitle(''); setBulkPopupText('') }}
+                          className="text-xs text-indigo-500 hover:text-indigo-700">
+                          {bulkPopupMode ? 'Single task' : 'Add multiple at once'}
+                        </button>
+                      </div>
+                      {bulkPopupMode ? (
+                        <textarea
+                          autoFocus
+                          placeholder={'One task per line, e.g.\nDraft outline\nReview notes\nSend follow-up'}
+                          value={bulkPopupText}
+                          onChange={e => setBulkPopupText(e.target.value)}
+                          rows={3}
+                          disabled={addingTaskToGoal}
+                          className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-indigo-300 resize-none disabled:opacity-50"
+                        />
+                      ) : (
+                        <input
+                          autoFocus
+                          value={newTaskTitle}
+                          onChange={e => setNewTaskTitle(e.target.value)}
+                          placeholder="Task title…"
+                          disabled={addingTaskToGoal}
+                          className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-indigo-300 focus:border-indigo-400 disabled:opacity-50"
+                        />
+                      )}
+                      <button type="submit"
+                        disabled={addingTaskToGoal || (bulkPopupMode ? !bulkPopupText.trim() : !newTaskTitle.trim())}
+                        className="w-full text-sm text-white bg-indigo-600 hover:bg-indigo-700 py-1.5 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed font-medium">
+                        {addingTaskToGoal ? 'Adding…' : bulkPopupMode ? 'Add tasks' : 'Add task'}
+                      </button>
                     </form>
                     {addTaskToGoalError && <p className="text-xs text-red-500 mt-1.5">{addTaskToGoalError}</p>}
                   </div>
