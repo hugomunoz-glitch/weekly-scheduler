@@ -124,6 +124,7 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
     setEditSmartTimebound(goal.smart_timebound || '')
     setEditShowSmart(!!(goal.smart_specific || goal.smart_measurable || goal.smart_achievable || goal.smart_relevant || goal.smart_timebound))
     setEditGoalError('')
+    setEditOptionsOpen(!!(goal.category || goal.priority || goal.collaboration_id || goal.family_member || goal.smart_specific || goal.smart_measurable || goal.smart_achievable || goal.smart_relevant || goal.smart_timebound))
   }
 
   async function handleEditGoalSubmit(e) {
@@ -150,6 +151,7 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
   function closeAdding() {
     resetViewportZoom()
     setAdding(false)
+    setAddOptionsOpen(false)
   }
 
   function closeEditingGoal() {
@@ -239,6 +241,8 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
   const [bulkGoalMode, setBulkGoalMode] = useState(false)
   const [bulkGoalTitles, setBulkGoalTitles] = useState('')
   const [bulkGoalSubmitting, setBulkGoalSubmitting] = useState(false)
+  const [addOptionsOpen, setAddOptionsOpen] = useState(false)
+  const [editOptionsOpen, setEditOptionsOpen] = useState(false)
 
   async function handleAdd(e, keepOpen) {
     e.preventDefault()
@@ -374,58 +378,49 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
                 style={{ border: '1px solid #6366f1', borderRadius: '8px', padding: '8px', fontSize: '14px', outline: 'none' }}
                 placeholder="Goal name" />
             )}
-            {customCategory ? (
-              <input
-                autoFocus
-                type="text"
-                placeholder="Custom category name"
-                value={newCategoryCustom}
-                onChange={e => setNewCategoryCustom(e.target.value)}
-                style={{ border: '1px solid #6366f1', borderRadius: '8px', padding: '8px', fontSize: '12px', outline: 'none' }}
-              />
-            ) : (
-              <select
-                value={newCategory}
-                onChange={e => { if (e.target.value === '__custom__') { setCustomCategory(true); return } setNewCategory(e.target.value) }}
-                style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '8px', fontSize: '12px', outline: 'none' }}
-              >
-                <option value="">No category</option>
-                {allCategories.map(c => <option key={c} value={c}>{c}</option>)}
-                <option value="__custom__">+ New category…</option>
-              </select>
-            )}
-            {newCategory === 'Family' && (
-              <input
-                type="text"
-                placeholder="Who's this about?"
-                value={newFamilyMember}
-                onChange={e => setNewFamilyMember(e.target.value)}
-                style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '8px', fontSize: '12px', outline: 'none' }}
-              />
-            )}
-            <select value={newPriority} onChange={e => setNewPriority(e.target.value)} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '8px', fontSize: '12px', outline: 'none' }}>
-              <option value="">No priority</option>
-              <option value="high">High</option>
-              <option value="medium">Medium</option>
-              <option value="low">Low</option>
-            </select>
-            {collaborations && collaborations.length > 0 && (
-              <select value={newGoalCollaborationId} onChange={e => setNewGoalCollaborationId(e.target.value)} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '8px', fontSize: '12px', outline: 'none' }}>
-                <option value="">Save to: Personal</option>
-                {collaborations.map(c => <option key={c.id} value={c.id}>Save to: {c.name}</option>)}
-              </select>
-            )}
-            {!bulkGoalMode && (!showSmart ? (
-              <button type="button" onClick={() => setShowSmart(true)} style={{ background: 'none', border: 'none', color: '#6366f1', fontSize: '12px', textAlign: 'left', cursor: 'pointer', padding: 0 }}>+ Make it a SMART goal (optional)</button>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', borderTop: '1px solid #f3f4f6', paddingTop: '6px' }}>
-                <input type="text" placeholder="Specific: what & why?" value={smartSpecific} onChange={e => setSmartSpecific(e.target.value)} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '7px 8px', fontSize: '12px', outline: 'none' }} />
-                <input type="text" placeholder="Measurable: how will you know?" value={smartMeasurable} onChange={e => setSmartMeasurable(e.target.value)} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '7px 8px', fontSize: '12px', outline: 'none' }} />
-                <input type="text" placeholder="Achievable: realistic?" value={smartAchievable} onChange={e => setSmartAchievable(e.target.value)} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '7px 8px', fontSize: '12px', outline: 'none' }} />
-                <input type="text" placeholder="Relevant: why does it matter?" value={smartRelevant} onChange={e => setSmartRelevant(e.target.value)} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '7px 8px', fontSize: '12px', outline: 'none' }} />
-                <input type="text" placeholder="Time-bound: target deadline?" value={smartTimebound} onChange={e => setSmartTimebound(e.target.value)} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '7px 8px', fontSize: '12px', outline: 'none' }} />
+            <button type="button" onClick={() => setAddOptionsOpen(o => !o)}
+              style={{ background: 'none', border: 'none', color: '#6b7280', fontSize: '12px', textAlign: 'left', cursor: 'pointer', padding: '2px 0', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <span style={{ display: 'inline-block', transform: addOptionsOpen ? 'rotate(90deg)' : 'none', transition: 'transform 0.15s' }}>▶</span> Options
+            </button>
+            {addOptionsOpen && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', borderTop: '1px solid #f3f4f6', paddingTop: '8px' }}>
+                {customCategory ? (
+                  <input autoFocus type="text" placeholder="Custom category name" value={newCategoryCustom} onChange={e => setNewCategoryCustom(e.target.value)} style={{ border: '1px solid #6366f1', borderRadius: '8px', padding: '8px', fontSize: '12px', outline: 'none' }} />
+                ) : (
+                  <select value={newCategory} onChange={e => { if (e.target.value === '__custom__') { setCustomCategory(true); return } setNewCategory(e.target.value) }} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '8px', fontSize: '12px', outline: 'none' }}>
+                    <option value="">No category</option>
+                    {allCategories.map(c => <option key={c} value={c}>{c}</option>)}
+                    <option value="__custom__">+ New category…</option>
+                  </select>
+                )}
+                {newCategory === 'Family' && (
+                  <input type="text" placeholder="Who's this about?" value={newFamilyMember} onChange={e => setNewFamilyMember(e.target.value)} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '8px', fontSize: '12px', outline: 'none' }} />
+                )}
+                <select value={newPriority} onChange={e => setNewPriority(e.target.value)} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '8px', fontSize: '12px', outline: 'none' }}>
+                  <option value="">No priority</option>
+                  <option value="high">High</option>
+                  <option value="medium">Medium</option>
+                  <option value="low">Low</option>
+                </select>
+                {collaborations && collaborations.length > 0 && (
+                  <select value={newGoalCollaborationId} onChange={e => setNewGoalCollaborationId(e.target.value)} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '8px', fontSize: '12px', outline: 'none' }}>
+                    <option value="">Save to: Personal</option>
+                    {collaborations.map(c => <option key={c.id} value={c.id}>Save to: {c.name}</option>)}
+                  </select>
+                )}
+                {!bulkGoalMode && (!showSmart ? (
+                  <button type="button" onClick={() => setShowSmart(true)} style={{ background: 'none', border: 'none', color: '#6366f1', fontSize: '12px', textAlign: 'left', cursor: 'pointer', padding: 0 }}>+ Make it a SMART goal (optional)</button>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <input type="text" placeholder="Specific: what & why?" value={smartSpecific} onChange={e => setSmartSpecific(e.target.value)} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '7px 8px', fontSize: '12px', outline: 'none' }} />
+                    <input type="text" placeholder="Measurable: how will you know?" value={smartMeasurable} onChange={e => setSmartMeasurable(e.target.value)} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '7px 8px', fontSize: '12px', outline: 'none' }} />
+                    <input type="text" placeholder="Achievable: realistic?" value={smartAchievable} onChange={e => setSmartAchievable(e.target.value)} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '7px 8px', fontSize: '12px', outline: 'none' }} />
+                    <input type="text" placeholder="Relevant: why does it matter?" value={smartRelevant} onChange={e => setSmartRelevant(e.target.value)} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '7px 8px', fontSize: '12px', outline: 'none' }} />
+                    <input type="text" placeholder="Time-bound: target deadline?" value={smartTimebound} onChange={e => setSmartTimebound(e.target.value)} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '7px 8px', fontSize: '12px', outline: 'none' }} />
+                  </div>
+                ))}
               </div>
-            ))}
+            )}
             <div style={{ display: 'flex', gap: '8px', marginTop: '4px', flexWrap: 'wrap' }}>
               {bulkGoalMode ? (
                 <button type="submit" disabled={bulkGoalCount === 0 || bulkGoalSubmitting} style={{ background: '#6366f1', color: 'white', border: 'none', borderRadius: '8px', padding: '8px 14px', fontSize: '13px', cursor: bulkGoalCount === 0 ? 'default' : 'pointer', opacity: bulkGoalCount === 0 || bulkGoalSubmitting ? 0.4 : 1 }}>
@@ -494,56 +489,47 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
               <form onSubmit={handleEditGoalSubmit} onClick={e => e.stopPropagation()} style={{ background: 'white', borderRadius: '12px', padding: '16px', width: '85vw', maxWidth: '320px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <input autoFocus value={editingTitle} onChange={e => setEditingTitle(e.target.value)}
                   style={{ border: '1px solid #6366f1', borderRadius: '8px', padding: '8px', fontSize: '14px', outline: 'none' }} />
-                {editingCustomCategory ? (
-                  <input
-                    autoFocus
-                    type="text"
-                    placeholder="Custom category name"
-                    value={editingCategoryCustom}
-                    onChange={e => setEditingCategoryCustom(e.target.value)}
-                    style={{ border: '1px solid #6366f1', borderRadius: '8px', padding: '8px', fontSize: '12px', outline: 'none' }}
-                  />
-                ) : (
-                  <select
-                    value={editingCategory}
-                    onChange={e => { if (e.target.value === '__custom__') { setEditingCustomCategory(true); return } setEditingCategory(e.target.value) }}
-                    style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '8px', fontSize: '12px', outline: 'none' }}
-                  >
-                    <option value="">No category</option>
-                    {allCategories.map(c => <option key={c} value={c}>{c}</option>)}
-                    <option value="__custom__">+ New category…</option>
-                  </select>
-                )}
-                <select value={editingPriority} onChange={e => setEditingPriority(e.target.value)} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '8px', fontSize: '12px', outline: 'none' }}>
-                  <option value="">No priority</option>
-                  <option value="high">High</option>
-                  <option value="medium">Medium</option>
-                  <option value="low">Low</option>
-                </select>
-                {editingCategory === 'Family' && (
-                  <input
-                    type="text"
-                    placeholder="Who's this about?"
-                    value={editFamilyMember}
-                    onChange={e => setEditFamilyMember(e.target.value)}
-                    style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '8px', fontSize: '12px', outline: 'none' }}
-                  />
-                )}
-                {collaborations && collaborations.length > 0 && (
-                  <select value={editingCollaborationId} onChange={e => setEditingCollaborationId(e.target.value)} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '8px', fontSize: '12px', outline: 'none' }}>
-                    <option value="">Save to: Personal</option>
-                    {collaborations.map(c => <option key={c.id} value={c.id}>Save to: {c.name}</option>)}
-                  </select>
-                )}
-                {!editShowSmart ? (
-                  <button type="button" onClick={() => setEditShowSmart(true)} style={{ background: 'none', border: 'none', color: '#6366f1', fontSize: '12px', textAlign: 'left', cursor: 'pointer', padding: 0 }}>+ Make it a SMART goal (optional)</button>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', borderTop: '1px solid #f3f4f6', paddingTop: '6px' }}>
-                    <input type="text" placeholder="Specific: what & why?" value={editSmartSpecific} onChange={e => setEditSmartSpecific(e.target.value)} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '7px 8px', fontSize: '12px', outline: 'none' }} />
-                    <input type="text" placeholder="Measurable: how will you know?" value={editSmartMeasurable} onChange={e => setEditSmartMeasurable(e.target.value)} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '7px 8px', fontSize: '12px', outline: 'none' }} />
-                    <input type="text" placeholder="Achievable: realistic?" value={editSmartAchievable} onChange={e => setEditSmartAchievable(e.target.value)} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '7px 8px', fontSize: '12px', outline: 'none' }} />
-                    <input type="text" placeholder="Relevant: why does it matter?" value={editSmartRelevant} onChange={e => setEditSmartRelevant(e.target.value)} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '7px 8px', fontSize: '12px', outline: 'none' }} />
-                    <input type="text" placeholder="Time-bound: target deadline?" value={editSmartTimebound} onChange={e => setEditSmartTimebound(e.target.value)} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '7px 8px', fontSize: '12px', outline: 'none' }} />
+                <button type="button" onClick={() => setEditOptionsOpen(o => !o)}
+                  style={{ background: 'none', border: 'none', color: '#6b7280', fontSize: '12px', textAlign: 'left', cursor: 'pointer', padding: '2px 0', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <span style={{ display: 'inline-block', transform: editOptionsOpen ? 'rotate(90deg)' : 'none', transition: 'transform 0.15s' }}>▶</span> Options
+                </button>
+                {editOptionsOpen && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', borderTop: '1px solid #f3f4f6', paddingTop: '8px' }}>
+                    {editingCustomCategory ? (
+                      <input type="text" placeholder="Custom category name" value={editingCategoryCustom} onChange={e => setEditingCategoryCustom(e.target.value)} style={{ border: '1px solid #6366f1', borderRadius: '8px', padding: '8px', fontSize: '12px', outline: 'none' }} />
+                    ) : (
+                      <select value={editingCategory} onChange={e => { if (e.target.value === '__custom__') { setEditingCustomCategory(true); return } setEditingCategory(e.target.value) }} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '8px', fontSize: '12px', outline: 'none' }}>
+                        <option value="">No category</option>
+                        {allCategories.map(c => <option key={c} value={c}>{c}</option>)}
+                        <option value="__custom__">+ New category…</option>
+                      </select>
+                    )}
+                    <select value={editingPriority} onChange={e => setEditingPriority(e.target.value)} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '8px', fontSize: '12px', outline: 'none' }}>
+                      <option value="">No priority</option>
+                      <option value="high">High</option>
+                      <option value="medium">Medium</option>
+                      <option value="low">Low</option>
+                    </select>
+                    {editingCategory === 'Family' && (
+                      <input type="text" placeholder="Who's this about?" value={editFamilyMember} onChange={e => setEditFamilyMember(e.target.value)} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '8px', fontSize: '12px', outline: 'none' }} />
+                    )}
+                    {collaborations && collaborations.length > 0 && (
+                      <select value={editingCollaborationId} onChange={e => setEditingCollaborationId(e.target.value)} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '8px', fontSize: '12px', outline: 'none' }}>
+                        <option value="">Save to: Personal</option>
+                        {collaborations.map(c => <option key={c.id} value={c.id}>Save to: {c.name}</option>)}
+                      </select>
+                    )}
+                    {!editShowSmart ? (
+                      <button type="button" onClick={() => setEditShowSmart(true)} style={{ background: 'none', border: 'none', color: '#6366f1', fontSize: '12px', textAlign: 'left', cursor: 'pointer', padding: 0 }}>+ Make it a SMART goal (optional)</button>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        <input type="text" placeholder="Specific: what & why?" value={editSmartSpecific} onChange={e => setEditSmartSpecific(e.target.value)} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '7px 8px', fontSize: '12px', outline: 'none' }} />
+                        <input type="text" placeholder="Measurable: how will you know?" value={editSmartMeasurable} onChange={e => setEditSmartMeasurable(e.target.value)} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '7px 8px', fontSize: '12px', outline: 'none' }} />
+                        <input type="text" placeholder="Achievable: realistic?" value={editSmartAchievable} onChange={e => setEditSmartAchievable(e.target.value)} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '7px 8px', fontSize: '12px', outline: 'none' }} />
+                        <input type="text" placeholder="Relevant: why does it matter?" value={editSmartRelevant} onChange={e => setEditSmartRelevant(e.target.value)} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '7px 8px', fontSize: '12px', outline: 'none' }} />
+                        <input type="text" placeholder="Time-bound: target deadline?" value={editSmartTimebound} onChange={e => setEditSmartTimebound(e.target.value)} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '7px 8px', fontSize: '12px', outline: 'none' }} />
+                      </div>
+                    )}
                   </div>
                 )}
                 <div style={{ display: 'flex', gap: '8px', marginTop: '4px', alignItems: 'center' }}>
@@ -1328,7 +1314,7 @@ export default function MobileLayout({
           { id: 'assistant', label: 'Assistant', emoji: '&#129302;' },
           { id: 'settings', label: 'Settings', emoji: '&#9881;' }
         ].map(tab => (
-          <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+          <button key={tab.id} onClick={() => { setActiveTab(tab.id); if (tab.id === 'goals' || tab.id === 'inbox') setMobileCalView('week') }}
             style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0', position: 'relative' }}>
             <div style={{ width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               {tab.id === 'day' ? (
