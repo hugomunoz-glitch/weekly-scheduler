@@ -438,6 +438,13 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
             title={goal.priority ? PRIORITY_LABELS[goal.priority] + ' priority' : undefined}
             onClick={(e) => openPopup(goal.id, e)}
           >
+            <button
+              onClick={(e) => { e.stopPropagation(); startEdit(goal) }}
+              className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-indigo-50"
+              title="Edit goal"
+            >
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2.5" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            </button>
             <div className="flex-1 min-w-0">
               {editingId === goal.id ? (
                 <form onSubmit={(e) => handleEditSubmit(e, goal.id)} className="space-y-1" onClick={(e) => e.stopPropagation()}>

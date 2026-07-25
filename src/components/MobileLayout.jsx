@@ -1,10 +1,12 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { useAssistantHistory } from '../hooks/useAssistantHistory'
 import { useAuth } from '../contexts/AuthContext'
 import CollaborationPanel from './CollaborationPanel'
 import DailyReflection from './DailyReflection'
 import ExportMenu from './ExportMenu'
+import MonthView from './MonthView'
+import YearView from './YearView'
 import { resetViewportZoom } from '../lib/resetZoom'
 import { format, isToday, parseISO } from 'date-fns'
 import { Droppable, Draggable } from '@hello-pangea/dnd'
@@ -943,11 +945,22 @@ export default function MobileLayout({
   onRollover, onAddGoal, onEditGoal, onDeleteGoal, onAssignTask
 }) {
   const [selectedDay, setSelectedDay] = useState(() => {
-    const today = new Date()
-    const inWeek = weekDays.some(d => format(d, 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd'))
-    return inWeek ? today : weekDays[0]
+    const todayStr = format(new Date(), 'yyyy-MM-dd')
+    const inWeek = weekDays.some(d => format(d, 'yyyy-MM-dd') === todayStr)
+    return inWeek ? todayStr : format(weekDays[0], 'yyyy-MM-dd')
   })
   const [activeTab, setActiveTab] = useState('day')
+  const [mobileCalView, setMobileCalView] = useState('week')
+
+  // Reset selectedDay when week navigation changes and selected day is no longer in view
+  useEffect(() => {
+    const inWeek = weekDays.some(d => format(d, 'yyyy-MM-dd') === selectedDay)
+    if (!inWeek) {
+      const todayStr = format(new Date(), 'yyyy-MM-dd')
+      const todayInWeek = weekDays.some(d => format(d, 'yyyy-MM-dd') === todayStr)
+      setSelectedDay(todayInWeek ? todayStr : format(weekDays[0], 'yyyy-MM-dd'))
+    }
+  }, [weekDays])
   const [showCollab, setShowCollab] = useState(false)
   const { user, profile, signOut, updateEmail, updatePassword, updateUsername } = useAuth()
   const [settingsSection, setSettingsSection] = useState(null) // 'username' | 'email' | 'password' | null
@@ -1016,19 +1029,40 @@ export default function MobileLayout({
   return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', background: '#f9fafb', overflow: 'hidden' }}>
 
-      <div style={{ background: 'white', borderBottom: '1px solid #e5e7eb', padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+      <div style={{ background: 'white', borderBottom: '1px solid #e5e7eb', padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
         <button onClick={onPrevWeek} style={{ background: 'none', border: 'none', fontSize: '22px', color: '#6b7280', cursor: 'pointer', padding: '4px 8px' }}>&#8249;</button>
-        <p style={{ fontSize: '13px', fontWeight: 500, color: '#111827', margin: 0 }}>{format(weekStart, 'MMM d')} - {format(weekDays[6], 'MMM d, yyyy')}</p>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+          <p style={{ fontSize: '13px', fontWeight: 500, color: '#111827', margin: 0 }}>{format(weekStart, 'MMM d')} - {format(weekDays[6], 'MMM d, yyyy')}</p>
+          <div style={{ display: 'flex', gap: '4px' }}>
+            {['week', 'month', 'year'].map(v => (
+              <button key={v} onClick={() => setMobileCalView(v)}
+                style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: 500, background: mobileCalView === v ? '#6366f1' : '#f3f4f6', color: mobileCalView === v ? 'white' : '#6b7280' }}>
+                {v.charAt(0).toUpperCase() + v.slice(1)}
+              </button>
+            ))}
+          </div>
+        </div>
         <button onClick={onNextWeek} style={{ background: 'none', border: 'none', fontSize: '22px', color: '#6b7280', cursor: 'pointer', padding: '4px 8px' }}>&#8250;</button>
       </div>
 
-      <div style={{ background: 'white', borderBottom: '1px solid #f3f4f6', padding: '8px 12px', display: 'flex', justifyContent: 'space-between', flexShrink: 0 }}>
+      {mobileCalView === 'month' && activeTab === 'day' && (
+        <div style={{ flex: 1, overflow: 'hidden' }}>
+          <MonthView tasks={tasks} onDayClick={(day) => { setSelectedDay(format(day, 'yyyy-MM-dd')); setMobileCalView('week') }} />
+        </div>
+      )}
+      {mobileCalView === 'year' && activeTab === 'day' && (
+        <div style={{ flex: 1, overflow: 'hidden' }}>
+          <YearView tasks={tasks} onMonthClick={() => setMobileCalView('month')} />
+        </div>
+      )}
+
+      {mobileCalView === 'week' && <div style={{ background: 'white', borderBottom: '1px solid #f3f4f6', padding: '8px 12px', display: 'flex', justifyContent: 'space-between', flexShrink: 0 }}>
         {weekDays.map((day, i) => {
-          const isSelected = format(day, 'yyyy-MM-dd') === format(selectedDay, 'yyyy-MM-dd')
+          const isSelected = format(day, 'yyyy-MM-dd') === selectedDay
           const today = isToday(day)
           const count = tasksForDay(day).filter(t => t.status !== 'done').length
           return (
-            <button key={i} onClick={() => { setSelectedDay(day); setActiveTab('day') }}
+            <button key={i} onClick={() => { setSelectedDay(format(day, 'yyyy-MM-dd')); setActiveTab('day'); setMobileCalView('week') }}
               style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 2px' }}>
               <span style={{ fontSize: '12px', color: isSelected ? '#6366f1' : '#374151', fontWeight: 600, textTransform: 'uppercase' }}>{dayNames[i]}</span>
               <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: isSelected ? '#6366f1' : today ? '#e0e7ff' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -1038,7 +1072,7 @@ export default function MobileLayout({
             </button>
           )
         })}
-      </div>
+      </div>}
 
       {overdueTasks.length > 0 && activeTab === 'day' && (
         <div style={{ background: '#fffbeb', borderBottom: '1px solid #fde68a', padding: '8px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
@@ -1050,11 +1084,11 @@ export default function MobileLayout({
       {activeTab === 'day' && (
         <>
           <div style={{ padding: '10px 16px 6px', flexShrink: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '15px', fontWeight: 500, color: '#111827' }}>{format(selectedDay, 'EEEE, MMM d')}</span>
+            <span style={{ fontSize: '15px', fontWeight: 500, color: '#111827' }}>{format(parseISO(selectedDay), 'EEEE, MMM d')}</span>
             <span style={{ fontSize: '11px', color: '#9ca3af' }}>Tap, Drag &amp; Drop to move</span>
           </div>
           {(() => {
-            const dayTasks = [...tasksForDay(selectedDay), ...dueCardsForDay(selectedDay)]
+            const dayTasks = [...tasksForDay(parseISO(selectedDay)), ...dueCardsForDay(parseISO(selectedDay))]
             const dayDone = dayTasks.filter(t => t.status === 'done').length
             const dayPct = dayTasks.length > 0 ? Math.round((dayDone / dayTasks.length) * 100) : 0
             return (
@@ -1072,7 +1106,7 @@ export default function MobileLayout({
           {loading ? (
             <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af', fontSize: '13px' }}>Loading</div>
           ) : (
-            <MobileDayView date={selectedDay} tasks={tasksForDay(selectedDay)} dueCards={dueCardsForDay(selectedDay)} goalMap={goalMap} collabMap={collabMap} profileMap={profileMap} onMarkDone={onMarkDone} onRescheduleToTomorrow={onRescheduleToTomorrow} onMoveToInbox={onMoveToInbox} onDelete={onDelete} onEdit={onEdit} onAddTaskForBucket={onAddTaskForBucket} />
+            <MobileDayView date={parseISO(selectedDay)} tasks={tasksForDay(parseISO(selectedDay))} dueCards={dueCardsForDay(parseISO(selectedDay))} goalMap={goalMap} collabMap={collabMap} profileMap={profileMap} onMarkDone={onMarkDone} onRescheduleToTomorrow={onRescheduleToTomorrow} onMoveToInbox={onMoveToInbox} onDelete={onDelete} onEdit={onEdit} onAddTaskForBucket={onAddTaskForBucket} />
           )}
         </>
       )}
