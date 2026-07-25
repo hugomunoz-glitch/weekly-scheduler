@@ -152,6 +152,7 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
     resetViewportZoom()
     setAdding(false)
     setAddOptionsOpen(false)
+    setNewGoalTasks([''])
   }
 
   function closeEditingGoal() {
@@ -243,12 +244,13 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
   const [bulkGoalSubmitting, setBulkGoalSubmitting] = useState(false)
   const [addOptionsOpen, setAddOptionsOpen] = useState(false)
   const [editOptionsOpen, setEditOptionsOpen] = useState(false)
+  const [newGoalTasks, setNewGoalTasks] = useState([''])
 
   async function handleAdd(e, keepOpen) {
     e.preventDefault()
     if (!newTitle.trim()) return
     try {
-      await onAddGoal(newTitle.trim(), COLORS[goals.length % COLORS.length], {
+      const savedGoal = await onAddGoal(newTitle.trim(), COLORS[goals.length % COLORS.length], {
         category: (customCategory ? newCategoryCustom.trim() : newCategory) || null,
         priority: newPriority || null,
         familyMember: newCategory === 'Family' ? newFamilyMember.trim() || null : null,
@@ -259,15 +261,15 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
         smartTimebound: smartTimebound.trim() || null
       }, newGoalCollaborationId || null)
       setAddGoalError('')
-      if (keepOpen) {
-        setNewTitle('')
-      } else {
-        setNewTitle(''); setNewCategory(''); setNewPriority(''); setCustomCategory(false); setNewCategoryCustom(''); setNewFamilyMember('')
-        setSmartSpecific(''); setSmartMeasurable(''); setSmartAchievable(''); setSmartRelevant(''); setSmartTimebound('')
-        setNewGoalCollaborationId(defaultCollaborationId || '')
-        setShowSmart(false)
-        closeAdding()
+      const taskTitles = newGoalTasks.map(t => t.trim()).filter(Boolean)
+      for (const title of taskTitles) {
+        try { await onCreateTask(title, '', savedGoal?.id, null, null, null, null, null, newGoalCollaborationId || null) } catch {}
       }
+      setNewTitle(''); setNewCategory(''); setNewPriority(''); setCustomCategory(false); setNewCategoryCustom(''); setNewFamilyMember('')
+      setSmartSpecific(''); setSmartMeasurable(''); setSmartAchievable(''); setSmartRelevant(''); setSmartTimebound('')
+      setNewGoalCollaborationId(defaultCollaborationId || '')
+      setShowSmart(false)
+      closeAdding()
     } catch {
       setAddGoalError('Could not save. Try again.')
     }
@@ -421,16 +423,35 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
                 ))}
               </div>
             )}
+            {!bulkGoalMode && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', borderTop: '1px solid #f3f4f6', paddingTop: '8px' }}>
+                <p style={{ fontSize: '12px', fontWeight: 500, color: '#6b7280', margin: 0 }}>Tasks (optional)</p>
+                {newGoalTasks.map((t, i) => (
+                  <div key={i} style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                    <input
+                      type="text"
+                      placeholder={i === 0 ? 'First task…' : 'Another task…'}
+                      value={t}
+                      onChange={e => setNewGoalTasks(prev => prev.map((v, j) => j === i ? e.target.value : v))}
+                      style={{ flex: 1, border: '1px solid #e5e7eb', borderRadius: '8px', padding: '6px 8px', fontSize: '12px', outline: 'none' }}
+                    />
+                    {newGoalTasks.length > 1 && (
+                      <button type="button" onClick={() => setNewGoalTasks(prev => prev.filter((_, j) => j !== i))}
+                        style={{ background: 'none', border: 'none', color: '#d1d5db', fontSize: '16px', cursor: 'pointer', lineHeight: 1, padding: '0 2px' }}>×</button>
+                    )}
+                  </div>
+                ))}
+                <button type="button" onClick={() => setNewGoalTasks(prev => [...prev, ''])}
+                  style={{ background: 'none', border: 'none', color: '#6366f1', fontSize: '12px', textAlign: 'left', cursor: 'pointer', padding: 0 }}>+ Add another task</button>
+              </div>
+            )}
             <div style={{ display: 'flex', gap: '8px', marginTop: '4px', flexWrap: 'wrap' }}>
               {bulkGoalMode ? (
                 <button type="submit" disabled={bulkGoalCount === 0 || bulkGoalSubmitting} style={{ background: '#6366f1', color: 'white', border: 'none', borderRadius: '8px', padding: '8px 14px', fontSize: '13px', cursor: bulkGoalCount === 0 ? 'default' : 'pointer', opacity: bulkGoalCount === 0 || bulkGoalSubmitting ? 0.4 : 1 }}>
                   {bulkGoalSubmitting ? 'Adding...' : bulkGoalCount > 0 ? 'Add ' + bulkGoalCount + ' goals' : 'Add goals'}
                 </button>
               ) : (
-                <>
-                  <button type="button" onClick={(e) => handleAdd(e, true)} style={{ background: 'white', color: '#6366f1', border: '1px solid #c7d2fe', borderRadius: '8px', padding: '8px 14px', fontSize: '13px', cursor: 'pointer' }}>Add another</button>
-                  <button type="submit" style={{ background: '#6366f1', color: 'white', border: 'none', borderRadius: '8px', padding: '8px 14px', fontSize: '13px', cursor: 'pointer' }}>Add</button>
-                </>
+                <button type="submit" style={{ background: '#6366f1', color: 'white', border: 'none', borderRadius: '8px', padding: '8px 14px', fontSize: '13px', cursor: 'pointer' }}>Add</button>
               )}
               <button type="button" onClick={() => { closeAdding(); setShowSmart(false); setBulkGoalMode(false) }} style={{ background: 'none', border: 'none', color: '#9ca3af', fontSize: '13px', cursor: 'pointer' }}>Cancel</button>
             </div>

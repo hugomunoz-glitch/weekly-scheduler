@@ -418,10 +418,7 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
                     {bulkGoalSubmitting ? 'Adding...' : bulkGoalCount > 0 ? 'Add ' + bulkGoalCount + ' goals' : 'Add goals'}
                   </button>
                 ) : (
-                  <>
-                    <button type="button" onClick={(e) => handleAdd(e, true)} className="text-sm text-indigo-600 border border-indigo-200 px-3 py-1.5 rounded-lg hover:bg-indigo-50">Add another</button>
-                    <button type="submit" className="text-sm text-white bg-indigo-600 px-3 py-1.5 rounded-lg hover:bg-indigo-700">Add</button>
-                  </>
+                  <button type="submit" className="text-sm text-white bg-indigo-600 px-3 py-1.5 rounded-lg hover:bg-indigo-700">Add</button>
                 )}
                 <button type="button" onClick={() => { setAdding(false); setShowSmart(false); setBulkGoalMode(false) }} className="text-sm text-gray-400 hover:text-gray-600">Cancel</button>
               </div>
