@@ -1021,6 +1021,33 @@ export default function MobileLayout({
   const [taskSortDir, setTaskSortDir] = useState(1)
   const [taskCategoryFilter, setTaskCategoryFilter] = useState('all')
   const taskCategories = [...new Set(tasks.map(t => t.category).filter(Boolean))].sort()
+  const [inlineTaskText, setInlineTaskText] = useState('')
+  const [inlineBulkMode, setInlineBulkMode] = useState(false)
+  const [inlineBulkText, setInlineBulkText] = useState('')
+  const [inlineSubmitting, setInlineSubmitting] = useState(false)
+
+  async function handleInlineAddTask(e) {
+    e.preventDefault()
+    const title = inlineTaskText.trim()
+    if (!title || inlineSubmitting) return
+    setInlineSubmitting(true)
+    await onCreateTask(title, '', null, null, null, null)
+    setInlineTaskText('')
+    setInlineSubmitting(false)
+  }
+
+  async function handleInlineBulkAdd(e) {
+    e.preventDefault()
+    const lines = inlineBulkText.split('\n').map(l => l.trim()).filter(Boolean)
+    if (!lines.length || inlineSubmitting) return
+    setInlineSubmitting(true)
+    for (const line of lines) {
+      await onCreateTask(line, '', null, null, null, null)
+    }
+    setInlineBulkText('')
+    setInlineBulkMode(false)
+    setInlineSubmitting(false)
+  }
 
   const tasksForDay = (date) => tasks.filter(t => t.scheduled_date === format(date, 'yyyy-MM-dd'))
   const dueCardsForDay = (date) => tasks.filter(t => t.due_date_card_date === format(date, 'yyyy-MM-dd') && t.scheduled_date !== t.due_date_card_date)
@@ -1045,14 +1072,14 @@ export default function MobileLayout({
         <button onClick={onNextWeek} style={{ background: 'none', border: 'none', fontSize: '22px', color: '#6b7280', cursor: 'pointer', padding: '4px 8px' }}>&#8250;</button>
       </div>
 
-      {mobileCalView === 'month' && activeTab === 'day' && (
+      {mobileCalView === 'month' && (
         <div style={{ flex: 1, overflow: 'hidden' }}>
-          <MonthView tasks={tasks} onDayClick={(day) => { setSelectedDay(format(day, 'yyyy-MM-dd')); setMobileCalView('week') }} />
+          <MonthView tasks={tasks} onDayClick={(day) => { setSelectedDay(format(day, 'yyyy-MM-dd')); setMobileCalView('week'); setActiveTab('day') }} />
         </div>
       )}
-      {mobileCalView === 'year' && activeTab === 'day' && (
+      {mobileCalView === 'year' && (
         <div style={{ flex: 1, overflow: 'hidden' }}>
-          <YearView tasks={tasks} onMonthClick={() => setMobileCalView('month')} onDayClick={(day) => { setSelectedDay(format(day, 'yyyy-MM-dd')); setMobileCalView('week') }} />
+          <YearView tasks={tasks} onMonthClick={() => setMobileCalView('month')} onDayClick={(day) => { setSelectedDay(format(day, 'yyyy-MM-dd')); setMobileCalView('week'); setActiveTab('day') }} />
         </div>
       )}
 
@@ -1074,14 +1101,14 @@ export default function MobileLayout({
         })}
       </div>}
 
-      {overdueTasks.length > 0 && activeTab === 'day' && (
+      {mobileCalView === 'week' && overdueTasks.length > 0 && activeTab === 'day' && (
         <div style={{ background: '#fffbeb', borderBottom: '1px solid #fde68a', padding: '8px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
           <span style={{ fontSize: '12px', color: '#92400e' }}>{overdueTasks.length} overdue</span>
           <button onClick={onRollover} style={{ fontSize: '12px', color: '#d97706', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 500 }}>Roll over</button>
         </div>
       )}
 
-      {activeTab === 'day' && (
+      {mobileCalView === 'week' && activeTab === 'day' && (
         <>
           <div style={{ padding: '10px 16px 6px', flexShrink: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: '15px', fontWeight: 500, color: '#111827' }}>{format(parseISO(selectedDay), 'EEEE, MMM d')}</span>
@@ -1111,11 +1138,11 @@ export default function MobileLayout({
         </>
       )}
 
-      {activeTab === 'goals' && (
+      {mobileCalView === 'week' && activeTab === 'goals' && (
         <MobileGoalsBar goals={goals} goalTasks={goalTasks} allTasks={tasks} collabMap={collabMap} collaborations={collaborations} defaultCollaborationId={defaultCollaborationId} onAddGoal={onAddGoal} onEditGoal={onEditGoal} onDeleteGoal={onDeleteGoal} onMarkDone={onMarkDone} onDelete={onDelete} onCreateTask={onCreateTask} onEditTask={onEdit} />
       )}
 
-      {activeTab === 'inbox' && (
+      {mobileCalView === 'week' && activeTab === 'inbox' && (
         <>
           <div style={{ padding: '10px 16px 0', flexShrink: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: '15px', fontWeight: 500, color: '#111827' }}>&#128221; Task List <span style={{ fontSize: '13px', color: '#9ca3af', fontWeight: 400 }}>{inboxTasks.filter(t => t.status !== 'done').length}</span></span>
@@ -1170,15 +1197,57 @@ export default function MobileLayout({
               {taskCategories.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
+          <div style={{ padding: '0 12px 8px', flexShrink: 0 }}>
+            {!inlineBulkMode ? (
+              <form onSubmit={handleInlineAddTask} style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                <input
+                  type="text"
+                  value={inlineTaskText}
+                  onChange={e => setInlineTaskText(e.target.value)}
+                  placeholder="Quick add a task…"
+                  style={{ flex: 1, fontSize: '13px', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '7px 10px', outline: 'none' }}
+                />
+                <button type="submit" disabled={!inlineTaskText.trim() || inlineSubmitting}
+                  style={{ background: '#6366f1', color: 'white', border: 'none', borderRadius: '8px', padding: '7px 12px', fontSize: '13px', cursor: 'pointer', opacity: !inlineTaskText.trim() ? 0.5 : 1 }}>
+                  Add
+                </button>
+                <button type="button" onClick={() => setInlineBulkMode(true)}
+                  style={{ background: 'none', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '7px 8px', fontSize: '11px', color: '#6b7280', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                  Bulk
+                </button>
+              </form>
+            ) : (
+              <form onSubmit={handleInlineBulkAdd} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <textarea
+                  autoFocus
+                  value={inlineBulkText}
+                  onChange={e => setInlineBulkText(e.target.value)}
+                  placeholder="One task per line…"
+                  rows={4}
+                  style={{ fontSize: '13px', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '8px 10px', outline: 'none', resize: 'none' }}
+                />
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  <button type="submit" disabled={!inlineBulkText.trim() || inlineSubmitting}
+                    style={{ flex: 1, background: '#6366f1', color: 'white', border: 'none', borderRadius: '8px', padding: '7px', fontSize: '13px', cursor: 'pointer', opacity: !inlineBulkText.trim() ? 0.5 : 1 }}>
+                    {inlineSubmitting ? 'Adding…' : 'Add tasks'}
+                  </button>
+                  <button type="button" onClick={() => { setInlineBulkMode(false); setInlineBulkText('') }}
+                    style={{ background: 'none', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '7px 12px', fontSize: '13px', color: '#6b7280', cursor: 'pointer' }}>
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
           <MobileInbox tasks={loading ? [] : inboxTasks} goalMap={goalMap} collabMap={collabMap} collabMembersMap={collabMembersMap} profileMap={profileMap} onAssignTask={onAssignTask} onMarkDone={onMarkDone} onAddTask={onAddTask} onEdit={onEdit} onDelete={onDelete} search={taskSearch} sortMode={taskSort} sortDir={taskSortDir} categoryFilter={taskCategoryFilter} />
         </>
       )}
 
-      {activeTab === 'reflect' && (
+      {mobileCalView === 'week' && activeTab === 'reflect' && (
         <DailyReflection isMobile={true} />
       )}
 
-      {activeTab === 'assistant' && (
+      {mobileCalView === 'week' && activeTab === 'assistant' && (
         <>
           <div style={{ padding: '10px 16px 6px', flexShrink: 0 }}>
             <span style={{ fontSize: '15px', fontWeight: 500, color: '#111827' }}>&#129302; Assistant</span>
@@ -1187,7 +1256,7 @@ export default function MobileLayout({
         </>
       )}
 
-      {activeTab === 'settings' && (
+      {mobileCalView === 'week' && activeTab === 'settings' && (
         <div style={{ flex: 1, overflowY: 'auto', padding: '16px' }}>
           <div style={{ padding: '4px 0 12px' }}>
             <span style={{ fontSize: '15px', fontWeight: 500, color: '#111827' }}>&#9881; Settings</span>

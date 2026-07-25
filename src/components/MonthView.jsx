@@ -64,16 +64,10 @@ export default function MonthView({ tasks, onDayClick }) {
                   display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
                 }}>{format(day, 'd')}</span>
               </div>
-              {active.length > 0 && (
-                <div style={{
-                  fontSize: '11px', fontWeight: 700, textAlign: 'center', marginTop: '2px',
-                  color: active.length >= 5 ? '#ef4444' : active.length >= 3 ? '#f59e0b' : '#6366f1',
-                  background: active.length >= 5 ? '#fef2f2' : active.length >= 3 ? '#fffbeb' : '#eef2ff',
-                  borderRadius: '4px', padding: '2px 4px'
-                }}>
-                  {active.length} task{active.length !== 1 ? 's' : ''}
-                </div>
-              )}
+              <div style={{
+                width: '8px', height: '8px', borderRadius: '50%', margin: '4px auto 0',
+                background: active.length >= 5 ? '#ef4444' : active.length >= 3 ? '#f59e0b' : active.length >= 1 ? '#22c55e' : 'transparent'
+              }} />
             </div>
           )
         })}
