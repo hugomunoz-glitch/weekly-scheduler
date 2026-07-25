@@ -94,10 +94,13 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
   const [editSmartTimebound, setEditSmartTimebound] = useState('')
   const [editGoalError, setEditGoalError] = useState('')
   const allCategories = [...new Set([...GOAL_CATEGORIES, ...goals.map(g => g.category).filter(Boolean)])].sort()
-  const [longPressGoalId, setLongPressGoalId] = useState(null)
+  const [pressedGoalId, setPressedGoalId] = useState(null)
   const [longPressTaskId, setLongPressTaskId] = useState(null)
   const pressTimerRef = useRef(null)
   const pressFiredRef = useRef(false)
+  const [goalBulkTaskMode, setGoalBulkTaskMode] = useState(false)
+  const [goalBulkTaskText, setGoalBulkTaskText] = useState('')
+  const [goalTaskSubmitting, setGoalTaskSubmitting] = useState(false)
 
   function startEditGoal(goal) {
     setEditingGoalId(goal.id)
@@ -210,10 +213,24 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
 
   function handleAddTaskToGoal(e, goalId) {
     e.preventDefault()
-    if (!newTaskTitle.trim()) return
+    if (!newTaskTitle.trim() || goalTaskSubmitting) return
     const goal = goals.find(g => g.id === goalId)
     onCreateTask(newTaskTitle.trim(), '', goalId, null, null, null, null, null, goal?.collaboration_id || null)
     setNewTaskTitle('')
+  }
+
+  async function handleBulkAddTaskToGoal(e, goalId) {
+    e.preventDefault()
+    const lines = goalBulkTaskText.split('\n').map(l => l.trim()).filter(Boolean)
+    if (!lines.length || goalTaskSubmitting) return
+    const goal = goals.find(g => g.id === goalId)
+    setGoalTaskSubmitting(true)
+    for (const line of lines) {
+      await onCreateTask(line, '', goalId, null, null, null, null, null, goal?.collaboration_id || null)
+    }
+    setGoalBulkTaskText('')
+    setGoalBulkTaskMode(false)
+    setGoalTaskSubmitting(false)
   }
 
   const [addGoalError, setAddGoalError] = useState('')
@@ -442,19 +459,24 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
         const done = linked.filter(t => t.status === 'done')
         const pct = linked.length > 0 ? Math.round((done.length / linked.length) * 100) : 0
       return (
-        <div key={goal.id} onClick={() => setViewingGoalId(goal.id)} style={{ border: '1px solid #e5e7eb', borderLeft: goal.priority && PRIORITY_BORDER[goal.priority] ? '4px solid ' + PRIORITY_BORDER[goal.priority] : '1px solid #e5e7eb', borderRadius: '10px', padding: '10px 12px', marginBottom: '8px', background: 'white', position: 'relative', cursor: 'pointer' }}>
+        <div key={goal.id} onClick={() => { if (pressedGoalId !== goal.id) setViewingGoalId(goal.id) }} style={{ border: '1px solid #e5e7eb', borderLeft: goal.priority && PRIORITY_BORDER[goal.priority] ? '4px solid ' + PRIORITY_BORDER[goal.priority] : '1px solid #e5e7eb', borderRadius: '10px', padding: '10px 12px', marginBottom: '8px', background: 'white', position: 'relative', cursor: 'pointer' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-            <span
-              style={{ fontSize: "15px", fontWeight: 600, color: "#1f2937", flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: "pointer" }}
-              onClick={(e) => { e.stopPropagation(); startEditGoal(goal) }}
-              title="Tap to edit"
-            >{goal.title}</span>
+            <span style={{ fontSize: "15px", fontWeight: 600, color: "#1f2937", flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{goal.title}</span>
             {goal.collaboration_id && collabMap && collabMap[goal.collaboration_id] && (
-              <span
-                style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', flexShrink: 0, background: collabMap[goal.collaboration_id].color }}
-              />
+              <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', flexShrink: 0, background: collabMap[goal.collaboration_id].color }} />
             )}
+            <button
+              onClick={(e) => { e.stopPropagation(); setPressedGoalId(pressedGoalId === goal.id ? null : goal.id) }}
+              style={{ background: 'none', border: 'none', color: '#6b7280', flexShrink: 0, padding: '0 0 0 4px', lineHeight: 1, fontSize: '16px' }}
+              title="More actions"
+            >&#8942;</button>
           </div>
+          {pressedGoalId === goal.id && (
+            <div onClick={e => e.stopPropagation()} style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '8px' }}>
+              <button onClick={(e) => { e.stopPropagation(); setPressedGoalId(null); startEditGoal(goal) }} style={{ fontSize: '24px', color: '#6366f1', background: 'none', border: 'none', padding: 0, cursor: 'pointer', lineHeight: 1 }} title="Edit goal">&#9998;</button>
+              <button onClick={(e) => { e.stopPropagation(); setPressedGoalId(null); onDeleteGoal(goal.id) }} style={{ fontSize: '18px', color: '#ef4444', background: 'none', border: 'none', padding: 0, cursor: 'pointer', lineHeight: 1 }} title="Delete goal">&#128465;</button>
+            </div>
+          )}
           {categoryBadge(goal.category) && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px', paddingLeft: '2px' }}>
               <span style={{ fontSize: '10px', fontWeight: 500, padding: '2px 6px', borderRadius: '4px', color: categoryBadge(goal.category).color, background: categoryBadge(goal.category).color + '1a' }}>{categoryBadge(goal.category).name}</span>
@@ -575,15 +597,39 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
                       ))}
                     </div>
                   )}
-                  <form onSubmit={(e) => handleAddTaskToGoal(e, goal.id)} style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #f3f4f6' }}>
-                    <input
-                      value={newTaskTitle}
-                      onChange={e => setNewTaskTitle(e.target.value)}
-                      placeholder="Add a task to this goal"
-                      style={{ flex: 1, fontSize: '12px', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '6px 8px', outline: 'none' }}
-                    />
-                    <button type="submit" style={{ background: '#6366f1', color: 'white', border: 'none', borderRadius: '6px', padding: '6px 10px', fontSize: '12px', cursor: 'pointer', flexShrink: 0 }}>Add</button>
-                  </form>
+                  <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #f3f4f6' }}>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '6px' }}>
+                      <button type="button" onClick={() => { setGoalBulkTaskMode(m => !m); setGoalBulkTaskText(''); setNewTaskTitle('') }} style={{ background: 'none', border: 'none', color: '#6366f1', fontSize: '11px', cursor: 'pointer', padding: 0 }}>
+                        {goalBulkTaskMode ? 'Add single task' : 'Add multiple tasks at once'}
+                      </button>
+                    </div>
+                    {goalBulkTaskMode ? (
+                      <form onSubmit={(e) => handleBulkAddTaskToGoal(e, goal.id)} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        <textarea
+                          autoFocus
+                          value={goalBulkTaskText}
+                          onChange={e => setGoalBulkTaskText(e.target.value)}
+                          placeholder="One task per line…"
+                          rows={3}
+                          style={{ fontSize: '12px', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '6px 8px', outline: 'none', resize: 'none' }}
+                        />
+                        <button type="submit" disabled={!goalBulkTaskText.trim() || goalTaskSubmitting}
+                          style={{ background: '#6366f1', color: 'white', border: 'none', borderRadius: '6px', padding: '7px', fontSize: '12px', cursor: 'pointer', opacity: !goalBulkTaskText.trim() ? 0.5 : 1 }}>
+                          {goalTaskSubmitting ? 'Adding…' : 'Add tasks'}
+                        </button>
+                      </form>
+                    ) : (
+                      <form onSubmit={(e) => handleAddTaskToGoal(e, goal.id)} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <input
+                          value={newTaskTitle}
+                          onChange={e => setNewTaskTitle(e.target.value)}
+                          placeholder="Add a task to this goal"
+                          style={{ flex: 1, fontSize: '12px', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '6px 8px', outline: 'none' }}
+                        />
+                        <button type="submit" disabled={!newTaskTitle.trim()} style={{ background: '#6366f1', color: 'white', border: 'none', borderRadius: '6px', padding: '6px 10px', fontSize: '12px', cursor: 'pointer', flexShrink: 0, opacity: !newTaskTitle.trim() ? 0.5 : 1 }}>Add</button>
+                      </form>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -1021,33 +1067,6 @@ export default function MobileLayout({
   const [taskSortDir, setTaskSortDir] = useState(1)
   const [taskCategoryFilter, setTaskCategoryFilter] = useState('all')
   const taskCategories = [...new Set(tasks.map(t => t.category).filter(Boolean))].sort()
-  const [inlineTaskText, setInlineTaskText] = useState('')
-  const [inlineBulkMode, setInlineBulkMode] = useState(false)
-  const [inlineBulkText, setInlineBulkText] = useState('')
-  const [inlineSubmitting, setInlineSubmitting] = useState(false)
-
-  async function handleInlineAddTask(e) {
-    e.preventDefault()
-    const title = inlineTaskText.trim()
-    if (!title || inlineSubmitting) return
-    setInlineSubmitting(true)
-    await onCreateTask(title, '', null, null, null, null)
-    setInlineTaskText('')
-    setInlineSubmitting(false)
-  }
-
-  async function handleInlineBulkAdd(e) {
-    e.preventDefault()
-    const lines = inlineBulkText.split('\n').map(l => l.trim()).filter(Boolean)
-    if (!lines.length || inlineSubmitting) return
-    setInlineSubmitting(true)
-    for (const line of lines) {
-      await onCreateTask(line, '', null, null, null, null)
-    }
-    setInlineBulkText('')
-    setInlineBulkMode(false)
-    setInlineSubmitting(false)
-  }
 
   const tasksForDay = (date) => tasks.filter(t => t.scheduled_date === format(date, 'yyyy-MM-dd'))
   const dueCardsForDay = (date) => tasks.filter(t => t.due_date_card_date === format(date, 'yyyy-MM-dd') && t.scheduled_date !== t.due_date_card_date)
@@ -1196,48 +1215,6 @@ export default function MobileLayout({
               <option value="all">All categories</option>
               {taskCategories.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
-          </div>
-          <div style={{ padding: '0 12px 8px', flexShrink: 0 }}>
-            {!inlineBulkMode ? (
-              <form onSubmit={handleInlineAddTask} style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                <input
-                  type="text"
-                  value={inlineTaskText}
-                  onChange={e => setInlineTaskText(e.target.value)}
-                  placeholder="Quick add a task…"
-                  style={{ flex: 1, fontSize: '13px', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '7px 10px', outline: 'none' }}
-                />
-                <button type="submit" disabled={!inlineTaskText.trim() || inlineSubmitting}
-                  style={{ background: '#6366f1', color: 'white', border: 'none', borderRadius: '8px', padding: '7px 12px', fontSize: '13px', cursor: 'pointer', opacity: !inlineTaskText.trim() ? 0.5 : 1 }}>
-                  Add
-                </button>
-                <button type="button" onClick={() => setInlineBulkMode(true)}
-                  style={{ background: 'none', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '7px 8px', fontSize: '11px', color: '#6b7280', cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                  Bulk
-                </button>
-              </form>
-            ) : (
-              <form onSubmit={handleInlineBulkAdd} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <textarea
-                  autoFocus
-                  value={inlineBulkText}
-                  onChange={e => setInlineBulkText(e.target.value)}
-                  placeholder="One task per line…"
-                  rows={4}
-                  style={{ fontSize: '13px', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '8px 10px', outline: 'none', resize: 'none' }}
-                />
-                <div style={{ display: 'flex', gap: '6px' }}>
-                  <button type="submit" disabled={!inlineBulkText.trim() || inlineSubmitting}
-                    style={{ flex: 1, background: '#6366f1', color: 'white', border: 'none', borderRadius: '8px', padding: '7px', fontSize: '13px', cursor: 'pointer', opacity: !inlineBulkText.trim() ? 0.5 : 1 }}>
-                    {inlineSubmitting ? 'Adding…' : 'Add tasks'}
-                  </button>
-                  <button type="button" onClick={() => { setInlineBulkMode(false); setInlineBulkText('') }}
-                    style={{ background: 'none', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '7px 12px', fontSize: '13px', color: '#6b7280', cursor: 'pointer' }}>
-                    Cancel
-                  </button>
-                </div>
-              </form>
-            )}
           </div>
           <MobileInbox tasks={loading ? [] : inboxTasks} goalMap={goalMap} collabMap={collabMap} collabMembersMap={collabMembersMap} profileMap={profileMap} onAssignTask={onAssignTask} onMarkDone={onMarkDone} onAddTask={onAddTask} onEdit={onEdit} onDelete={onDelete} search={taskSearch} sortMode={taskSort} sortDir={taskSortDir} categoryFilter={taskCategoryFilter} />
         </>

@@ -1,9 +1,19 @@
-import { useState } from 'react'
-import { format, startOfYear, eachMonthOfInterval, endOfYear, getDaysInMonth, startOfMonth, getDay, isToday, addYears, subYears } from 'date-fns'
+import { useState, useRef, useEffect } from 'react'
+import { format, startOfYear, eachMonthOfInterval, endOfYear, getDaysInMonth, startOfMonth, getDay, isToday, addYears, subYears, getMonth, getYear } from 'date-fns'
 
 export default function YearView({ tasks, onMonthClick, onDayClick }) {
   const [currentYear, setCurrentYear] = useState(new Date())
   const months = eachMonthOfInterval({ start: startOfYear(currentYear), end: endOfYear(currentYear) })
+  const scrollRef = useRef(null)
+  const currentMonthRef = useRef(null)
+  const todayMonth = getMonth(new Date())
+  const todayYear = getYear(new Date())
+
+  useEffect(() => {
+    if (currentMonthRef.current && scrollRef.current) {
+      currentMonthRef.current.scrollIntoView({ behavior: 'auto', block: 'start' })
+    }
+  }, [getYear(currentYear)])
 
   function taskCountForMonth(month) {
     const prefix = format(month, 'yyyy-MM')
@@ -21,15 +31,17 @@ export default function YearView({ tasks, onMonthClick, onDayClick }) {
         <span style={{ fontSize: '16px', fontWeight: 700, color: '#111827' }}>{format(currentYear, 'yyyy')}</span>
         <button onClick={() => setCurrentYear(y => addYears(y, 1))} style={{ background: 'none', border: 'none', fontSize: '20px', color: '#6b7280', cursor: 'pointer', padding: '4px 10px' }}>›</button>
       </div>
-      <div style={{ flex: 1, overflowY: 'auto', padding: '16px', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))', gap: '14px' }}>
+      <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', padding: '16px', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))', gap: '14px' }}>
         {months.map(month => {
           const daysInMonth = getDaysInMonth(month)
           const firstDow = (getDay(startOfMonth(month)) + 6) % 7
           const count = taskCountForMonth(month)
           const monthStr = format(month, 'yyyy-MM')
+          const isCurrentMonth = getYear(currentYear) === todayYear && getMonth(month) === todayMonth
           return (
             <div
               key={monthStr}
+              ref={isCurrentMonth ? currentMonthRef : null}
               onClick={() => onMonthClick && onMonthClick(month)}
               style={{ border: '1px solid #e5e7eb', borderRadius: '10px', padding: '10px 12px', cursor: onMonthClick ? 'pointer' : 'default', background: 'white', transition: 'box-shadow 0.15s' }}
               onMouseEnter={e => e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)'}
