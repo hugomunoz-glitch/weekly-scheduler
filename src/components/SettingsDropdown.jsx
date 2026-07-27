@@ -31,7 +31,7 @@ function NotificationRow({ tasks }) {
   )
 }
 
-export default function SettingsDropdown({ onOpenCollaborations, tasks }) {
+export default function SettingsDropdown({ onOpenCollaborations, tasks, rolloverMode, onRolloverModeChange }) {
   const { user, profile, signOut, updateEmail, updatePassword, updateUsername } = useAuth()
   const [open, setOpen] = useState(false)
   const [section, setSection] = useState(null) // 'email' | 'password' | 'username' | null
@@ -207,6 +207,17 @@ export default function SettingsDropdown({ onOpenCollaborations, tasks }) {
               </button>
             )}
 
+            <div className="px-3 py-2 border-t border-gray-100">
+              <p className="text-xs text-gray-500 font-medium mb-1.5">Overdue tasks</p>
+              <div className="flex flex-col gap-1">
+                {['manual', 'auto'].map(mode => (
+                  <label key={mode} className="flex items-center gap-2 text-xs text-gray-600 cursor-pointer">
+                    <input type="radio" name="rollover" checked={rolloverMode === mode} onChange={() => onRolloverModeChange(mode)} className="accent-indigo-600" />
+                    {mode === 'manual' ? 'Manual — show "Roll over" button' : 'Auto — roll over on app open'}
+                  </label>
+                ))}
+              </div>
+            </div>
             <NotificationRow tasks={tasks} />
             <button
               onClick={() => { setOpen(false); onOpenCollaborations() }}

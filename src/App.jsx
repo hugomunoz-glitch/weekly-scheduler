@@ -131,6 +131,7 @@ export default function App() {
     requestAnimationFrame(() => window.scrollTo(0, 0))
   }, [])
 
+  const [rolloverMode, setRolloverMode] = useState(() => localStorage.getItem('rolloverMode') || 'manual')
   const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }))
   const [tasks, setTasks] = useState([])
   const [goals, setGoals] = useState([])
@@ -187,6 +188,9 @@ export default function App() {
       scheduleDailyNotifications(tasks)
     }
   }, [tasks])
+
+  const rolloverRef = useRef(null)
+  const autoRolledRef = useRef(false)
 
   const COLLAB_COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316']
   const collabMap = Object.fromEntries(collaborations.map((c, i) => [c.id, { name: c.name, color: COLLAB_COLORS[i % COLLAB_COLORS.length] }]))
@@ -775,6 +779,14 @@ export default function App() {
     setTasks(prev => prev.map(t => ids.includes(t.id) ? { ...t, scheduled_date: todayStr } : t))
     await supabase.from('tasks').update({ scheduled_date: todayStr }).in('id', ids)
   }
+  rolloverRef.current = rolloverOverdue
+
+  // Auto-rollover once on load when mode is 'auto'
+  useEffect(() => {
+    if (rolloverMode !== 'auto' || loading || autoRolledRef.current || overdueTasks.length === 0) return
+    autoRolledRef.current = true
+    rolloverRef.current?.()
+  }, [rolloverMode, loading, overdueTasks.length])
 
   // The Task List shows every task regardless of scheduling so nothing gets
   // lost -- but a recurring series can generate dozens of near-identical
@@ -817,6 +829,7 @@ export default function App() {
     overdueTasks, onMarkDone: markDone, onRescheduleToTomorrow: rescheduleToTomorrow,
     onMoveToInbox: moveToInbox, onDelete: requestDeleteTask, onEdit: setEditingTask, onAssignTask: assignTask,
     onAddTask: () => setShowAdd(true), onAddTaskForDay: openAddForDay, onAddTaskForBucket: openAddForBucket, onCreateTask: addTask, onRollover: rolloverOverdue,
+    rolloverMode, onRolloverModeChange: mode => { setRolloverMode(mode); localStorage.setItem('rolloverMode', mode) },
     onAddGoal: addGoal, onEditGoal: editGoal, onDeleteGoal: deleteGoal,
     onPrevWeek: () => setWeekStart(w => subWeeks(w, 1)),
     onNextWeek: () => setWeekStart(w => addWeeks(w, 1)),
@@ -863,13 +876,13 @@ export default function App() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              {overdueTasks.length > 0 && (
+              {overdueTasks.length > 0 && rolloverMode === 'manual' && (
                 <button onClick={rolloverOverdue} className="px-3 py-1.5 text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100">Roll over {overdueTasks.length} overdue</button>
               )}
               <ExportMenu tasks={visibleTasks} goals={visibleGoals} weekStart={weekStart} />
               <button onClick={() => setShowReflect(true)} className="px-3 py-1.5 text-sm font-medium text-indigo-600 border border-indigo-200 rounded-lg hover:bg-indigo-50">Reflect</button>
               <button onClick={() => setShowAdd(true)} className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700">+ Add task</button>
-              <SettingsDropdown onOpenCollaborations={() => setShowCollab(true)} tasks={tasks} />
+              <SettingsDropdown onOpenCollaborations={() => setShowCollab(true)} tasks={tasks} rolloverMode={rolloverMode} onRolloverModeChange={mode => { setRolloverMode(mode); localStorage.setItem('rolloverMode', mode) }} />
             </div>
           </header>
           <div className="mx-3 mt-3 rounded-xl border border-gray-200 shadow-sm overflow-hidden shrink-0">

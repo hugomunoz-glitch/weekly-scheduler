@@ -1047,7 +1047,8 @@ export default function MobileLayout({
   collaborations, activeView, onChangeView, defaultCollaborationId,
   overdueTasks, onPrevWeek, onNextWeek, onMarkDone,
   onRescheduleToTomorrow, onMoveToInbox, onDelete, onEdit, onAddTask, onAddTaskForBucket, onCreateTask,
-  onRollover, onAddGoal, onEditGoal, onDeleteGoal, onAssignTask
+  onRollover, onAddGoal, onEditGoal, onDeleteGoal, onAssignTask,
+  rolloverMode, onRolloverModeChange
 }) {
   const [selectedDay, setSelectedDay] = useState(() => {
     const todayStr = format(new Date(), 'yyyy-MM-dd')
@@ -1179,7 +1180,7 @@ export default function MobileLayout({
         })}
       </div>}
 
-      {mobileCalView === 'week' && overdueTasks.length > 0 && activeTab === 'day' && (
+      {mobileCalView === 'week' && overdueTasks.length > 0 && activeTab === 'day' && rolloverMode === 'manual' && (
         <div style={{ background: '#fffbeb', borderBottom: '1px solid #fde68a', padding: '8px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
           <span style={{ fontSize: '12px', color: '#92400e' }}>{overdueTasks.length} overdue</span>
           <button onClick={onRollover} style={{ fontSize: '12px', color: '#d97706', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 500 }}>Roll over</button>
@@ -1296,6 +1297,17 @@ export default function MobileLayout({
         <div style={{ flex: 1, overflowY: 'auto', padding: '16px' }}>
           <div style={{ padding: '4px 0 12px' }}>
             <span style={{ fontSize: '15px', fontWeight: 500, color: '#111827' }}>&#9881; Settings</span>
+          </div>
+          <div style={{ border: '1px solid #e5e7eb', borderRadius: '10px', padding: '14px', marginBottom: '10px', background: 'white' }}>
+            <p style={{ margin: '0 0 8px', fontSize: '13px', fontWeight: 600, color: '#374151' }}>Overdue tasks</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {[['manual', 'Manual — show "Roll over" button'], ['auto', 'Auto — roll over on app open']].map(([mode, label]) => (
+                <label key={mode} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#374151', cursor: 'pointer' }}>
+                  <input type="radio" name="mobileRollover" checked={rolloverMode === mode} onChange={() => onRolloverModeChange(mode)} style={{ accentColor: '#6366f1' }} />
+                  {label}
+                </label>
+              ))}
+            </div>
           </div>
           <div style={{ border: '1px solid #e5e7eb', borderRadius: '10px', padding: '14px', marginBottom: '10px', background: 'white' }}>
             <p style={{ margin: '0 0 6px', fontSize: '13px', fontWeight: 600, color: '#374151' }}>Notifications</p>
