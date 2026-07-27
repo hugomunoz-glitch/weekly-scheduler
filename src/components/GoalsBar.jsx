@@ -33,7 +33,7 @@ function PriorityBadge({ priority }) {
   )
 }
 
-export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations, defaultCollaborationId, onAddGoal, onEditGoal, onDeleteGoal, onMarkDone, onDelete, onCreateTask, onEditTask }) {
+export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations, defaultCollaborationId, onAddGoal, onEditGoal, onDeleteGoal, onDuplicateGoal, onMarkDone, onDelete, onDuplicateTask, onCreateTask, onEditTask }) {
   const [adding, setAdding] = useState(false)
   const [newTitle, setNewTitle] = useState('')
   const [newGoalTasks, setNewGoalTasks] = useState([''])
@@ -571,13 +571,24 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
                 </div>
               )}
               {editingId !== goal.id && (
-                <span
-                  onClick={(e) => { e.stopPropagation(); onDeleteGoal(goal.id) }}
-                  className="absolute top-0.5 right-0.5 w-2.5 h-2.5 rounded-full bg-red-500 hover:bg-red-600 text-white text-[5px] font-semibold flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm z-10"
-                  title="Delete goal"
-                >
-                  &#10005;
-                </span>
+                <>
+                  <span
+                    onClick={(e) => { e.stopPropagation(); onDeleteGoal(goal.id) }}
+                    className="absolute top-0.5 right-0.5 w-2.5 h-2.5 rounded-full bg-red-500 hover:bg-red-600 text-white text-[5px] font-semibold flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm z-10"
+                    title="Delete goal"
+                  >
+                    &#10005;
+                  </span>
+                  {onDuplicateGoal && (
+                    <span
+                      onClick={(e) => { e.stopPropagation(); onDuplicateGoal(goal.id) }}
+                      className="absolute top-0.5 right-4 text-[10px] text-gray-400 hover:text-indigo-600 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10 cursor-pointer"
+                      title="Duplicate goal"
+                    >
+                      &#10697;
+                    </span>
+                  )}
+                </>
               )}
               {categoryBadge(goal.category) && (
                 <div className="flex items-center gap-1 mt-0.5">

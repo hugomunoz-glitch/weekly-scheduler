@@ -772,6 +772,65 @@ export default function App() {
     if (error) fetchTasks()
   }
 
+  async function duplicateTask(taskId) {
+    const task = tasks.find(t => t.id === taskId)
+    if (!task) return
+    const { data, error } = await supabase.from('tasks').insert({
+      title: task.title + ' (copy)',
+      notes: task.notes || null,
+      goal_id: task.goal_id || null,
+      start_time: null,
+      end_time: null,
+      due_date: null,
+      status: 'inbox',
+      scheduled_date: null,
+      bucket: null,
+      priority: task.priority || null,
+      category: task.category || null,
+      owner_id: user.id,
+      collaboration_id: task.collaboration_id || null,
+      assigned_to: null,
+      family_member: task.family_member || null,
+      position: 0,
+      due_date_card_position: null,
+      due_date_card_date: null,
+      due_date_card_bucket: null,
+      recurrence_group_id: null,
+      recurrence_freq: null,
+      recurrence_interval: null,
+      recurrence_byday: null,
+      recurrence_end_type: null,
+      recurrence_end_count: null,
+      recurrence_end_date: null
+    }).select().single()
+    if (error) { console.error('duplicateTask failed:', error); return }
+    setTasks(prev => [data, ...prev])
+    if (data.goal_id) {
+      setGoalTasks(prev => [{ id: data.id, title: data.title, goal_id: data.goal_id, status: data.status, due_date: data.due_date, start_time: data.start_time, priority: data.priority, collaboration_id: data.collaboration_id, assigned_to: data.assigned_to }, ...prev])
+    }
+  }
+
+  async function duplicateGoal(goalId) {
+    const goal = goals.find(g => g.id === goalId)
+    if (!goal) return
+    const { data, error } = await supabase.from('goals').insert({
+      title: goal.title + ' (copy)',
+      color: goal.color,
+      owner_id: user.id,
+      collaboration_id: goal.collaboration_id || null,
+      category: goal.category || null,
+      priority: goal.priority || null,
+      family_member: goal.family_member || null,
+      smart_specific: goal.smart_specific || null,
+      smart_measurable: goal.smart_measurable || null,
+      smart_achievable: goal.smart_achievable || null,
+      smart_relevant: goal.smart_relevant || null,
+      smart_timebound: goal.smart_timebound || null
+    }).select().single()
+    if (error) { console.error('duplicateGoal failed:', error); return }
+    setGoals(prev => [...prev, data])
+  }
+
   async function rolloverOverdue() {
     const todayStr = format(today, 'yyyy-MM-dd')
     const ids = overdueTasks.map(t => t.id)
@@ -830,7 +889,8 @@ export default function App() {
     onMoveToInbox: moveToInbox, onDelete: requestDeleteTask, onEdit: setEditingTask, onAssignTask: assignTask,
     onAddTask: () => setShowAdd(true), onAddTaskForDay: openAddForDay, onAddTaskForBucket: openAddForBucket, onCreateTask: addTask, onRollover: rolloverOverdue,
     rolloverMode, onRolloverModeChange: mode => { setRolloverMode(mode); localStorage.setItem('rolloverMode', mode) },
-    onAddGoal: addGoal, onEditGoal: editGoal, onDeleteGoal: deleteGoal,
+    onAddGoal: addGoal, onEditGoal: editGoal, onDeleteGoal: deleteGoal, onDuplicateGoal: duplicateGoal,
+    onDuplicateTask: duplicateTask,
     onPrevWeek: () => setWeekStart(w => subWeeks(w, 1)),
     onNextWeek: () => setWeekStart(w => addWeeks(w, 1)),
     onThisWeek: () => setWeekStart(startOfWeek(new Date(), { weekStartsOn: 1 }))
@@ -886,15 +946,15 @@ export default function App() {
             </div>
           </header>
           <div className="mx-3 mt-3 rounded-xl border border-gray-200 shadow-sm overflow-hidden shrink-0">
-            <GoalsBar goals={visibleGoals} goalTasks={visibleGoalTasks} allTasks={visibleTasks} collabMap={collabMap} collaborations={collaborations} defaultCollaborationId={defaultCollaborationId} onAddGoal={addGoal} onEditGoal={editGoal} onDeleteGoal={deleteGoal} onMarkDone={markDone} onDelete={requestDeleteTask} onCreateTask={addTask} onEditTask={setEditingTask} />
+            <GoalsBar goals={visibleGoals} goalTasks={visibleGoalTasks} allTasks={visibleTasks} collabMap={collabMap} collaborations={collaborations} defaultCollaborationId={defaultCollaborationId} onAddGoal={addGoal} onEditGoal={editGoal} onDeleteGoal={deleteGoal} onDuplicateGoal={duplicateGoal} onMarkDone={markDone} onDelete={requestDeleteTask} onDuplicateTask={duplicateTask} onCreateTask={addTask} onEditTask={setEditingTask} />
           </div>
           <div className="flex flex-1 overflow-hidden gap-3 p-3">
             <main className="flex-1 overflow-x-auto overflow-y-auto rounded-xl border border-gray-200 shadow-sm bg-white p-4">
               {loading ? <div className="flex items-center justify-center h-full text-sm text-gray-400">Loading</div> : (
                 <>
-                  {calView === 'week' && <WeekGrid days={weekDays} tasksForDay={tasksForDay} dueCardsForDay={dueCardsForDay} goalMap={goalMap} collabMap={collabMap} profileMap={profileMap} onMarkDone={markDone} onRescheduleToTomorrow={rescheduleToTomorrow} onMoveToInbox={moveToInbox} onDelete={requestDeleteTask} onEdit={setEditingTask} onAddTaskForDay={openAddForDay} onAddTaskForBucket={openAddForBucket} />}
+                  {calView === 'week' && <WeekGrid days={weekDays} tasksForDay={tasksForDay} dueCardsForDay={dueCardsForDay} goalMap={goalMap} collabMap={collabMap} profileMap={profileMap} onMarkDone={markDone} onRescheduleToTomorrow={rescheduleToTomorrow} onMoveToInbox={moveToInbox} onDelete={requestDeleteTask} onEdit={setEditingTask} onDuplicate={duplicateTask} onAddTaskForDay={openAddForDay} onAddTaskForBucket={openAddForBucket} />}
                   {calView === 'month' && <MonthView tasks={visibleTasks} onDayClick={(day) => { setCalView('week'); setWeekStart(startOfWeek(day, { weekStartsOn: 1 })) }} />}
-                  {calView === 'day' && <DayView tasks={visibleTasks} goalMap={goalMap} collabMap={collabMap} profileMap={profileMap} onMarkDone={markDone} onRescheduleToTomorrow={rescheduleToTomorrow} onMoveToInbox={moveToInbox} onDelete={requestDeleteTask} onEdit={setEditingTask} onAddTaskForBucket={openAddForBucket} />}
+                  {calView === 'day' && <DayView tasks={visibleTasks} goalMap={goalMap} collabMap={collabMap} profileMap={profileMap} onMarkDone={markDone} onRescheduleToTomorrow={rescheduleToTomorrow} onMoveToInbox={moveToInbox} onDelete={requestDeleteTask} onEdit={setEditingTask} onDuplicate={duplicateTask} onAddTaskForBucket={openAddForBucket} />}
                   {calView === 'year' && <YearView tasks={visibleTasks} onMonthClick={() => setCalView('month')} onDayClick={(day) => { setCalView('week'); setWeekStart(startOfWeek(day, { weekStartsOn: 1 })) }} />}
                 </>
               )}

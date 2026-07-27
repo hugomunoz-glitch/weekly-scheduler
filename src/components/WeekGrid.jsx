@@ -1,6 +1,6 @@
 import DayColumn from './DayColumn'
 
-export default function WeekGrid({ days, tasksForDay, dueCardsForDay, goalMap, collabMap, profileMap, onMarkDone, onRescheduleToTomorrow, onMoveToInbox, onDelete, onEdit, onAddTaskForBucket }) {
+export default function WeekGrid({ days, tasksForDay, dueCardsForDay, goalMap, collabMap, profileMap, onMarkDone, onRescheduleToTomorrow, onMoveToInbox, onDelete, onEdit, onDuplicate, onAddTaskForBucket }) {
   return (
     <div className="grid grid-cols-7 gap-2 min-w-[840px] h-full min-h-[500px]">
       {days.map(day => (
@@ -17,6 +17,7 @@ export default function WeekGrid({ days, tasksForDay, dueCardsForDay, goalMap, c
           onMoveToInbox={onMoveToInbox}
           onDelete={onDelete}
           onEdit={onEdit}
+          onDuplicate={onDuplicate}
           onAddTaskForBucket={onAddTaskForBucket}
         />
       ))}
