@@ -1,7 +1,37 @@
 import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import { requestNotificationPermission, getNotificationPermission, scheduleDailyNotifications } from '../lib/notifications'
 
-export default function SettingsDropdown({ onOpenCollaborations }) {
+function NotificationRow({ tasks }) {
+  const [permission, setPermission] = useState(getNotificationPermission())
+  async function enable() {
+    const result = await requestNotificationPermission()
+    setPermission(result)
+    if (result === 'granted') scheduleDailyNotifications(tasks || [])
+  }
+  if (permission === 'unsupported') return null
+  if (permission === 'denied') return (
+    <div className="px-3 py-2 border-t border-gray-100">
+      <p className="text-xs text-gray-400">Notifications blocked — enable in browser settings.</p>
+    </div>
+  )
+  if (permission === 'granted') return (
+    <div className="px-3 py-2 border-t border-gray-100">
+      <p className="text-xs text-gray-500 font-medium mb-0.5">🔔 Notifications on</p>
+      <p className="text-[11px] text-gray-400">Morning 8 AM · Afternoon 12 PM · Evening 5 PM</p>
+    </div>
+  )
+  return (
+    <div className="px-3 py-2 border-t border-gray-100">
+      <button onClick={enable} className="text-xs text-indigo-600 hover:text-indigo-800 font-medium">
+        Enable notifications
+      </button>
+      <p className="text-[11px] text-gray-400 mt-0.5">Daily task reminders by bucket</p>
+    </div>
+  )
+}
+
+export default function SettingsDropdown({ onOpenCollaborations, tasks }) {
   const { user, profile, signOut, updateEmail, updatePassword, updateUsername } = useAuth()
   const [open, setOpen] = useState(false)
   const [section, setSection] = useState(null) // 'email' | 'password' | 'username' | null
@@ -177,6 +207,7 @@ export default function SettingsDropdown({ onOpenCollaborations }) {
               </button>
             )}
 
+            <NotificationRow tasks={tasks} />
             <button
               onClick={() => { setOpen(false); onOpenCollaborations() }}
               className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 border-t border-gray-100"

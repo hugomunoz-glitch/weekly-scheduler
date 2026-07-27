@@ -102,6 +102,8 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
   const [recurEndDate, setRecurEndDate] = useState(isRecurring ? (editingTask.recurrence_end_date || '') : '')
   const [showScopeChoice, setShowScopeChoice] = useState(false)
   const inputRef = useRef(null)
+  const hasExistingOptions = !!(editingTask && (editingTask.goal_id || editingTask.start_time || editingTask.due_date || editingTask.scheduled_date || editingTask.priority || editingTask.category || editingTask.collaboration_id))
+  const [optionsOpen, setOptionsOpen] = useState(hasExistingOptions)
 
   useEffect(() => { inputRef.current?.focus() }, [])
   useEffect(() => {
@@ -258,7 +260,12 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
             className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 resize-none"
           />
           )}
-          <div className="flex flex-wrap gap-3">
+          <button type="button" onClick={() => setOptionsOpen(o => !o)}
+            className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700 py-0.5">
+            <span style={{ display: 'inline-block', transform: optionsOpen ? 'rotate(90deg)' : 'none', transition: 'transform 0.15s', fontSize: '9px' }}>▶</span>
+            Options
+          </button>
+          {optionsOpen && <><div className="flex flex-wrap gap-3">
             <div className="flex-1 min-w-0">
               <label className="block text-xs font-medium text-gray-500 mb-1">Goal</label>
               <select
@@ -575,6 +582,7 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
           </div>
           {bulkMode && bulkError && <p className="text-xs text-red-500">{bulkError}</p>}
           {!bulkMode && submitError && <p className="text-xs text-red-500">{submitError}</p>}
+          </>}
           <div className="flex gap-2 pt-1">
             {showScopeChoice ? (
               <>

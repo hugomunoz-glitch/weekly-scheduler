@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { startOfWeek, addWeeks, subWeeks, addDays, addMonths, addYears, format, parseISO, isBefore, isAfter, getDay, startOfDay } from 'date-fns'
 import { DragDropContext } from '@hello-pangea/dnd'
 import { supabase } from './lib/supabase'
@@ -18,6 +18,7 @@ import ExportMenu from './components/ExportMenu'
 import MonthView from './components/MonthView'
 import DayView from './components/DayView'
 import YearView from './components/YearView'
+import { registerServiceWorker, scheduleDailyNotifications, getNotificationPermission } from './lib/notifications'
 
 function useWarmupSensor(api) {
   useEffect(() => {
@@ -176,6 +177,16 @@ export default function App() {
   }, [user])
 
   useEffect(() => { fetchTasks() }, [fetchTasks])
+
+  // Register service worker once on mount
+  useEffect(() => { registerServiceWorker() }, [])
+
+  // Reschedule notifications whenever tasks change
+  useEffect(() => {
+    if (tasks.length > 0 && getNotificationPermission() === 'granted') {
+      scheduleDailyNotifications(tasks)
+    }
+  }, [tasks])
 
   const COLLAB_COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316']
   const collabMap = Object.fromEntries(collaborations.map((c, i) => [c.id, { name: c.name, color: COLLAB_COLORS[i % COLLAB_COLORS.length] }]))
@@ -858,7 +869,7 @@ export default function App() {
               <ExportMenu tasks={visibleTasks} goals={visibleGoals} weekStart={weekStart} />
               <button onClick={() => setShowReflect(true)} className="px-3 py-1.5 text-sm font-medium text-indigo-600 border border-indigo-200 rounded-lg hover:bg-indigo-50">Reflect</button>
               <button onClick={() => setShowAdd(true)} className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700">+ Add task</button>
-              <SettingsDropdown onOpenCollaborations={() => setShowCollab(true)} />
+              <SettingsDropdown onOpenCollaborations={() => setShowCollab(true)} tasks={tasks} />
             </div>
           </header>
           <div className="mx-3 mt-3 rounded-xl border border-gray-200 shadow-sm overflow-hidden shrink-0">
