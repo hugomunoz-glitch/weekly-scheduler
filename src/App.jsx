@@ -880,7 +880,7 @@ export default function App() {
   })()
   const taskCategories = [...new Set(visibleTasks.map(t => t.category).filter(Boolean))].sort()
   const tasksForDay = (date) => visibleTasks.filter(t => t.scheduled_date === format(date, 'yyyy-MM-dd'))
-  const dueCardsForDay = (date) => visibleTasks.filter(t => t.due_date_card_date === format(date, 'yyyy-MM-dd') && t.scheduled_date !== t.due_date_card_date)
+  const dueCardsForDay = (date) => visibleTasks.filter(t => t.due_date_card_date === format(date, 'yyyy-MM-dd'))
   const openAddForDay = (date) => { setAddForDate(format(date, 'yyyy-MM-dd')); setAddForTime(null); setAddForBucket(null); setShowAdd(true) }
   const openAddForBucket = (date, bucketId) => {
     setAddForDate(format(date, 'yyyy-MM-dd'))
