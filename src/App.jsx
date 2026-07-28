@@ -655,6 +655,33 @@ export default function App() {
     return data
   }
 
+  async function duplicateGoal(goalId) {
+    const src = goals.find(g => g.id === goalId)
+    if (!src) return
+    const payload = {
+      title: src.title + ' (copy)',
+      color: src.color,
+      owner_id: user.id,
+      collaboration_id: src.collaboration_id || null,
+      category: src.category || null,
+      priority: src.priority || null,
+      family_member: src.family_member || null,
+      smart_specific: src.smart_specific || null,
+      smart_measurable: src.smart_measurable || null,
+      smart_achievable: src.smart_achievable || null,
+      smart_relevant: src.smart_relevant || null,
+      smart_timebound: src.smart_timebound || null,
+    }
+    const { data, error } = await supabase.from('goals').insert(payload).select().single()
+    if (error) { console.error('duplicateGoal failed:', error); return }
+    setGoals(prev => {
+      const idx = prev.findIndex(g => g.id === goalId)
+      const next = [...prev]
+      next.splice(idx + 1, 0, data)
+      return next
+    })
+  }
+
   async function editGoal(goalId, title, extra, collaborationId) {
     const payload = { title }
     if (collaborationId !== undefined) payload.collaboration_id = collaborationId || null
