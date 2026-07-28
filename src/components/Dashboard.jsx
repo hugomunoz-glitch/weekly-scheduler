@@ -231,6 +231,32 @@ export default function Dashboard({ tasks, goals, goalTasks, collaborations, col
                 <StatTile value={activeGoals} label="Goals with progress" />
               </div>
 
+              {/* ── task breakdown ── */}
+              <section>
+                <h3 className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Where Your Time Goes</h3>
+                {chartData.length === 0 ? (
+                  <div className="rounded-xl border border-gray-200 bg-white p-6 text-center text-sm text-gray-300">
+                    No tasks scheduled this week yet.
+                  </div>
+                ) : (
+                  <div className="rounded-xl border border-gray-200 bg-white p-4 flex items-center gap-6">
+                    <DonutChart data={chartData} />
+                    <div className="flex flex-col gap-2 flex-1 min-w-0">
+                      {chartData.map(d => (
+                        <div key={d.label} className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: d.color }} />
+                          <span className="text-sm text-gray-600 truncate flex-1 min-w-0">{d.label}</span>
+                          <span className="text-sm tabular-nums font-medium text-gray-800 shrink-0">{d.value}</span>
+                          <span className="text-xs tabular-nums text-gray-400 w-9 text-right shrink-0">
+                            {Math.round((d.value / chartData.reduce((s, x) => s + x.value, 0)) * 100)}%
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </section>
+
               {/* ── goal momentum ── */}
               {goalsWithProgress.length > 0 && (
                 <section>
@@ -262,32 +288,6 @@ export default function Dashboard({ tasks, goals, goalTasks, collaborations, col
                   </div>
                 </section>
               )}
-
-              {/* ── task breakdown ── */}
-              <section>
-                <h3 className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Where Your Time Goes</h3>
-                {chartData.length === 0 ? (
-                  <div className="rounded-xl border border-gray-200 bg-white p-6 text-center text-sm text-gray-300">
-                    No tasks scheduled this week yet.
-                  </div>
-                ) : (
-                  <div className="rounded-xl border border-gray-200 bg-white p-4 flex items-center gap-6">
-                    <DonutChart data={chartData} />
-                    <div className="flex flex-col gap-2 flex-1 min-w-0">
-                      {chartData.map(d => (
-                        <div key={d.label} className="flex items-center gap-2">
-                          <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: d.color }} />
-                          <span className="text-sm text-gray-600 truncate flex-1 min-w-0">{d.label}</span>
-                          <span className="text-sm tabular-nums font-medium text-gray-800 shrink-0">{d.value}</span>
-                          <span className="text-xs tabular-nums text-gray-400 w-9 text-right shrink-0">
-                            {Math.round((d.value / chartData.reduce((s, x) => s + x.value, 0)) * 100)}%
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </section>
             </>
           ) : (
             /* ── team view ── */
