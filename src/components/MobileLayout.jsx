@@ -720,7 +720,6 @@ function MobileDayView({ date, tasks, dueCards, goalMap, collabMap, profileMap, 
         })
         const bucketDueCards = (dueCards || []).filter(t => (t.due_date_card_bucket || 'morning') === bucket.id).sort((a, b) => (a.due_date_card_position || 0) - (b.due_date_card_position || 0))
         const droppableId = bucket.id + '-' + dateStr
-        const dueDroppableId = bucket.id + '-due-' + dateStr
         return (
           <div key={bucket.id} style={{ marginBottom: '16px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
@@ -744,32 +743,22 @@ function MobileDayView({ date, tasks, dueCards, goalMap, collabMap, profileMap, 
                       }}
                     </Draggable>
                   ))}
+                  {bucketDueCards.map((task, index) => (
+                    <Draggable key={task.id + '__due__'} draggableId={task.id + '__due__'} index={bucketAll.length + index} isDragDisabled={task.status === 'done'}>
+                      {(provided, snapshot) => {
+                        const card = (
+                          <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps} style={{ ...provided.draggableProps.style, marginBottom: '6px', WebkitTouchCallout: 'none', WebkitUserSelect: 'none', userSelect: 'none', touchAction: 'manipulation' }}>
+                            <TaskCard task={task} isDone={task.status === 'done'} isDragging={snapshot.isDragging} isDueCard collabBadge={task.collaboration_id && collabMap ? collabMap[task.collaboration_id] : null} assigneeName={task.assigned_to && profileMap ? profileMap[task.assigned_to] : null} onMarkDone={onMarkDone} onRescheduleToTomorrow={onRescheduleToTomorrow} onMoveToInbox={onMoveToInbox} onDelete={onDelete} onEdit={onEdit} onDuplicate={onDuplicateTask} />
+                          </div>
+                        )
+                        return snapshot.isDragging ? createPortal(card, document.body) : card
+                      }}
+                    </Draggable>
+                  ))}
                   {provided.placeholder}
                 </div>
               )}
             </Droppable>
-            {bucketDueCards.length > 0 && (
-              <Droppable droppableId={dueDroppableId}>
-                {(provided, snapshot) => (
-                  <div ref={provided.innerRef} {...provided.droppableProps}
-                    style={{ minHeight: '10px', background: snapshot.isDraggingOver ? '#eef2ff' : 'transparent', borderRadius: '8px', padding: '2px', transition: 'background 0.15s' }}>
-                    {bucketDueCards.map((task, index) => (
-                      <Draggable key={task.id + '__due__'} draggableId={task.id + '__due__'} index={index} isDragDisabled={task.status === 'done'}>
-                        {(provided, snapshot) => {
-                          const card = (
-                            <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps} style={{ ...provided.draggableProps.style, marginBottom: '6px', WebkitTouchCallout: 'none', WebkitUserSelect: 'none', userSelect: 'none', touchAction: 'manipulation' }}>
-                              <TaskCard task={task} isDone={task.status === 'done'} isDragging={snapshot.isDragging} isDueCard collabBadge={task.collaboration_id && collabMap ? collabMap[task.collaboration_id] : null} assigneeName={task.assigned_to && profileMap ? profileMap[task.assigned_to] : null} onMarkDone={onMarkDone} onRescheduleToTomorrow={onRescheduleToTomorrow} onMoveToInbox={onMoveToInbox} onDelete={onDelete} onEdit={onEdit} onDuplicate={onDuplicateTask} />
-                            </div>
-                          )
-                          return snapshot.isDragging ? createPortal(card, document.body) : card
-                        }}
-                      </Draggable>
-                    ))}
-                    {provided.placeholder}
-                  </div>
-                )}
-              </Droppable>
-            )}
           </div>
         )
       })}

@@ -231,18 +231,25 @@ export default function App() {
 
     if (isDueCard) {
       try {
+        // Due cards now share droppables with regular tasks: 'bucket-YYYY-MM-DD'
         const destParts = destination.droppableId.split('-')
         const destBucket = destParts[0]
-        const destDateStr = destParts.slice(2).join('-')
+        const destDateStr = destParts.slice(1).join('-')
+
         if (destination.droppableId === source.droppableId) {
-          const siblings = visibleTasks.filter(t => t.due_date_card_date === destDateStr && (t.due_date_card_bucket || 'morning') === destBucket).sort((a, b) => (a.due_date_card_position || 0) - (b.due_date_card_position || 0))
+          // Reorder within same bucket — find card by id, not by raw index (which includes regular tasks)
+          const siblings = visibleTasks
+            .filter(t => t.due_date_card_date === destDateStr && (t.due_date_card_bucket || 'morning') === destBucket)
+            .sort((a, b) => (a.due_date_card_position || 0) - (b.due_date_card_position || 0))
+          const srcIdx = siblings.findIndex(t => t.id === taskId)
+          if (srcIdx === -1) { fetchTasks(); return }
           const reordered = Array.from(siblings)
-          const [moved] = reordered.splice(source.index, 1)
-          if (!moved) { fetchTasks(); return }
-          reordered.splice(destination.index, 0, moved)
-          const updatedPositions = Object.fromEntries(reordered.filter(Boolean).map((t, i) => [t.id, i]))
+          const [moved] = reordered.splice(srcIdx, 1)
+          const destIdx = Math.min(Math.max(destination.index, 0), reordered.length)
+          reordered.splice(destIdx, 0, moved)
+          const updatedPositions = Object.fromEntries(reordered.map((t, i) => [t.id, i]))
           requestAnimationFrame(() => setTasks(prev => prev.map(t => updatedPositions[t.id] !== undefined ? { ...t, due_date_card_position: updatedPositions[t.id] } : t)))
-          await Promise.all(reordered.filter(Boolean).map((t, i) => supabase.from('tasks').update({ due_date_card_position: i }).eq('id', t.id)))
+          await Promise.all(reordered.map((t, i) => supabase.from('tasks').update({ due_date_card_position: i }).eq('id', t.id)))
         } else {
           const newPosition = destination.index
           requestAnimationFrame(() => setTasks(prev => prev.map(t => t.id === taskId ? { ...t, due_date_card_date: destDateStr, due_date_card_bucket: destBucket, due_date_card_position: newPosition } : t)))
