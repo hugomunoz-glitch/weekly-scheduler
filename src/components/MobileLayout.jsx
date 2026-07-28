@@ -1423,6 +1423,7 @@ export default function MobileLayout({
           profileMap={profileMap}
           weekStart={weekStart}
           onClose={() => setShowDashboard(false)}
+          onEditGoal={onEditGoal}
           isMobile={true}
         />
       )}
