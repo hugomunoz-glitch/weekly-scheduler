@@ -475,15 +475,6 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
             title={goal.priority ? PRIORITY_LABELS[goal.priority] + ' priority' : undefined}
             onClick={(e) => openPopup(goal.id, e)}
           >
-            {editingId !== goal.id && (
-              <button
-                onClick={(e) => { e.stopPropagation(); onDeleteGoal(goal.id) }}
-                className="hidden md:flex absolute -top-2 -right-2 w-4 h-4 rounded-full bg-red-500 hover:bg-red-600 text-white text-[9px] font-semibold items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm z-10"
-                title="Delete goal"
-              >
-                &#10005;
-              </button>
-            )}
             <div className="flex-1 min-w-0">
               {editingId === goal.id ? (
                 <form onSubmit={(e) => handleEditSubmit(e, goal.id)} className="space-y-1" onClick={(e) => e.stopPropagation()}>
@@ -615,6 +606,11 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
                       title="Duplicate goal"
                     >&#10697;</button>
                   )}
+                  <button
+                    onClick={() => onDeleteGoal(goal.id)}
+                    className="text-base text-red-400 hover:text-red-600 px-1 py-0.5 rounded transition-colors ml-auto"
+                    title="Delete goal"
+                  >&#128465;</button>
                 </div>
               )}
               {viewingGoalId === goal.id && popupPos && (
