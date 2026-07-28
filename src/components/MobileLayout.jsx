@@ -1441,11 +1441,10 @@ export default function MobileLayout({
           { id: 'goals', label: 'Goals', emoji: '&#127919;' },
           { id: 'inbox', label: 'Task List', emoji: '&#128221;', badge: inboxTasks.filter(t => t.status !== 'done').length },
           { id: 'dashboard', label: 'Dashboard', emoji: '&#128202;' },
-          { id: 'vision', label: 'Vision', isVision: true },
           { id: 'assistant', label: 'Assistant', emoji: '&#129302;' },
           { id: 'settings', label: 'Settings', emoji: '&#9881;' }
         ].map(tab => (
-          <button key={tab.id} onClick={() => { if (tab.id === 'dashboard') { setShowDashboard(true) } else if (tab.id === 'vision') { setShowVisionMission(true) } else { setActiveTab(tab.id); setMobileCalView('week') } }}
+          <button key={tab.id} onClick={() => { if (tab.id === 'dashboard') { setShowDashboard(true) } else { setActiveTab(tab.id); setMobileCalView('week') } }}
             style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0', position: 'relative' }}>
             <div style={{ width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               {tab.id === 'day' ? (
@@ -1456,8 +1455,6 @@ export default function MobileLayout({
                   <rect x="0" y="4" width="34" height="9" fill={activeTab === 'day' ? '#6366f1' : '#9ca3af'} />
                   <text x="17" y="24" textAnchor="middle" fill={activeTab === 'day' ? '#4338ca' : '#374151'} fontSize="13" fontWeight="600">{new Date().getDate()}</text>
                 </svg>
-              ) : tab.isVision ? (
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
               ) : (
                 <span style={{ fontSize: '22px', lineHeight: 1 }} dangerouslySetInnerHTML={{ __html: tab.emoji }} />
               )}
