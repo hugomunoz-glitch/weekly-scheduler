@@ -537,52 +537,93 @@ export default function Dashboard({ tasks, goals, goalTasks, collaborations, col
             </>
           ) : (
             /* ── team view ── */
-            <section>
-              <h3 className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Team This Week</h3>
-              {collaborations.length === 0 ? (
-                <div className="rounded-xl border border-gray-200 bg-white p-6 text-center text-sm text-gray-300">
-                  No collaborations yet. Add one via Settings.
-                </div>
-              ) : (
-                <div className="flex flex-col gap-3">
-                  {collaborations.map(collab => {
-                    const members = collabMembersMap[collab.id] || []
-                    const color = collabMap[collab.id]?.color || '#6366f1'
-                    return (
-                      <div key={collab.id} className="rounded-xl border border-gray-200 bg-white p-4">
-                        <div className="flex items-center gap-2 mb-3">
-                          <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
-                          <p className="text-sm font-semibold text-gray-800">{collab.name}</p>
-                        </div>
-                        {members.length === 0 ? (
-                          <p className="text-xs text-gray-300">No members yet.</p>
-                        ) : (
-                          <div className="flex flex-col gap-2">
-                            {members.map(m => {
-                              const done = memberDone[m.id] || 0
-                              const weekDoneCount = memberWeekDone[m.id] || 0
-                              return (
-                                <div key={m.id} className="flex items-center gap-3">
-                                  <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 text-white" style={{ backgroundColor: color }}>
-                                    {m.username.slice(0, 2).toUpperCase()}
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <p className="text-sm text-gray-800 font-medium truncate">{m.username}</p>
-                                    <p className="text-xs text-gray-400 tabular-nums">
-                                      {weekDoneCount} done this week · {done} total
-                                    </p>
-                                  </div>
-                                </div>
-                              )
-                            })}
+            <>
+              <section>
+                <h3 className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Team This Week</h3>
+                {collaborations.length === 0 ? (
+                  <div className="rounded-xl border border-gray-200 bg-white p-6 text-center text-sm text-gray-300">
+                    No collaborations yet. Add one via Settings.
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-3">
+                    {collaborations.map(collab => {
+                      const members = collabMembersMap[collab.id] || []
+                      const color = collabMap[collab.id]?.color || '#6366f1'
+                      return (
+                        <div key={collab.id} className="rounded-xl border border-gray-200 bg-white p-4">
+                          <div className="flex items-center gap-2 mb-3">
+                            <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                            <p className="text-sm font-semibold text-gray-800">{collab.name}</p>
                           </div>
-                        )}
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
-            </section>
+                          {members.length === 0 ? (
+                            <p className="text-xs text-gray-300">No members yet.</p>
+                          ) : (
+                            <div className="flex flex-col gap-2">
+                              {members.map(m => {
+                                const done = memberDone[m.id] || 0
+                                const weekDoneCount = memberWeekDone[m.id] || 0
+                                return (
+                                  <div key={m.id} className="flex items-center gap-3">
+                                    <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 text-white" style={{ backgroundColor: color }}>
+                                      {m.username.slice(0, 2).toUpperCase()}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-sm text-gray-800 font-medium truncate">{m.username}</p>
+                                      <p className="text-xs text-gray-400 tabular-nums">
+                                        {weekDoneCount} done this week · {done} total
+                                      </p>
+                                    </div>
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </section>
+
+              {/* ── shared goal momentum ── */}
+              {(() => {
+                const sharedGoals = goalsWithProgress.filter(g => g.collaboration_id)
+                if (sharedGoals.length === 0) return null
+                return (
+                  <section>
+                    <h3 className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Shared Goal Momentum</h3>
+                    <div className="flex flex-col gap-2">
+                      {sharedGoals.map(g => {
+                        const collabColor = g.collaboration_id && collabMap[g.collaboration_id]?.color
+                        return (
+                          <div key={g.id} className="rounded-xl border border-gray-200 bg-white px-4 py-3 flex items-center gap-4">
+                            <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: g.displayColor }} />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between gap-2 mb-1.5">
+                                <p className="text-sm font-medium text-gray-800 truncate">{g.title}</p>
+                                <div className="flex items-center gap-2 shrink-0">
+                                  {collabColor && (
+                                    <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: collabColor }} title={collabMap[g.collaboration_id]?.name} />
+                                  )}
+                                  {g.streak > 0 && (
+                                    <span className="text-xs text-orange-500 font-medium tabular-nums">🔥 {g.streak}d</span>
+                                  )}
+                                  <span className="text-xs text-gray-400 tabular-nums">{g.done}/{g.total}</span>
+                                </div>
+                              </div>
+                              <div className="h-1.5 rounded-full bg-gray-100 overflow-hidden">
+                                <div className="h-full rounded-full transition-all duration-500" style={{ width: `${g.pct}%`, backgroundColor: g.displayColor }} />
+                              </div>
+                            </div>
+                            <span className="text-sm font-semibold tabular-nums text-gray-700 w-9 text-right shrink-0">{g.pct}%</span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </section>
+                )
+              })()}
+            </>
           )}
         </div>
       </div>
