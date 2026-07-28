@@ -54,7 +54,8 @@ function DonutChart({ data }) {
   const cx = size / 2, cy = size / 2
   const circumference = 2 * Math.PI * r
   const GAP = 3
-  const total = data.reduce((s, d) => s + d.value, 0)
+  const nonZero = data.filter(d => d.value > 0)
+  const total = nonZero.reduce((s, d) => s + d.value, 0)
   const [hovered, setHovered] = useState(null)
 
   if (total === 0) {
@@ -66,14 +67,14 @@ function DonutChart({ data }) {
   }
 
   let offset = 0
-  const segments = data.map(d => {
+  const segments = nonZero.map(d => {
     const length = Math.max(0, (d.value / total) * circumference - GAP)
     const dashOffset = circumference - offset
     offset += length + GAP
     return { ...d, length, dashOffset }
   })
 
-  const active = hovered != null ? data[hovered] : null
+  const active = hovered != null ? nonZero[hovered] : null
 
   return (
     <div className="relative flex items-center justify-center shrink-0">
@@ -132,10 +133,11 @@ function MobileDonutChart({ data, size = 110 }) {
   const cx = size / 2, cy = size / 2
   const circumference = 2 * Math.PI * r
   const GAP = 3
-  const total = data.reduce((s, d) => s + d.value, 0)
+  const nonZero = data.filter(d => d.value > 0)
+  const total = nonZero.reduce((s, d) => s + d.value, 0)
   if (total === 0) return null
   let offset = 0
-  const segments = data.map(d => {
+  const segments = nonZero.map(d => {
     const length = Math.max(0, (d.value / total) * circumference - GAP)
     const dashOffset = circumference - offset
     offset += length + GAP
@@ -198,21 +200,32 @@ export default function Dashboard({ tasks, goals, goalTasks, collaborations, col
     return { ...g, done, total: linked.length, pct, streak, displayColor }
   }).sort((a, b) => b.pct - a.pct)
 
-  // donut: goals by category
+  // donut: goals by category — always show all 8 standard categories
   const DONUT_COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#06b6d4', '#ec4899', '#84cc16']
+  const STANDARD_GOAL_CATEGORIES = [
+    'Career/Professional', 'Family', 'Financial', 'Intellectual',
+    'Physical (Health/Wellness)', 'Relationships',
+    'Social (Community/Volunteering)', 'Spiritual (Prayer/Church)'
+  ]
   const goalCatCounts = {}
   goals.forEach(g => {
     const badge = g.category ? categoryBadge(g.category) : null
     const key = badge ? badge.name : 'Uncategorized'
     goalCatCounts[key] = (goalCatCounts[key] || 0) + 1
   })
-  const chartData = Object.entries(goalCatCounts)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 7)
-    .map(([cat, count], i) => {
-      const badge = categoryBadge(cat)
-      return { label: cat, value: count, color: badge?.color || DONUT_COLORS[i % DONUT_COLORS.length] }
-    })
+  // All standard categories (with 0 if no goals), plus any custom/uncategorized
+  const allCats = STANDARD_GOAL_CATEGORIES.map(cat => {
+    const badge = categoryBadge(cat)
+    return { label: badge.name, value: goalCatCounts[badge.name] || 0, color: badge.color }
+  })
+  // Add any non-standard categories found in goals
+  Object.entries(goalCatCounts).forEach(([name, count]) => {
+    if (!allCats.find(c => c.label === name)) {
+      const badge = categoryBadge(name)
+      allCats.push({ label: name, value: count, color: badge?.color || DONUT_COLORS[allCats.length % DONUT_COLORS.length] })
+    }
+  })
+  const chartData = allCats.sort((a, b) => b.value - a.value)
 
   // ── team stats ──
   const memberDone = {}
@@ -319,13 +332,14 @@ export default function Dashboard({ tasks, goals, goalTasks, collaborations, col
                   <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 7, minWidth: 0 }}>
                     {chartData.map(d => {
                       const total = chartData.reduce((s, x) => s + x.value, 0)
+                      const isEmpty = d.value === 0
                       return (
                         <div key={d.label} style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                          <div style={{ width: 8, height: 8, borderRadius: '50%', background: d.color, flexShrink: 0 }} />
-                          <span style={{ fontSize: 12, color: '#374151', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.label}</span>
-                          <span style={{ fontSize: 12, fontWeight: 600, color: '#111827', flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>{d.value}</span>
+                          <div style={{ width: 8, height: 8, borderRadius: '50%', background: isEmpty ? '#e5e7eb' : d.color, flexShrink: 0 }} />
+                          <span style={{ fontSize: 12, color: isEmpty ? '#d1d5db' : '#374151', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.label}</span>
+                          <span style={{ fontSize: 12, fontWeight: 600, color: isEmpty ? '#d1d5db' : '#111827', flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>{d.value}</span>
                           <span style={{ fontSize: 11, color: '#9ca3af', width: 30, textAlign: 'right', flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>
-                            {Math.round((d.value / total) * 100)}%
+                            {isEmpty ? '—' : Math.round((d.value / total) * 100) + '%'}
                           </span>
                         </div>
                       )
@@ -470,14 +484,14 @@ export default function Dashboard({ tasks, goals, goalTasks, collaborations, col
                 ) : (
                   <div className="rounded-xl border border-gray-200 bg-white p-4 flex items-center gap-6">
                     <DonutChart data={chartData} />
-                    <div className="flex flex-col gap-2 flex-1 min-w-0">
+                    <div className="flex flex-col gap-1.5 flex-1 min-w-0">
                       {chartData.map(d => (
                         <div key={d.label} className="flex items-center gap-2">
-                          <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: d.color }} />
-                          <span className="text-sm text-gray-600 truncate flex-1 min-w-0">{d.label}</span>
-                          <span className="text-sm tabular-nums font-medium text-gray-800 shrink-0">{d.value}</span>
+                          <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: d.value > 0 ? d.color : '#d1d5db' }} />
+                          <span className={`text-sm truncate flex-1 min-w-0 ${d.value === 0 ? 'text-gray-300' : 'text-gray-600'}`}>{d.label}</span>
+                          <span className={`text-sm tabular-nums font-medium shrink-0 ${d.value === 0 ? 'text-gray-300' : 'text-gray-800'}`}>{d.value}</span>
                           <span className="text-xs tabular-nums text-gray-400 w-9 text-right shrink-0">
-                            {Math.round((d.value / chartData.reduce((s, x) => s + x.value, 0)) * 100)}%
+                            {d.value === 0 ? '—' : Math.round((d.value / chartData.reduce((s, x) => s + x.value, 0)) * 100) + '%'}
                           </span>
                         </div>
                       ))}

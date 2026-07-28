@@ -541,10 +541,15 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
               title="More actions"
             >&#8942;</button>
           </div>
-          {categoryBadge(goal.category) && (
+          {categoryBadge(goal.category) ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px', paddingLeft: '2px' }}>
               <span style={{ fontSize: '10px', fontWeight: 500, padding: '2px 6px', borderRadius: '4px', color: categoryBadge(goal.category).color, background: categoryBadge(goal.category).color + '1a' }}>{categoryBadge(goal.category).name}</span>
             </div>
+          ) : (
+            <button
+              onClick={(e) => { e.stopPropagation(); startEditGoal(goal) }}
+              style={{ fontSize: '10px', fontWeight: 500, padding: '2px 6px', borderRadius: '4px', border: '1px dashed #d1d5db', color: '#9ca3af', background: 'none', cursor: 'pointer', marginBottom: '6px', display: 'block' }}
+            >+ Category</button>
           )}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingLeft: '2px' }}>
             <div style={{ flex: 1, height: '4px', background: '#f3f4f6', borderRadius: '2px', overflow: 'hidden' }}>
