@@ -33,7 +33,7 @@ function PriorityBadge({ priority }) {
   )
 }
 
-export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations, collabMembersMap, defaultCollaborationId, onAddGoal, onEditGoal, onDeleteGoal, onDuplicateGoal, onMarkDone, onDelete, onDuplicateTask, onCreateTask, onEditTask }) {
+export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations, collabMembersMap, defaultCollaborationId, onAddGoal, onEditGoal, onDeleteGoal, onDuplicateGoal, onMarkDone, onDelete, onDuplicateTask, onCreateTask, onEditTask, activeView, onChangeView }) {
   const [adding, setAdding] = useState(false)
   const [newTitle, setNewTitle] = useState('')
   const [newGoalTasks, setNewGoalTasks] = useState([''])
@@ -357,12 +357,40 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
     <div className="bg-white px-6 pt-4 pb-2 shrink-0">
       <div className="flex items-start gap-3 overflow-x-auto">
       <div className="sticky left-0 z-10 bg-white self-stretch flex items-center gap-3 pr-3 shrink-0">
-        <div className="flex flex-col gap-0.5 shrink-0">
+        <div className="flex flex-col gap-1 shrink-0">
           <span className="text-sm font-semibold text-gray-900 tracking-wide flex items-center gap-1">
             <span style={{ fontSize: 14, lineHeight: 1 }}>🎯</span>
             Goals
           </span>
           <span className="text-[11px] text-gray-400">{completedGoalsCount} of {goals.length} done</span>
+          {onChangeView && (
+            <div className="flex flex-col gap-1 mt-0.5">
+              <div className="flex items-center p-0.5 rounded-lg bg-gray-100 text-[10px] font-medium">
+                {[['all', 'All'], ['personal', 'Personal'], ...(collaborations && collaborations.length > 0 ? [['collab', 'Collabs']] : [])].map(([v, label]) => {
+                  const isCollabActive = v === 'collab' && activeView !== 'all' && activeView !== 'personal'
+                  const isActive = v === 'collab' ? isCollabActive : activeView === v
+                  return (
+                    <button
+                      key={v}
+                      onClick={() => onChangeView(v === 'collab' ? (collaborations[0]?.id || 'all') : v)}
+                      className={'px-2 py-0.5 rounded-md transition-all ' + (isActive ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700')}
+                    >
+                      {label}
+                    </button>
+                  )
+                })}
+              </div>
+              {activeView !== 'all' && activeView !== 'personal' && collaborations && collaborations.length > 1 && (
+                <select
+                  value={activeView}
+                  onChange={e => onChangeView(e.target.value)}
+                  className="text-[10px] border border-gray-200 rounded-lg px-1.5 py-0.5 bg-white focus:outline-none focus:border-indigo-400"
+                >
+                  {collaborations.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+              )}
+            </div>
+          )}
         </div>
         {adding ? (
           <div className="border border-gray-200 rounded-lg p-3 space-y-2 bg-gray-50 shrink-0 w-72">
