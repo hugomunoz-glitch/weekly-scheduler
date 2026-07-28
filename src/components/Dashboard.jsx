@@ -254,6 +254,42 @@ export default function Dashboard({ tasks, goals, goalTasks, collaborations, col
                 aria-label="Close"
               >✕</button>
             </div>
+            {/* date range picker */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', background: '#f3f4f6', borderRadius: 8, padding: 2, gap: 2 }}>
+                {['week', 'custom'].map(m => (
+                  <button
+                    key={m}
+                    onClick={() => setRangeMode(m)}
+                    style={{
+                      padding: '4px 10px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 500,
+                      background: rangeMode === m ? 'white' : 'transparent',
+                      color: rangeMode === m ? '#111827' : '#6b7280',
+                      boxShadow: rangeMode === m ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                    }}
+                  >
+                    {m === 'week' ? 'This week' : 'Custom'}
+                  </button>
+                ))}
+              </div>
+              {rangeMode === 'custom' && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#374151' }}>
+                  <input
+                    type="date"
+                    value={customStart}
+                    onChange={e => setCustomStart(e.target.value)}
+                    style={{ border: '1px solid #e5e7eb', borderRadius: 6, padding: '3px 6px', fontSize: 11, background: 'white', outline: 'none' }}
+                  />
+                  <span style={{ color: '#9ca3af' }}>–</span>
+                  <input
+                    type="date"
+                    value={customEnd}
+                    onChange={e => setCustomEnd(e.target.value)}
+                    style={{ border: '1px solid #e5e7eb', borderRadius: 6, padding: '3px 6px', fontSize: 11, background: 'white', outline: 'none' }}
+                  />
+                </div>
+              )}
+            </div>
           </div>
 
           <div style={{ overflowY: 'auto', padding: '16px', display: 'flex', flexDirection: 'column', gap: 16 }}>
