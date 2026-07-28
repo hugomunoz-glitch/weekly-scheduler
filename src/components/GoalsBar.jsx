@@ -466,6 +466,7 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
         })
         const done = linked.filter(t => t.status === 'done')
         const pct = linked.length > 0 ? Math.round((done.length / linked.length) * 100) : 0
+        const goalDisplayColor = (goal.category ? categoryBadge(goal.category)?.color : null) || goal.color
         return (
           <div
             key={goal.id}
@@ -575,7 +576,7 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
               )}
               <div className="flex items-center gap-1.5 mt-1">
                 <div className="flex-1 h-1 bg-gray-100 rounded-full overflow-hidden">
-                  <div className="h-full rounded-full transition-all" style={{ width: pct + '%', background: goal.color }} />
+                  <div className="h-full rounded-full transition-all" style={{ width: pct + '%', background: goalDisplayColor }} />
                 </div>
                 <span className="text-xs text-gray-400 shrink-0">{pct}%</span>
               </div>
