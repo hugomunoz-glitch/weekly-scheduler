@@ -220,6 +220,25 @@ export default function App() {
 
   const overdueTasks = visibleTasks.filter(t => t.scheduled_date && t.status === 'scheduled' && isBefore(parseISO(t.scheduled_date), today))
 
+  const inboxTasksForDrag = (() => {
+    const groups = {}
+    const standalone = []
+    for (const t of visibleTasks) {
+      if (t.recurrence_group_id) {
+        if (!groups[t.recurrence_group_id]) groups[t.recurrence_group_id] = []
+        groups[t.recurrence_group_id].push(t)
+      } else {
+        standalone.push(t)
+      }
+    }
+    const representatives = Object.values(groups).map(occurrences => {
+      const notDone = occurrences.filter(t => t.status !== 'done').sort((a, b) => (a.scheduled_date || '').localeCompare(b.scheduled_date || ''))
+      if (notDone.length > 0) return notDone[0]
+      return [...occurrences].sort((a, b) => (b.scheduled_date || '').localeCompare(a.scheduled_date || ''))[0]
+    })
+    return [...standalone, ...representatives].sort((a, b) => (a.position || 0) - (b.position || 0))
+  })()
+
   async function onDragEnd(result) {
     const { draggableId, destination, source } = result
     if (!destination) return
@@ -227,7 +246,9 @@ export default function App() {
     if (destination.droppableId.startsWith('goalpopup-')) return
 
     const isDueCard = draggableId.endsWith('__due__')
-    const taskId = isDueCard ? draggableId.slice(0, -7) : draggableId
+    const isListCard = draggableId.endsWith('__list__')
+    // Strip suffixes to get the real task id
+    const taskId = isDueCard ? draggableId.slice(0, -7) : isListCard ? draggableId.slice(0, -8) : draggableId
 
     if (isDueCard) {
       try {
@@ -265,7 +286,7 @@ export default function App() {
 
     try {
       if (destination.droppableId === source.droppableId && destination.droppableId === 'inbox') {
-        const inboxOnly = visibleTasks.filter(t => t.status === 'inbox').sort((a, b) => (a.position || 0) - (b.position || 0))
+        const inboxOnly = inboxTasksForDrag
         const reordered = Array.from(inboxOnly)
         const [moved] = reordered.splice(source.index, 1)
         if (!moved) { fetchTasks(); return }
@@ -860,24 +881,7 @@ export default function App() {
   // series down to whichever occurrence is next up and not yet done (or,
   // if the whole series is done, the most recent one). The calendar is
   // unaffected -- it still shows every individual occurrence on its own date.
-  const inboxTasks = (() => {
-    const groups = {}
-    const standalone = []
-    for (const t of visibleTasks) {
-      if (t.recurrence_group_id) {
-        if (!groups[t.recurrence_group_id]) groups[t.recurrence_group_id] = []
-        groups[t.recurrence_group_id].push(t)
-      } else {
-        standalone.push(t)
-      }
-    }
-    const representatives = Object.values(groups).map(occurrences => {
-      const notDone = occurrences.filter(t => t.status !== 'done').sort((a, b) => (a.scheduled_date || '').localeCompare(b.scheduled_date || ''))
-      if (notDone.length > 0) return notDone[0]
-      return [...occurrences].sort((a, b) => (b.scheduled_date || '').localeCompare(a.scheduled_date || ''))[0]
-    })
-    return [...standalone, ...representatives]
-  })()
+  const inboxTasks = inboxTasksForDrag
   const taskCategories = [...new Set(visibleTasks.map(t => t.category).filter(Boolean))].sort()
   const tasksForDay = (date) => visibleTasks.filter(t => t.scheduled_date === format(date, 'yyyy-MM-dd'))
   const dueCardsForDay = (date) => visibleTasks.filter(t => t.due_date_card_date === format(date, 'yyyy-MM-dd'))
