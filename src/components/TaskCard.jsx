@@ -29,7 +29,7 @@ export function categoryBadge(category) {
   return { name: clean, color: CATEGORY_COLORS[hash % CATEGORY_COLORS.length] }
 }
 
-export default function TaskCard({ task, isDone, isDragging, collabBadge, assigneeName, isDueCard, onMarkDone, onRescheduleToTomorrow, onMoveToInbox, onDelete, onEdit }) {
+export default function TaskCard({ task, isDone, isDragging, collabBadge, assigneeName, isDueCard, onMarkDone, onRescheduleToTomorrow, onMoveToInbox, onDelete, onEdit, onDuplicate }) {
   const [showActions, setShowActions] = useState(false)
   const canHover = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(hover: hover)').matches
   const catBadge = categoryBadge(task.category)
@@ -110,12 +110,14 @@ export default function TaskCard({ task, isDone, isDragging, collabBadge, assign
       </div>
       {isDone && showActions && (
         <div className="flex justify-end gap-2 mt-1">
+          {onDuplicate && <button onClick={() => onDuplicate(task.id)} className="text-base text-gray-400 hover:text-indigo-600 transition-colors px-1" title="Duplicate">&#10697;</button>}
           <button onClick={(e) => onDelete(task.id, e)} className="md:hidden text-base text-red-500 hover:text-red-700 transition-colors px-1" title="Delete">&#128465;</button>
         </div>
       )}
       {!isDone && !isDragging && showActions && (
         <div className="flex flex-wrap items-center gap-2 mt-2 pt-1.5 border-t border-gray-100">
           <button onClick={() => onEdit(task)} className="text-[27px] text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 px-1.5 py-0.5 rounded transition-colors leading-none" title="Edit">&#9998;</button>
+          {onDuplicate && <button onClick={() => onDuplicate(task.id)} className="text-[20px] text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 px-1.5 py-0.5 rounded transition-colors leading-none" title="Duplicate">&#10697;</button>}
           {!isDueCard && (
           <button onClick={() => onRescheduleToTomorrow(task.id, task.scheduled_date)} className="hover:bg-indigo-50 px-1.5 py-0.5 rounded transition-colors leading-none flex items-center" title="Move to tomorrow">
             <svg width="20" height="20" viewBox="0 0 34 32" fill="none">

@@ -14,6 +14,7 @@ import AddTaskModal from './components/AddTaskModal'
 import GoalsBar from './components/GoalsBar'
 import MobileLayout from './components/MobileLayout'
 import DailyReflection from './components/DailyReflection'
+import Dashboard from './components/Dashboard'
 import ExportMenu from './components/ExportMenu'
 import MonthView from './components/MonthView'
 import DayView from './components/DayView'
@@ -145,6 +146,7 @@ export default function App() {
   const [followUpPrefill, setFollowUpPrefill] = useState(null)
   const [showCollab, setShowCollab] = useState(false)
   const [showReflect, setShowReflect] = useState(false)
+  const [showDashboard, setShowDashboard] = useState(false)
   const [collaborations, setCollaborations] = useState([])
   const [collabMembersMap, setCollabMembersMap] = useState({})
   const [activeView, setActiveView] = useState('all')
@@ -220,6 +222,25 @@ export default function App() {
 
   const overdueTasks = visibleTasks.filter(t => t.scheduled_date && t.status === 'scheduled' && isBefore(parseISO(t.scheduled_date), today))
 
+  const inboxTasksForDrag = (() => {
+    const groups = {}
+    const standalone = []
+    for (const t of visibleTasks) {
+      if (t.recurrence_group_id) {
+        if (!groups[t.recurrence_group_id]) groups[t.recurrence_group_id] = []
+        groups[t.recurrence_group_id].push(t)
+      } else {
+        standalone.push(t)
+      }
+    }
+    const representatives = Object.values(groups).map(occurrences => {
+      const notDone = occurrences.filter(t => t.status !== 'done').sort((a, b) => (a.scheduled_date || '').localeCompare(b.scheduled_date || ''))
+      if (notDone.length > 0) return notDone[0]
+      return [...occurrences].sort((a, b) => (b.scheduled_date || '').localeCompare(a.scheduled_date || ''))[0]
+    })
+    return [...standalone, ...representatives].sort((a, b) => (a.position || 0) - (b.position || 0))
+  })()
+
   async function onDragEnd(result) {
     const { draggableId, destination, source } = result
     if (!destination) return
@@ -227,22 +248,31 @@ export default function App() {
     if (destination.droppableId.startsWith('goalpopup-')) return
 
     const isDueCard = draggableId.endsWith('__due__')
-    const taskId = isDueCard ? draggableId.slice(0, -7) : draggableId
+    const isListCard = draggableId.endsWith('__list__')
+    // Strip suffixes to get the real task id
+    const taskId = isDueCard ? draggableId.slice(0, -7) : isListCard ? draggableId.slice(0, -8) : draggableId
 
     if (isDueCard) {
       try {
+        // Due cards now share droppables with regular tasks: 'bucket-YYYY-MM-DD'
         const destParts = destination.droppableId.split('-')
         const destBucket = destParts[0]
-        const destDateStr = destParts.slice(2).join('-')
+        const destDateStr = destParts.slice(1).join('-')
+
         if (destination.droppableId === source.droppableId) {
-          const siblings = visibleTasks.filter(t => t.due_date_card_date === destDateStr && (t.due_date_card_bucket || 'morning') === destBucket).sort((a, b) => (a.due_date_card_position || 0) - (b.due_date_card_position || 0))
+          // Reorder within same bucket — find card by id, not by raw index (which includes regular tasks)
+          const siblings = visibleTasks
+            .filter(t => t.due_date_card_date === destDateStr && (t.due_date_card_bucket || 'morning') === destBucket)
+            .sort((a, b) => (a.due_date_card_position || 0) - (b.due_date_card_position || 0))
+          const srcIdx = siblings.findIndex(t => t.id === taskId)
+          if (srcIdx === -1) { fetchTasks(); return }
           const reordered = Array.from(siblings)
-          const [moved] = reordered.splice(source.index, 1)
-          if (!moved) { fetchTasks(); return }
-          reordered.splice(destination.index, 0, moved)
-          const updatedPositions = Object.fromEntries(reordered.filter(Boolean).map((t, i) => [t.id, i]))
+          const [moved] = reordered.splice(srcIdx, 1)
+          const destIdx = Math.min(Math.max(destination.index, 0), reordered.length)
+          reordered.splice(destIdx, 0, moved)
+          const updatedPositions = Object.fromEntries(reordered.map((t, i) => [t.id, i]))
           requestAnimationFrame(() => setTasks(prev => prev.map(t => updatedPositions[t.id] !== undefined ? { ...t, due_date_card_position: updatedPositions[t.id] } : t)))
-          await Promise.all(reordered.filter(Boolean).map((t, i) => supabase.from('tasks').update({ due_date_card_position: i }).eq('id', t.id)))
+          await Promise.all(reordered.map((t, i) => supabase.from('tasks').update({ due_date_card_position: i }).eq('id', t.id)))
         } else {
           const newPosition = destination.index
           requestAnimationFrame(() => setTasks(prev => prev.map(t => t.id === taskId ? { ...t, due_date_card_date: destDateStr, due_date_card_bucket: destBucket, due_date_card_position: newPosition } : t)))
@@ -258,7 +288,7 @@ export default function App() {
 
     try {
       if (destination.droppableId === source.droppableId && destination.droppableId === 'inbox') {
-        const inboxOnly = visibleTasks.filter(t => t.status === 'inbox').sort((a, b) => (a.position || 0) - (b.position || 0))
+        const inboxOnly = inboxTasksForDrag
         const reordered = Array.from(inboxOnly)
         const [moved] = reordered.splice(source.index, 1)
         if (!moved) { fetchTasks(); return }
@@ -627,6 +657,33 @@ export default function App() {
     return data
   }
 
+  async function duplicateGoal(goalId) {
+    const src = goals.find(g => g.id === goalId)
+    if (!src) return
+    const payload = {
+      title: src.title + ' (copy)',
+      color: src.color,
+      owner_id: user.id,
+      collaboration_id: src.collaboration_id || null,
+      category: src.category || null,
+      priority: src.priority || null,
+      family_member: src.family_member || null,
+      smart_specific: src.smart_specific || null,
+      smart_measurable: src.smart_measurable || null,
+      smart_achievable: src.smart_achievable || null,
+      smart_relevant: src.smart_relevant || null,
+      smart_timebound: src.smart_timebound || null,
+    }
+    const { data, error } = await supabase.from('goals').insert(payload).select().single()
+    if (error) { console.error('duplicateGoal failed:', error); return }
+    setGoals(prev => {
+      const idx = prev.findIndex(g => g.id === goalId)
+      const next = [...prev]
+      next.splice(idx + 1, 0, data)
+      return next
+    })
+  }
+
   async function editGoal(goalId, title, extra, collaborationId) {
     const payload = { title }
     if (collaborationId !== undefined) payload.collaboration_id = collaborationId || null
@@ -772,6 +829,65 @@ export default function App() {
     if (error) fetchTasks()
   }
 
+  async function duplicateTask(taskId) {
+    const task = tasks.find(t => t.id === taskId)
+    if (!task) return
+    const { data, error } = await supabase.from('tasks').insert({
+      title: task.title + ' (copy)',
+      notes: task.notes || null,
+      goal_id: task.goal_id || null,
+      start_time: null,
+      end_time: null,
+      due_date: null,
+      status: 'inbox',
+      scheduled_date: null,
+      bucket: null,
+      priority: task.priority || null,
+      category: task.category || null,
+      owner_id: user.id,
+      collaboration_id: task.collaboration_id || null,
+      assigned_to: null,
+      family_member: task.family_member || null,
+      position: 0,
+      due_date_card_position: null,
+      due_date_card_date: null,
+      due_date_card_bucket: null,
+      recurrence_group_id: null,
+      recurrence_freq: null,
+      recurrence_interval: null,
+      recurrence_byday: null,
+      recurrence_end_type: null,
+      recurrence_end_count: null,
+      recurrence_end_date: null
+    }).select().single()
+    if (error) { console.error('duplicateTask failed:', error); return }
+    setTasks(prev => [data, ...prev])
+    if (data.goal_id) {
+      setGoalTasks(prev => [{ id: data.id, title: data.title, goal_id: data.goal_id, status: data.status, due_date: data.due_date, start_time: data.start_time, priority: data.priority, collaboration_id: data.collaboration_id, assigned_to: data.assigned_to }, ...prev])
+    }
+  }
+
+  async function duplicateGoal(goalId) {
+    const goal = goals.find(g => g.id === goalId)
+    if (!goal) return
+    const { data, error } = await supabase.from('goals').insert({
+      title: goal.title + ' (copy)',
+      color: goal.color,
+      owner_id: user.id,
+      collaboration_id: goal.collaboration_id || null,
+      category: goal.category || null,
+      priority: goal.priority || null,
+      family_member: goal.family_member || null,
+      smart_specific: goal.smart_specific || null,
+      smart_measurable: goal.smart_measurable || null,
+      smart_achievable: goal.smart_achievable || null,
+      smart_relevant: goal.smart_relevant || null,
+      smart_timebound: goal.smart_timebound || null
+    }).select().single()
+    if (error) { console.error('duplicateGoal failed:', error); return }
+    setGoals(prev => [...prev, data])
+  }
+
   async function rolloverOverdue() {
     const todayStr = format(today, 'yyyy-MM-dd')
     const ids = overdueTasks.map(t => t.id)
@@ -794,27 +910,10 @@ export default function App() {
   // series down to whichever occurrence is next up and not yet done (or,
   // if the whole series is done, the most recent one). The calendar is
   // unaffected -- it still shows every individual occurrence on its own date.
-  const inboxTasks = (() => {
-    const groups = {}
-    const standalone = []
-    for (const t of visibleTasks) {
-      if (t.recurrence_group_id) {
-        if (!groups[t.recurrence_group_id]) groups[t.recurrence_group_id] = []
-        groups[t.recurrence_group_id].push(t)
-      } else {
-        standalone.push(t)
-      }
-    }
-    const representatives = Object.values(groups).map(occurrences => {
-      const notDone = occurrences.filter(t => t.status !== 'done').sort((a, b) => (a.scheduled_date || '').localeCompare(b.scheduled_date || ''))
-      if (notDone.length > 0) return notDone[0]
-      return [...occurrences].sort((a, b) => (b.scheduled_date || '').localeCompare(a.scheduled_date || ''))[0]
-    })
-    return [...standalone, ...representatives]
-  })()
+  const inboxTasks = inboxTasksForDrag
   const taskCategories = [...new Set(visibleTasks.map(t => t.category).filter(Boolean))].sort()
   const tasksForDay = (date) => visibleTasks.filter(t => t.scheduled_date === format(date, 'yyyy-MM-dd'))
-  const dueCardsForDay = (date) => visibleTasks.filter(t => t.due_date_card_date === format(date, 'yyyy-MM-dd') && t.scheduled_date !== t.due_date_card_date)
+  const dueCardsForDay = (date) => visibleTasks.filter(t => t.due_date_card_date === format(date, 'yyyy-MM-dd'))
   const openAddForDay = (date) => { setAddForDate(format(date, 'yyyy-MM-dd')); setAddForTime(null); setAddForBucket(null); setShowAdd(true) }
   const openAddForBucket = (date, bucketId) => {
     setAddForDate(format(date, 'yyyy-MM-dd'))
@@ -830,7 +929,8 @@ export default function App() {
     onMoveToInbox: moveToInbox, onDelete: requestDeleteTask, onEdit: setEditingTask, onAssignTask: assignTask,
     onAddTask: () => setShowAdd(true), onAddTaskForDay: openAddForDay, onAddTaskForBucket: openAddForBucket, onCreateTask: addTask, onRollover: rolloverOverdue,
     rolloverMode, onRolloverModeChange: mode => { setRolloverMode(mode); localStorage.setItem('rolloverMode', mode) },
-    onAddGoal: addGoal, onEditGoal: editGoal, onDeleteGoal: deleteGoal,
+    onAddGoal: addGoal, onEditGoal: editGoal, onDeleteGoal: deleteGoal, onDuplicateGoal: duplicateGoal,
+    onDuplicateTask: duplicateTask,
     onPrevWeek: () => setWeekStart(w => subWeeks(w, 1)),
     onNextWeek: () => setWeekStart(w => addWeeks(w, 1)),
     onThisWeek: () => setWeekStart(startOfWeek(new Date(), { weekStartsOn: 1 }))
@@ -880,27 +980,28 @@ export default function App() {
                 <button onClick={rolloverOverdue} className="px-3 py-1.5 text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100">Roll over {overdueTasks.length} overdue</button>
               )}
               <ExportMenu tasks={visibleTasks} goals={visibleGoals} weekStart={weekStart} />
+              <button onClick={() => setShowDashboard(true)} className="px-3 py-1.5 text-sm font-medium text-indigo-600 border border-indigo-200 rounded-lg hover:bg-indigo-50">Dashboard</button>
               <button onClick={() => setShowReflect(true)} className="px-3 py-1.5 text-sm font-medium text-indigo-600 border border-indigo-200 rounded-lg hover:bg-indigo-50">Reflect</button>
               <button onClick={() => setShowAdd(true)} className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700">+ Add task</button>
               <SettingsDropdown onOpenCollaborations={() => setShowCollab(true)} tasks={tasks} rolloverMode={rolloverMode} onRolloverModeChange={mode => { setRolloverMode(mode); localStorage.setItem('rolloverMode', mode) }} />
             </div>
           </header>
           <div className="mx-3 mt-3 rounded-xl border border-gray-200 shadow-sm overflow-hidden shrink-0">
-            <GoalsBar goals={visibleGoals} goalTasks={visibleGoalTasks} allTasks={visibleTasks} collabMap={collabMap} collaborations={collaborations} defaultCollaborationId={defaultCollaborationId} onAddGoal={addGoal} onEditGoal={editGoal} onDeleteGoal={deleteGoal} onMarkDone={markDone} onDelete={requestDeleteTask} onCreateTask={addTask} onEditTask={setEditingTask} />
+            <GoalsBar goals={visibleGoals} goalTasks={visibleGoalTasks} allTasks={visibleTasks} collabMap={collabMap} collaborations={collaborations} defaultCollaborationId={defaultCollaborationId} onAddGoal={addGoal} onEditGoal={editGoal} onDeleteGoal={deleteGoal} onDuplicateGoal={duplicateGoal} onMarkDone={markDone} onDelete={requestDeleteTask} onDuplicateTask={duplicateTask} onCreateTask={addTask} onEditTask={setEditingTask} />
           </div>
           <div className="flex flex-1 overflow-hidden gap-3 p-3">
             <main className="flex-1 overflow-x-auto overflow-y-auto rounded-xl border border-gray-200 shadow-sm bg-white p-4">
               {loading ? <div className="flex items-center justify-center h-full text-sm text-gray-400">Loading</div> : (
                 <>
-                  {calView === 'week' && <WeekGrid days={weekDays} tasksForDay={tasksForDay} dueCardsForDay={dueCardsForDay} goalMap={goalMap} collabMap={collabMap} profileMap={profileMap} onMarkDone={markDone} onRescheduleToTomorrow={rescheduleToTomorrow} onMoveToInbox={moveToInbox} onDelete={requestDeleteTask} onEdit={setEditingTask} onAddTaskForDay={openAddForDay} onAddTaskForBucket={openAddForBucket} />}
+                  {calView === 'week' && <WeekGrid days={weekDays} tasksForDay={tasksForDay} dueCardsForDay={dueCardsForDay} goalMap={goalMap} collabMap={collabMap} profileMap={profileMap} onMarkDone={markDone} onRescheduleToTomorrow={rescheduleToTomorrow} onMoveToInbox={moveToInbox} onDelete={requestDeleteTask} onEdit={setEditingTask} onDuplicate={duplicateTask} onAddTaskForDay={openAddForDay} onAddTaskForBucket={openAddForBucket} />}
                   {calView === 'month' && <MonthView tasks={visibleTasks} onDayClick={(day) => { setCalView('week'); setWeekStart(startOfWeek(day, { weekStartsOn: 1 })) }} />}
-                  {calView === 'day' && <DayView tasks={visibleTasks} goalMap={goalMap} collabMap={collabMap} profileMap={profileMap} onMarkDone={markDone} onRescheduleToTomorrow={rescheduleToTomorrow} onMoveToInbox={moveToInbox} onDelete={requestDeleteTask} onEdit={setEditingTask} onAddTaskForBucket={openAddForBucket} />}
+                  {calView === 'day' && <DayView tasks={visibleTasks} goalMap={goalMap} collabMap={collabMap} profileMap={profileMap} onMarkDone={markDone} onRescheduleToTomorrow={rescheduleToTomorrow} onMoveToInbox={moveToInbox} onDelete={requestDeleteTask} onEdit={setEditingTask} onDuplicate={duplicateTask} onAddTaskForBucket={openAddForBucket} />}
                   {calView === 'year' && <YearView tasks={visibleTasks} onMonthClick={() => setCalView('month')} onDayClick={(day) => { setCalView('week'); setWeekStart(startOfWeek(day, { weekStartsOn: 1 })) }} />}
                 </>
               )}
             </main>
             <div className="rounded-xl border border-gray-200 shadow-sm overflow-hidden shrink-0">
-              <Sidebar tasks={inboxTasks} goalMap={goalMap} collabMap={collabMap} collabMembersMap={collabMembersMap} profileMap={profileMap} onAssignTask={assignTask} onMarkDone={markDone} goals={visibleGoals} allTasks={visibleTasks} onAddTask={() => setShowAdd(true)} onCreateTask={addTask} onAddGoal={addGoal} onEdit={setEditingTask} onDelete={requestDeleteTask} />
+              <Sidebar tasks={inboxTasks} goalMap={goalMap} collabMap={collabMap} collabMembersMap={collabMembersMap} profileMap={profileMap} onAssignTask={assignTask} onMarkDone={markDone} goals={visibleGoals} allTasks={visibleTasks} onAddTask={() => setShowAdd(true)} onCreateTask={addTask} onAddGoal={addGoal} onEdit={setEditingTask} onDelete={requestDeleteTask} onDuplicate={duplicateTask} />
             </div>
           </div>
         </div>
@@ -909,6 +1010,7 @@ export default function App() {
       {editingTask && <AddTaskModal editingTask={editingTask} onEdit={editTask} onClose={() => setEditingTask(null)} goals={visibleGoals} onAddGoal={addGoal} existingTaskCategories={taskCategories} collaborations={collaborations} collabMembersMap={collabMembersMap} defaultCollaborationId={defaultCollaborationId} onCreateFollowUp={(prefill) => { setEditingTask(null); setFollowUpPrefill(prefill); setShowAdd(true) }} />}
       {showCollab && <CollaborationPanel onClose={() => setShowCollab(false)} />}
       {showReflect && <DailyReflection onClose={() => setShowReflect(false)} />}
+      {showDashboard && <Dashboard tasks={tasks} goals={visibleGoals} goalTasks={goalTasks} collaborations={collaborations} collabMap={collabMap} collabMembersMap={collabMembersMap} profileMap={profileMap} weekStart={weekStart} onClose={() => setShowDashboard(false)} />}
       {deleteScopePrompt && (
         <>
           <div className="fixed inset-0 z-[1999]" onClick={() => setDeleteScopePrompt(null)} />

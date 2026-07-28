@@ -11,7 +11,7 @@ const BUCKETS = [
 
 const OVERLOAD_CAP = 5
 
-export default function DayColumn({ date, tasks, dueCards, goalMap, collabMap, profileMap, onMarkDone, onRescheduleToTomorrow, onMoveToInbox, onDelete, onEdit, onAddTaskForBucket }) {
+export default function DayColumn({ date, tasks, dueCards, goalMap, collabMap, profileMap, onMarkDone, onRescheduleToTomorrow, onMoveToInbox, onDelete, onEdit, onDuplicate, onAddTaskForBucket }) {
   const today = isToday(date)
   const isPast = isBefore(date, startOfDay(new Date())) && !today
   const dateStr = format(date, 'yyyy-MM-dd')
@@ -48,7 +48,6 @@ export default function DayColumn({ date, tasks, dueCards, goalMap, collabMap, p
           })
           const bucketDueCards = (dueCards || []).filter(t => (t.due_date_card_bucket || 'morning') === bucket.id).sort((a, b) => (a.due_date_card_position || 0) - (b.due_date_card_position || 0))
           const droppableId = bucket.id + '-' + dateStr
-          const dueDroppableId = bucket.id + '-due-' + dateStr
           return (
             <div key={bucket.id} className="group relative flex-1 flex flex-col border-b border-gray-50 last:border-0">
               <div className="px-3 py-1.5 flex items-center gap-1.5 shrink-0">
@@ -74,7 +73,19 @@ export default function DayColumn({ date, tasks, dueCards, goalMap, collabMap, p
                         {(provided, snapshot) => {
                           const card = (
                             <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps} className="mb-1.5" style={provided.draggableProps.style}>
-                              <TaskCard task={task} isDone={task.status === 'done'} isDragging={snapshot.isDragging} collabBadge={task.collaboration_id && collabMap ? collabMap[task.collaboration_id] : null} assigneeName={task.assigned_to && profileMap ? profileMap[task.assigned_to] : null} onMarkDone={onMarkDone} onRescheduleToTomorrow={onRescheduleToTomorrow} onMoveToInbox={onMoveToInbox} onDelete={onDelete} onEdit={onEdit} />
+                              <TaskCard task={task} isDone={task.status === 'done'} isDragging={snapshot.isDragging} collabBadge={task.collaboration_id && collabMap ? collabMap[task.collaboration_id] : null} assigneeName={task.assigned_to && profileMap ? profileMap[task.assigned_to] : null} onMarkDone={onMarkDone} onRescheduleToTomorrow={onRescheduleToTomorrow} onMoveToInbox={onMoveToInbox} onDelete={onDelete} onEdit={onEdit} onDuplicate={onDuplicate} />
+                            </div>
+                          )
+                          return snapshot.isDragging ? createPortal(card, document.body) : card
+                        }}
+                      </Draggable>
+                    ))}
+                    {bucketDueCards.map((task, index) => (
+                      <Draggable key={task.id + '__due__'} draggableId={task.id + '__due__'} index={bucketAll.length + index} isDragDisabled={task.status === 'done'}>
+                        {(provided, snapshot) => {
+                          const card = (
+                            <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps} className="mb-1.5" style={provided.draggableProps.style}>
+                              <TaskCard task={task} isDone={task.status === 'done'} isDragging={snapshot.isDragging} isDueCard collabBadge={task.collaboration_id && collabMap ? collabMap[task.collaboration_id] : null} assigneeName={task.assigned_to && profileMap ? profileMap[task.assigned_to] : null} onMarkDone={onMarkDone} onRescheduleToTomorrow={onRescheduleToTomorrow} onMoveToInbox={onMoveToInbox} onDelete={onDelete} onEdit={onEdit} onDuplicate={onDuplicate} />
                             </div>
                           )
                           return snapshot.isDragging ? createPortal(card, document.body) : card
@@ -85,31 +96,6 @@ export default function DayColumn({ date, tasks, dueCards, goalMap, collabMap, p
                   </div>
                 )}
               </Droppable>
-              {bucketDueCards.length > 0 && (
-                <Droppable droppableId={dueDroppableId}>
-                  {(provided, snapshot) => (
-                    <div
-                      ref={provided.innerRef}
-                      {...provided.droppableProps}
-                      className={'px-2 pb-2 min-h-[10px] transition-colors ' + (snapshot.isDraggingOver ? 'bg-indigo-50' : '')}
-                    >
-                      {bucketDueCards.map((task, index) => (
-                        <Draggable key={task.id + '__due__'} draggableId={task.id + '__due__'} index={index} isDragDisabled={task.status === 'done'}>
-                          {(provided, snapshot) => {
-                            const card = (
-                              <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps} className="mb-1.5" style={provided.draggableProps.style}>
-                                <TaskCard task={task} isDone={task.status === 'done'} isDragging={snapshot.isDragging} isDueCard collabBadge={task.collaboration_id && collabMap ? collabMap[task.collaboration_id] : null} assigneeName={task.assigned_to && profileMap ? profileMap[task.assigned_to] : null} onMarkDone={onMarkDone} onRescheduleToTomorrow={onRescheduleToTomorrow} onMoveToInbox={onMoveToInbox} onDelete={onDelete} onEdit={onEdit} />
-                              </div>
-                            )
-                            return snapshot.isDragging ? createPortal(card, document.body) : card
-                          }}
-                        </Draggable>
-                      ))}
-                      {provided.placeholder}
-                    </div>
-                  )}
-                </Droppable>
-              )}
             </div>
           )
         })}

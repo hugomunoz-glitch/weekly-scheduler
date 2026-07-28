@@ -8,7 +8,7 @@ const BUCKETS = [
   { id: 'afternoon', label: 'Evening', icon: '🌙' },
 ]
 
-export default function DayView({ tasks, goalMap, collabMap, profileMap, onMarkDone, onRescheduleToTomorrow, onMoveToInbox, onDelete, onEdit, onAddTaskForBucket }) {
+export default function DayView({ tasks, goalMap, collabMap, profileMap, onMarkDone, onRescheduleToTomorrow, onMoveToInbox, onDelete, onEdit, onDuplicate, onAddTaskForBucket }) {
   const [currentDay, setCurrentDay] = useState(new Date())
   const dateStr = format(currentDay, 'yyyy-MM-dd')
   const dayTasks = tasks.filter(t => t.scheduled_date === dateStr || t.due_date_card_date === dateStr)
@@ -78,6 +78,7 @@ export default function DayView({ tasks, goalMap, collabMap, profileMap, onMarkD
                     onMoveToInbox={onMoveToInbox}
                     onDelete={onDelete}
                     onEdit={onEdit}
+                    onDuplicate={onDuplicate}
                   />
                 ))
               )}

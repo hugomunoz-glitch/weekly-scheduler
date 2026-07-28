@@ -9,7 +9,7 @@ const PRIORITY_COLORS = { high: '#ef4444', medium: '#f59e0b', low: '#9ca3af' }
 const PRIORITY_LABELS = { high: 'High', medium: 'Medium', low: 'Low' }
 const PRIORITY_BORDER = { high: '#ef4444', medium: '#f59e0b', low: '#22c55e' }
 
-function Inbox({ tasks, goalMap, collabMap, collabMembersMap, profileMap, onAssignTask, onMarkDone, onEdit, onDelete, search, sortMode, sortDir, categoryFilter }) {
+function Inbox({ tasks, goalMap, collabMap, collabMembersMap, profileMap, onAssignTask, onMarkDone, onEdit, onDelete, onDuplicate, search, sortMode, sortDir, categoryFilter }) {
   const [hoverId, setHoverId] = useState(null)
   const searched = search && search.trim() ? tasks.filter(t => t.title.toLowerCase().includes(search.trim().toLowerCase())) : tasks
   const filteredTasks = categoryFilter && categoryFilter !== 'all' ? searched.filter(t => t.category === categoryFilter) : searched
@@ -118,6 +118,7 @@ function Inbox({ tasks, goalMap, collabMap, collabMembersMap, profileMap, onAssi
                     {!snapshot.isDragging && hoverId === task.id && (
                       <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                         <button onClick={() => onEdit(task)} className="text-[27px] text-indigo-400 hover:text-indigo-600 leading-none" title="Edit">&#9998;</button>
+                        {onDuplicate && <button onClick={() => onDuplicate(task.id)} className="text-[20px] text-gray-400 hover:text-indigo-600 leading-none" title="Duplicate">&#10697;</button>}
                         {task.scheduled_date && (
                           <span className="text-xs text-gray-400">Scheduled: {format(parseISO(task.scheduled_date), 'MMM d')}</span>
                         )}
@@ -287,7 +288,7 @@ function Assistant({ goals, tasks, onCreateTask, onAddGoal }) {
   )
 }
 
-export default function Sidebar({ tasks, goalMap, collabMap, collabMembersMap, profileMap, onAssignTask, onMarkDone, goals, allTasks, onAddTask, onCreateTask, onAddGoal, onEdit, onDelete }) {
+export default function Sidebar({ tasks, goalMap, collabMap, collabMembersMap, profileMap, onAssignTask, onMarkDone, goals, allTasks, onAddTask, onCreateTask, onAddGoal, onEdit, onDelete, onDuplicate }) {
   const [tab, setTab] = useState('inbox')
   const [taskSearch, setTaskSearch] = useState('')
   const [showTaskSearch, setShowTaskSearch] = useState(false)
@@ -359,7 +360,7 @@ export default function Sidebar({ tasks, goalMap, collabMap, collabMembersMap, p
                 {taskCategories.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
-            <Inbox tasks={tasks} goalMap={goalMap} collabMap={collabMap} collabMembersMap={collabMembersMap} profileMap={profileMap} onAssignTask={onAssignTask} onMarkDone={onMarkDone} onEdit={onEdit} onDelete={onDelete} search={taskSearch} sortMode={taskSort} sortDir={taskSortDir} categoryFilter={taskCategoryFilter} />
+            <Inbox tasks={tasks} goalMap={goalMap} collabMap={collabMap} collabMembersMap={collabMembersMap} profileMap={profileMap} onAssignTask={onAssignTask} onMarkDone={onMarkDone} onEdit={onEdit} onDelete={onDelete} onDuplicate={onDuplicate} search={taskSearch} sortMode={taskSort} sortDir={taskSortDir} categoryFilter={taskCategoryFilter} />
           </>
         ) : (
           <Assistant goals={goals} tasks={allTasks} onCreateTask={onCreateTask} onAddGoal={onAddGoal} />

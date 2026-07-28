@@ -33,7 +33,7 @@ function PriorityBadge({ priority }) {
   )
 }
 
-export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations, defaultCollaborationId, onAddGoal, onEditGoal, onDeleteGoal, onMarkDone, onDelete, onCreateTask, onEditTask }) {
+export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations, defaultCollaborationId, onAddGoal, onEditGoal, onDeleteGoal, onDuplicateGoal, onMarkDone, onDelete, onDuplicateTask, onCreateTask, onEditTask }) {
   const [adding, setAdding] = useState(false)
   const [newTitle, setNewTitle] = useState('')
   const [newGoalTasks, setNewGoalTasks] = useState([''])
@@ -474,13 +474,36 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
             title={goal.priority ? PRIORITY_LABELS[goal.priority] + ' priority' : undefined}
             onClick={(e) => openPopup(goal.id, e)}
           >
-            <button
-              onClick={(e) => { e.stopPropagation(); startEdit(goal) }}
-              className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-indigo-50"
-              title="Edit goal"
-            >
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2.5" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-            </button>
+            {editingId !== goal.id && (
+              <div
+                className="absolute top-1.5 right-1.5 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity z-20"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {onDuplicateGoal && (
+                  <button
+                    onClick={() => onDuplicateGoal(goal.id)}
+                    className="w-5 h-5 flex items-center justify-center rounded text-gray-400 hover:text-indigo-500 hover:bg-indigo-50 transition-colors"
+                    title="Duplicate goal"
+                  >
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                  </button>
+                )}
+                <button
+                  onClick={() => startEdit(goal)}
+                  className="w-5 h-5 flex items-center justify-center rounded text-gray-400 hover:text-indigo-500 hover:bg-indigo-50 transition-colors"
+                  title="Edit goal"
+                >
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                </button>
+                <button
+                  onClick={() => onDeleteGoal(goal.id)}
+                  className="w-5 h-5 flex items-center justify-center rounded text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                  title="Delete goal"
+                >
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                </button>
+              </div>
+            )}
             <div className="flex-1 min-w-0">
               {editingId === goal.id ? (
                 <form onSubmit={(e) => handleEditSubmit(e, goal.id)} className="space-y-1" onClick={(e) => e.stopPropagation()}>
@@ -569,15 +592,6 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
                     )}
                   </p>
                 </div>
-              )}
-              {editingId !== goal.id && (
-                <span
-                  onClick={(e) => { e.stopPropagation(); onDeleteGoal(goal.id) }}
-                  className="absolute top-0.5 right-0.5 w-2.5 h-2.5 rounded-full bg-red-500 hover:bg-red-600 text-white text-[5px] font-semibold flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm z-10"
-                  title="Delete goal"
-                >
-                  &#10005;
-                </span>
               )}
               {categoryBadge(goal.category) && (
                 <div className="flex items-center gap-1 mt-0.5">
@@ -670,6 +684,15 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
                                       )}
                                       {t.start_time && (
                                         <span className="text-sm text-indigo-400 shrink-0 whitespace-nowrap">{formatTime(t.start_time)}</span>
+                                      )}
+                                      {onDuplicateTask && (
+                                        <button
+                                          onClick={(e) => { e.stopPropagation(); onDuplicateTask(t.id) }}
+                                          className="text-[14px] text-gray-400 hover:text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 leading-none px-0.5"
+                                          title="Duplicate task"
+                                        >
+                                          &#10697;
+                                        </button>
                                       )}
                                       <button
                                         onClick={(e) => { e.stopPropagation(); onDelete(t.id, e) }}
