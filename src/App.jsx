@@ -14,6 +14,7 @@ import AddTaskModal from './components/AddTaskModal'
 import GoalsBar from './components/GoalsBar'
 import MobileLayout from './components/MobileLayout'
 import DailyReflection from './components/DailyReflection'
+import Dashboard from './components/Dashboard'
 import ExportMenu from './components/ExportMenu'
 import MonthView from './components/MonthView'
 import DayView from './components/DayView'
@@ -145,6 +146,7 @@ export default function App() {
   const [followUpPrefill, setFollowUpPrefill] = useState(null)
   const [showCollab, setShowCollab] = useState(false)
   const [showReflect, setShowReflect] = useState(false)
+  const [showDashboard, setShowDashboard] = useState(false)
   const [collaborations, setCollaborations] = useState([])
   const [collabMembersMap, setCollabMembersMap] = useState({})
   const [activeView, setActiveView] = useState('all')
@@ -978,6 +980,7 @@ export default function App() {
                 <button onClick={rolloverOverdue} className="px-3 py-1.5 text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100">Roll over {overdueTasks.length} overdue</button>
               )}
               <ExportMenu tasks={visibleTasks} goals={visibleGoals} weekStart={weekStart} />
+              <button onClick={() => setShowDashboard(true)} className="px-3 py-1.5 text-sm font-medium text-indigo-600 border border-indigo-200 rounded-lg hover:bg-indigo-50">Dashboard</button>
               <button onClick={() => setShowReflect(true)} className="px-3 py-1.5 text-sm font-medium text-indigo-600 border border-indigo-200 rounded-lg hover:bg-indigo-50">Reflect</button>
               <button onClick={() => setShowAdd(true)} className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700">+ Add task</button>
               <SettingsDropdown onOpenCollaborations={() => setShowCollab(true)} tasks={tasks} rolloverMode={rolloverMode} onRolloverModeChange={mode => { setRolloverMode(mode); localStorage.setItem('rolloverMode', mode) }} />
@@ -1007,6 +1010,7 @@ export default function App() {
       {editingTask && <AddTaskModal editingTask={editingTask} onEdit={editTask} onClose={() => setEditingTask(null)} goals={visibleGoals} onAddGoal={addGoal} existingTaskCategories={taskCategories} collaborations={collaborations} collabMembersMap={collabMembersMap} defaultCollaborationId={defaultCollaborationId} onCreateFollowUp={(prefill) => { setEditingTask(null); setFollowUpPrefill(prefill); setShowAdd(true) }} />}
       {showCollab && <CollaborationPanel onClose={() => setShowCollab(false)} />}
       {showReflect && <DailyReflection onClose={() => setShowReflect(false)} />}
+      {showDashboard && <Dashboard tasks={tasks} goals={visibleGoals} goalTasks={goalTasks} collaborations={collaborations} collabMap={collabMap} collabMembersMap={collabMembersMap} profileMap={profileMap} weekStart={weekStart} onClose={() => setShowDashboard(false)} />}
       {deleteScopePrompt && (
         <>
           <div className="fixed inset-0 z-[1999]" onClick={() => setDeleteScopePrompt(null)} />
