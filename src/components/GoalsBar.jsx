@@ -359,7 +359,7 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
       <div className="sticky left-0 z-10 bg-white self-stretch flex items-center gap-3 pr-3 shrink-0">
         <div className="flex flex-col gap-0.5 shrink-0">
           <span className="text-sm font-semibold text-gray-900 tracking-wide flex items-center gap-1">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-indigo-500"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+            <span style={{ fontSize: 14, lineHeight: 1 }}>🎯</span>
             Goals
           </span>
           <span className="text-[11px] text-gray-400">{completedGoalsCount} of {goals.length} done</span>
