@@ -16,6 +16,7 @@ function tasksThisWeek(tasks, weekStart) {
 }
 
 function tasksInRange(tasks, start, end) {
+  if (!start || !end) return []
   return tasks.filter(t => t.scheduled_date >= start && t.scheduled_date <= end)
 }
 
@@ -239,7 +240,9 @@ export default function Dashboard({ tasks, goals, goalTasks, collaborations, col
 
   const weekLabel = rangeMode === 'week'
     ? `${format(weekStart, 'MMM d')} – ${format(addDays(weekStart, 6), 'MMM d, yyyy')}`
-    : `${format(parseISO(rangeStart), 'MMM d')} – ${format(parseISO(rangeEnd), 'MMM d, yyyy')}`
+    : rangeStart && rangeEnd
+      ? `${format(parseISO(rangeStart), 'MMM d')} – ${format(parseISO(rangeEnd), 'MMM d, yyyy')}`
+      : 'Custom range'
 
   if (isMobile) {
     return (
