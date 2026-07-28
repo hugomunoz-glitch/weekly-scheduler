@@ -682,6 +682,15 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
                                       {t.start_time && (
                                         <span className="text-sm text-indigo-400 shrink-0 whitespace-nowrap">{formatTime(t.start_time)}</span>
                                       )}
+                                      {onDuplicateTask && (
+                                        <button
+                                          onClick={(e) => { e.stopPropagation(); onDuplicateTask(t.id) }}
+                                          className="text-[14px] text-gray-400 hover:text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 leading-none px-0.5"
+                                          title="Duplicate task"
+                                        >
+                                          &#10697;
+                                        </button>
+                                      )}
                                       <button
                                         onClick={(e) => { e.stopPropagation(); onDelete(t.id, e) }}
                                         className="w-5 h-5 rounded-full bg-red-500 hover:bg-red-600 text-white text-[11px] font-semibold flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
