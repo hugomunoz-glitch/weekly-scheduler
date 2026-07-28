@@ -867,27 +867,6 @@ export default function App() {
     }
   }
 
-  async function duplicateGoal(goalId) {
-    const goal = goals.find(g => g.id === goalId)
-    if (!goal) return
-    const { data, error } = await supabase.from('goals').insert({
-      title: goal.title + ' (copy)',
-      color: goal.color,
-      owner_id: user.id,
-      collaboration_id: goal.collaboration_id || null,
-      category: goal.category || null,
-      priority: goal.priority || null,
-      family_member: goal.family_member || null,
-      smart_specific: goal.smart_specific || null,
-      smart_measurable: goal.smart_measurable || null,
-      smart_achievable: goal.smart_achievable || null,
-      smart_relevant: goal.smart_relevant || null,
-      smart_timebound: goal.smart_timebound || null
-    }).select().single()
-    if (error) { console.error('duplicateGoal failed:', error); return }
-    setGoals(prev => [...prev, data])
-  }
-
   async function rolloverOverdue() {
     const todayStr = format(today, 'yyyy-MM-dd')
     const ids = overdueTasks.map(t => t.id)
