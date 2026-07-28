@@ -527,6 +527,7 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
         })
         const done = linked.filter(t => t.status === 'done')
         const pct = linked.length > 0 ? Math.round((done.length / linked.length) * 100) : 0
+        const goalDisplayColor = (goal.category ? categoryBadge(goal.category)?.color : null) || goal.color
       return (
         <div key={goal.id} onClick={() => { if (pressedGoalId !== goal.id) setViewingGoalId(goal.id) }} style={{ border: '1px solid #e5e7eb', borderLeft: goal.priority && PRIORITY_BORDER[goal.priority] ? '4px solid ' + PRIORITY_BORDER[goal.priority] : '1px solid #e5e7eb', borderRadius: '10px', padding: '10px 12px', marginBottom: '8px', background: 'white', position: 'relative', cursor: 'pointer' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
@@ -554,7 +555,7 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
           )}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingLeft: '2px' }}>
             <div style={{ flex: 1, height: '4px', background: '#f3f4f6', borderRadius: '2px', overflow: 'hidden' }}>
-              <div style={{ height: '100%', width: pct + '%', background: goal.color, borderRadius: '2px' }} />
+              <div style={{ height: '100%', width: pct + '%', background: goalDisplayColor, borderRadius: '2px' }} />
             </div>
             <span style={{ fontSize: "11px", color: "#9ca3af", flexShrink: 0 }}>{pct}%</span>
             <span style={{ fontSize: "11px", color: "#9ca3af", flexShrink: 0 }}>{done.length}/{linked.length}</span>
