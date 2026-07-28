@@ -49,7 +49,7 @@ function computeGoalStreak(goalId, goalTasks) {
 // ── Donut chart ───────────────────────────────────────────────────────────────
 
 function DonutChart({ data }) {
-  const size = 140, strokeWidth = 18
+  const size = 120, strokeWidth = 16
   const r = (size - strokeWidth) / 2
   const cx = size / 2, cy = size / 2
   const circumference = 2 * Math.PI * r
@@ -59,7 +59,7 @@ function DonutChart({ data }) {
 
   if (total === 0) {
     return (
-      <div className="w-[140px] h-[140px] rounded-full border-[18px] border-gray-100 flex items-center justify-center shrink-0">
+      <div className="w-[120px] h-[120px] rounded-full border-[16px] border-gray-100 flex items-center justify-center shrink-0">
         <span className="text-xs text-gray-300">No data</span>
       </div>
     )
@@ -165,12 +165,13 @@ export default function Dashboard({ tasks, goals, goalTasks, collaborations, col
     const key = t.category || 'Uncategorized'
     catCounts[key] = (catCounts[key] || 0) + 1
   })
+  const DONUT_COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#06b6d4', '#ec4899', '#84cc16']
   const chartData = Object.entries(catCounts)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 7)
-    .map(([cat, count]) => {
+    .map(([cat, count], i) => {
       const badge = categoryBadge(cat)
-      return { label: cat === 'Uncategorized' ? cat : badge?.name || cat, value: count, color: badge?.color || '#9ca3af' }
+      return { label: cat === 'Uncategorized' ? cat : badge?.name || cat, value: count, color: DONUT_COLORS[i % DONUT_COLORS.length] }
     })
 
   // ── team stats ──
@@ -194,7 +195,7 @@ export default function Dashboard({ tasks, goals, goalTasks, collaborations, col
       onClick={e => { if (e.target === overlayRef.current) onClose() }}
     >
       <div
-        className="w-full max-w-2xl max-h-[88vh] overflow-y-auto bg-gray-50 rounded-2xl shadow-2xl border border-gray-200 flex flex-col"
+        className="w-full max-w-lg max-h-[92vh] overflow-y-auto bg-gray-50 rounded-2xl shadow-2xl border border-gray-200 flex flex-col"
         role="dialog"
         aria-modal="true"
         aria-label="Dashboard"
