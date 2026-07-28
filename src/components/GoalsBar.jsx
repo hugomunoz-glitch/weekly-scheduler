@@ -33,7 +33,7 @@ function PriorityBadge({ priority }) {
   )
 }
 
-export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations, defaultCollaborationId, onAddGoal, onEditGoal, onDeleteGoal, onDuplicateGoal, onMarkDone, onDelete, onDuplicateTask, onCreateTask, onEditTask }) {
+export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations, collabMembersMap, defaultCollaborationId, onAddGoal, onEditGoal, onDeleteGoal, onDuplicateGoal, onMarkDone, onDelete, onDuplicateTask, onCreateTask, onEditTask }) {
   const [adding, setAdding] = useState(false)
   const [newTitle, setNewTitle] = useState('')
   const [newGoalTasks, setNewGoalTasks] = useState([''])
@@ -46,12 +46,22 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
   const [bulkGoalTitles, setBulkGoalTitles] = useState('')
   const [bulkGoalSubmitting, setBulkGoalSubmitting] = useState(false)
   const [newGoalCollaborationId, setNewGoalCollaborationId] = useState(defaultCollaborationId || '')
+  const [newGoalAssignee, setNewGoalAssignee] = useState('')
+  const [newSoftDeadline, setNewSoftDeadline] = useState('')
+  const [newDueDate, setNewDueDate] = useState('')
+  const [newTerm, setNewTerm] = useState('')
   const [showSmart, setShowSmart] = useState(false)
   const [smartSpecific, setSmartSpecific] = useState('')
   const [smartMeasurable, setSmartMeasurable] = useState('')
   const [smartAchievable, setSmartAchievable] = useState('')
   const [smartRelevant, setSmartRelevant] = useState('')
   const [smartTimebound, setSmartTimebound] = useState('')
+  const [postDuplicateGoalId, setPostDuplicateGoalId] = useState(null)
+  const [postDupTasks, setPostDupTasks] = useState([''])
+  const [postDupPopupPos, setPostDupPopupPos] = useState(null)
+  const [postDupGoalTitle, setPostDupGoalTitle] = useState('')
+  const [postDupSaving, setPostDupSaving] = useState(false)
+  const [inlineCategoryGoalId, setInlineCategoryGoalId] = useState(null)
   const [editingId, setEditingId] = useState(null)
   const [editingTitle, setEditingTitle] = useState('')
   const [confirmDeleteId, setConfirmDeleteId] = useState(null)
@@ -129,6 +139,11 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
       const aRank = a.priority in PRIORITY_RANK ? PRIORITY_RANK[a.priority] : 3
       const bRank = b.priority in PRIORITY_RANK ? PRIORITY_RANK[b.priority] : 3
       result = aRank !== bRank ? aRank - bRank : a.title.localeCompare(b.title)
+    } else if (sortMode === 'term') {
+      const termRank = { long: 0, short: 1 }
+      const aR = a.term in termRank ? termRank[a.term] : 2
+      const bR = b.term in termRank ? termRank[b.term] : 2
+      result = aR !== bR ? aR - bR : a.title.localeCompare(b.title)
     } else {
       const aDate = nearestDueDate(a.id), bDate = nearestDueDate(b.id)
       if (!aDate && !bDate) result = a.title.localeCompare(b.title)
@@ -138,6 +153,13 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
     }
     return result * sortDir
   })
+  // Partition: fully completed goals go to bottom
+  const [activeGoals, completedGoalsPartition] = visibleGoals.reduce(([a, c], g) => {
+    const linked = goalTasks.filter(t => t.goal_id === g.id)
+    const isFullyDone = linked.length > 0 && linked.every(t => t.status === 'done')
+    return isFullyDone ? [a, [...c, g]] : [[...a, g], c]
+  }, [[], []])
+  visibleGoals = [...activeGoals, ...completedGoalsPartition]
 
   function handleEditTask(taskId) {
     const full = (allTasks || []).find(t => t.id === taskId)
@@ -189,7 +211,11 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
         smartMeasurable: smartMeasurable.trim() || null,
         smartAchievable: smartAchievable.trim() || null,
         smartRelevant: smartRelevant.trim() || null,
-        smartTimebound: smartTimebound.trim() || null
+        smartTimebound: smartTimebound.trim() || null,
+        softDeadline: newSoftDeadline || null,
+        goalDueDate: newDueDate || null,
+        term: newTerm || null,
+        assigneeId: newGoalAssignee || null
       }, newGoalCollaborationId || null)
       setAddGoalError('')
       // Create any initial tasks the user entered
@@ -203,6 +229,7 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
       } else {
         setNewTitle(''); setNewCategory(''); setNewPriority(''); setCustomCategory(false); setNewCategoryCustom(''); setNewFamilyMember('')
         setSmartSpecific(''); setSmartMeasurable(''); setSmartAchievable(''); setSmartRelevant(''); setSmartTimebound('')
+        setNewSoftDeadline(''); setNewDueDate(''); setNewTerm(''); setNewGoalAssignee('')
         setNewGoalCollaborationId(defaultCollaborationId || '')
         setShowSmart(false)
         setNewGoalTasks([''])
@@ -242,6 +269,10 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
 
   const bulkGoalCount = bulkGoalTitles.split('\n').map(l => l.trim()).filter(Boolean).length
 
+  const [editingAssigneeId, setEditingAssigneeId] = useState('')
+  const [editSoftDeadline, setEditSoftDeadline] = useState('')
+  const [editDueDate, setEditDueDate] = useState('')
+  const [editingTerm, setEditingTerm] = useState('')
   const [editingCategory, setEditingCategory] = useState('')
   const [editingCustomCategory, setEditingCustomCategory] = useState(false)
   const [editingCategoryCustom, setEditingCategoryCustom] = useState('')
@@ -277,6 +308,10 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
     setEditSmartRelevant(goal.smart_relevant || '')
     setEditSmartTimebound(goal.smart_timebound || '')
     setEditShowSmart(!!(goal.smart_specific || goal.smart_measurable || goal.smart_achievable || goal.smart_relevant || goal.smart_timebound))
+    setEditSoftDeadline(goal.soft_deadline || '')
+    setEditDueDate(goal.due_date || '')
+    setEditingTerm(goal.term || '')
+    setEditingAssigneeId(goal.assigned_to || '')
     setEditError('')
   }
 
@@ -293,7 +328,11 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
         smartMeasurable: editSmartMeasurable.trim() || null,
         smartAchievable: editSmartAchievable.trim() || null,
         smartRelevant: editSmartRelevant.trim() || null,
-        smartTimebound: editSmartTimebound.trim() || null
+        smartTimebound: editSmartTimebound.trim() || null,
+        softDeadline: editSoftDeadline || null,
+        goalDueDate: editDueDate || null,
+        term: editingTerm || null,
+        assigneeId: editingAssigneeId || null
       }, editingCollaborationId || null)
       setEditingId(null)
     } catch {
@@ -374,11 +413,35 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
                 />
               )}
               {collaborations && collaborations.length > 0 && (
-                <select value={newGoalCollaborationId} onChange={e => setNewGoalCollaborationId(e.target.value)} className="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-300">
+                <select value={newGoalCollaborationId} onChange={e => { setNewGoalCollaborationId(e.target.value); setNewGoalAssignee('') }} className="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-300">
                   <option value="">Save to: Personal</option>
                   {collaborations.map(c => <option key={c.id} value={c.id}>Save to: {c.name}</option>)}
                 </select>
               )}
+              {newGoalCollaborationId && collabMembersMap && collabMembersMap[newGoalCollaborationId] && collabMembersMap[newGoalCollaborationId].length > 0 && (
+                <select value={newGoalAssignee} onChange={e => setNewGoalAssignee(e.target.value)} className="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-300">
+                  <option value="">Assign to: Unassigned</option>
+                  {collabMembersMap[newGoalCollaborationId].map(m => <option key={m.id} value={m.id}>{m.username}</option>)}
+                </select>
+              )}
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <label className="block text-[10px] text-gray-400 mb-0.5">Soft deadline</label>
+                  <input type="date" value={newSoftDeadline} onChange={e => setNewSoftDeadline(e.target.value)} className="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-300" />
+                </div>
+                <div className="flex-1">
+                  <label className="block text-[10px] text-gray-400 mb-0.5">Due date</label>
+                  <input type="date" value={newDueDate} onChange={e => setNewDueDate(e.target.value)} className="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-300" />
+                </div>
+              </div>
+              <div className="flex gap-1">
+                {[['', '—'], ['long', 'Long-term'], ['short', 'Short-term']].map(([val, label]) => (
+                  <button key={val} type="button" onClick={() => setNewTerm(val)}
+                    className={'text-[10px] px-2 py-1 rounded border transition-colors ' + (newTerm === val ? 'bg-indigo-600 text-white border-indigo-600' : 'border-gray-200 text-gray-500 hover:border-indigo-300')}>
+                    {label}
+                  </button>
+                ))}
+              </div>
               {!bulkGoalMode && (
                 <div className="space-y-1.5 pt-1 border-t border-gray-200">
                   <p className="text-xs font-medium text-gray-500">Tasks (optional)</p>
@@ -466,11 +529,12 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
         })
         const done = linked.filter(t => t.status === 'done')
         const pct = linked.length > 0 ? Math.round((done.length / linked.length) * 100) : 0
+        const isFullyCompleted = linked.length > 0 && linked.every(t => t.status === 'done')
         const goalDisplayColor = (goal.category ? categoryBadge(goal.category)?.color : null) || goal.color
         return (
           <div
             key={goal.id}
-            className="flex items-start gap-2 border border-gray-200 rounded-lg px-3 py-1.5 shrink-0 min-w-[160px] group cursor-pointer relative"
+            className={'flex items-start gap-2 border rounded-lg px-3 py-1.5 shrink-0 min-w-[160px] group cursor-pointer relative ' + (isFullyCompleted ? 'border-gray-100 bg-gray-50 opacity-70' : 'border-gray-200')}
             style={goal.priority && PRIORITY_BORDER[goal.priority] ? { borderLeft: '4px solid ' + PRIORITY_BORDER[goal.priority] } : undefined}
             title={goal.priority ? PRIORITY_LABELS[goal.priority] + ' priority' : undefined}
             onClick={(e) => openPopup(goal.id, e)}
@@ -524,11 +588,35 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
                     />
                   )}
                   {collaborations && collaborations.length > 0 && (
-                    <select value={editingCollaborationId} onChange={e => setEditingCollaborationId(e.target.value)} className="text-xs border border-gray-200 rounded px-1 py-0.5 w-full focus:outline-none">
+                    <select value={editingCollaborationId} onChange={e => { setEditingCollaborationId(e.target.value); setEditingAssigneeId('') }} className="text-xs border border-gray-200 rounded px-1 py-0.5 w-full focus:outline-none">
                       <option value="">Save to: Personal</option>
                       {collaborations.map(c => <option key={c.id} value={c.id}>Save to: {c.name}</option>)}
                     </select>
                   )}
+                  {editingCollaborationId && collabMembersMap && collabMembersMap[editingCollaborationId] && collabMembersMap[editingCollaborationId].length > 0 && (
+                    <select value={editingAssigneeId} onChange={e => setEditingAssigneeId(e.target.value)} className="text-xs border border-gray-200 rounded px-1 py-0.5 w-full focus:outline-none">
+                      <option value="">Assign to: Unassigned</option>
+                      {collabMembersMap[editingCollaborationId].map(m => <option key={m.id} value={m.id}>{m.username}</option>)}
+                    </select>
+                  )}
+                  <div className="flex gap-1.5">
+                    <div className="flex-1">
+                      <label className="block text-[10px] text-gray-400 mb-0.5">Soft deadline</label>
+                      <input type="date" value={editSoftDeadline} onChange={e => setEditSoftDeadline(e.target.value)} className="w-full border border-gray-200 rounded px-1.5 py-1 text-xs focus:outline-none" />
+                    </div>
+                    <div className="flex-1">
+                      <label className="block text-[10px] text-gray-400 mb-0.5">Due date</label>
+                      <input type="date" value={editDueDate} onChange={e => setEditDueDate(e.target.value)} className="w-full border border-gray-200 rounded px-1.5 py-1 text-xs focus:outline-none" />
+                    </div>
+                  </div>
+                  <div className="flex gap-1">
+                    {[['', '—'], ['long', 'Long-term'], ['short', 'Short-term']].map(([val, label]) => (
+                      <button key={val} type="button" onClick={() => setEditingTerm(val)}
+                        className={'text-[10px] px-2 py-0.5 rounded border transition-colors ' + (editingTerm === val ? 'bg-indigo-600 text-white border-indigo-600' : 'border-gray-200 text-gray-500 hover:border-indigo-300')}>
+                        {label}
+                      </button>
+                    ))}
+                  </div>
                   {!editShowSmart ? (
                     <button type="button" onClick={() => setEditShowSmart(true)} className="text-xs text-indigo-500 hover:text-indigo-700 text-left">+ Make it a SMART goal (optional)</button>
                   ) : (
@@ -549,7 +637,7 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
               ) : (
                 <div className="flex items-center justify-between gap-1">
                   <p
-                    className="text-sm font-medium text-gray-700 truncate cursor-pointer hover:text-indigo-600"
+                    className={'text-sm font-medium truncate cursor-pointer hover:text-indigo-600 ' + (isFullyCompleted ? 'line-through text-gray-400' : 'text-gray-700')}
                     onClick={(e) => { e.stopPropagation(); startEdit(goal) }}
                     title="Click to edit"
                   >
@@ -564,11 +652,29 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
                   </p>
                 </div>
               )}
-              {categoryBadge(goal.category) ? (
+              {inlineCategoryGoalId === goal.id ? (
+                <select
+                  autoFocus
+                  value={goal.category || ''}
+                  onClick={e => e.stopPropagation()}
+                  onChange={async e => {
+                    e.stopPropagation()
+                    await onEditGoal(goal.id, goal.title, { ...goal, category: e.target.value || null }, goal.collaboration_id || null)
+                    setInlineCategoryGoalId(null)
+                  }}
+                  onBlur={() => setInlineCategoryGoalId(null)}
+                  className="text-[10px] border border-indigo-300 rounded px-1 py-0.5 w-full focus:outline-none mt-0.5"
+                >
+                  <option value="">No category</option>
+                  {allCategories.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              ) : categoryBadge(goal.category) ? (
                 <div className="flex items-center gap-1 mt-0.5">
                   <span
-                    className="text-[10px] font-medium px-1.5 py-0.5 rounded"
+                    className="text-[10px] font-medium px-1.5 py-0.5 rounded cursor-pointer hover:opacity-75"
                     style={{ color: categoryBadge(goal.category).color, background: categoryBadge(goal.category).color + '1a' }}
+                    onClick={e => { e.stopPropagation(); setInlineCategoryGoalId(goal.id) }}
+                    title="Click to change category"
                   >
                     {categoryBadge(goal.category).name}
                   </span>
@@ -582,13 +688,31 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
                   + Category
                 </button>
               )}
-              <div className="flex items-center gap-1.5 mt-1">
-                <div className="flex-1 h-1 bg-gray-100 rounded-full overflow-hidden">
-                  <div className="h-full rounded-full transition-all" style={{ width: pct + '%', background: goalDisplayColor }} />
+              {goal.term && (
+                <span className={'text-[10px] font-medium px-1.5 py-0.5 rounded mt-0.5 inline-block ' + (goal.term === 'long' ? 'bg-violet-50 text-violet-600' : 'bg-sky-50 text-sky-600')}>
+                  {goal.term === 'long' ? 'Long-term' : 'Short-term'}
+                </span>
+              )}
+              {isFullyCompleted ? (
+                <div className="mt-1">
+                  <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-600">✓ Complete — All tasks done</span>
                 </div>
-                <span className="text-xs text-gray-400 shrink-0">{pct}%</span>
-              </div>
-              <p className="text-xs text-gray-300 mt-0.5">{done.length}/{linked.length}</p>
+              ) : (
+                <div className="flex items-center gap-1.5 mt-1">
+                  <div className="flex-1 h-1 bg-gray-100 rounded-full overflow-hidden">
+                    <div className="h-full rounded-full transition-all" style={{ width: pct + '%', background: goalDisplayColor }} />
+                  </div>
+                  <span className="text-xs text-gray-400 shrink-0">{pct}%</span>
+                </div>
+              )}
+              {!isFullyCompleted && <p className="text-xs text-gray-300 mt-0.5">{done.length}/{linked.length}</p>}
+              {(goal.soft_deadline || goal.due_date) && (
+                <p className="text-[10px] text-gray-400 mt-0.5">
+                  {goal.soft_deadline && <span>Aim: {goal.soft_deadline.slice(5).replace('-', '/')}</span>}
+                  {goal.soft_deadline && goal.due_date && ' · '}
+                  {goal.due_date && <span className="text-amber-500">Due: {goal.due_date.slice(5).replace('-', '/')}</span>}
+                </p>
+              )}
               {editingId !== goal.id && (
                 <div
                   className="flex flex-wrap items-center gap-2 mt-2 pt-1.5 border-t border-gray-100 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity"
@@ -601,10 +725,27 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
                   >&#9998;</button>
                   {onDuplicateGoal && (
                     <button
-                      onClick={() => onDuplicateGoal(goal.id)}
+                      onClick={async (e) => {
+                        e.stopPropagation()
+                        const newGoal = await onDuplicateGoal(goal.id)
+                        if (newGoal) {
+                          setPostDuplicateGoalId(newGoal.id)
+                          setPostDupGoalTitle(newGoal.title)
+                          setPostDupTasks([''])
+                          const rect = e.currentTarget.getBoundingClientRect()
+                          setPostDupPopupPos({ top: Math.min(rect.bottom + 8, window.innerHeight - 300), left: Math.min(Math.max(rect.left, 12), window.innerWidth - 420) })
+                        }
+                      }}
                       className="text-[20px] text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 px-1.5 py-0.5 rounded transition-colors leading-none"
                       title="Duplicate goal"
                     >&#10697;</button>
+                  )}
+                  {isFullyCompleted && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); openPopup(goal.id, e) }}
+                      className="text-xs text-indigo-500 hover:text-indigo-700 px-1.5 py-0.5 rounded transition-colors"
+                      title="Add tasks to revive goal"
+                    >+ Tasks</button>
                   )}
                   <button
                     onClick={() => onDeleteGoal(goal.id)}
@@ -775,6 +916,7 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
               <option value="created">Date Created</option>
               <option value="deadline">Deadline</option>
               <option value="priority">Priority</option>
+              <option value="term">Long/Short Term</option>
             </select>
             <button
               onClick={() => setSortDir(d => d * -1)}
@@ -792,6 +934,61 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
           {allCategories.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
       </div>
+      {/* Post-duplicate add-tasks popup */}
+      {postDuplicateGoalId && postDupPopupPos && (
+        <div
+          className="fixed z-50 bg-white border border-gray-200 rounded-lg shadow-2xl w-[380px] max-w-[92vw] p-4"
+          style={{ top: postDupPopupPos.top, left: postDupPopupPos.left }}
+          onClick={e => e.stopPropagation()}
+        >
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-sm font-semibold text-gray-800">Add tasks to &ldquo;{postDupGoalTitle}&rdquo;</p>
+            <button onClick={() => { setPostDuplicateGoalId(null); setPostDupPopupPos(null) }} className="text-gray-400 hover:text-gray-600 text-sm">✕</button>
+          </div>
+          <div className="space-y-1.5">
+            {postDupTasks.map((t, i) => (
+              <div key={i} className="flex gap-1.5 items-center">
+                <input
+                  type="text"
+                  placeholder={i === 0 ? 'First task…' : 'Another task…'}
+                  value={t}
+                  onChange={e => setPostDupTasks(prev => prev.map((v, j) => j === i ? e.target.value : v))}
+                  className="flex-1 border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-300"
+                  autoFocus={i === 0}
+                />
+                {postDupTasks.length > 1 && (
+                  <button type="button" onClick={() => setPostDupTasks(prev => prev.filter((_, j) => j !== i))} className="text-gray-300 hover:text-red-400 text-sm leading-none">×</button>
+                )}
+              </div>
+            ))}
+            <button type="button" onClick={() => setPostDupTasks(prev => [...prev, ''])} className="text-xs text-indigo-500 hover:text-indigo-700">+ Add another</button>
+          </div>
+          <div className="flex gap-2 mt-3">
+            <button
+              type="button"
+              disabled={postDupSaving}
+              onClick={async () => {
+                const titles = postDupTasks.map(t => t.trim()).filter(Boolean)
+                if (titles.length === 0) { setPostDuplicateGoalId(null); setPostDupPopupPos(null); return }
+                setPostDupSaving(true)
+                const goal = goals.find(g => g.id === postDuplicateGoalId)
+                try {
+                  for (const title of titles) {
+                    await onCreateTask(title, '', postDuplicateGoalId, null, null, null, null, null, goal?.collaboration_id || null)
+                  }
+                } catch {}
+                setPostDupSaving(false)
+                setPostDuplicateGoalId(null)
+                setPostDupPopupPos(null)
+              }}
+              className="flex-1 text-sm text-white bg-indigo-600 hover:bg-indigo-700 px-3 py-1.5 rounded-lg disabled:opacity-40"
+            >
+              {postDupSaving ? 'Saving…' : 'Save tasks'}
+            </button>
+            <button type="button" onClick={() => { setPostDuplicateGoalId(null); setPostDupPopupPos(null) }} className="text-sm text-gray-400 hover:text-gray-600 px-2">Skip</button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

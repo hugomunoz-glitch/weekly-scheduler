@@ -89,7 +89,7 @@ export default function TaskCard({ task, isDone, isDragging, collabBadge, assign
           </span>
           {task.start_time && !isDueCard && (
             <p className={'text-xs mt-0.5 ' + (isDone ? 'text-gray-300' : 'text-indigo-400 font-medium')}>
-              {formatTime(task.start_time)}
+              {formatTime(task.start_time)}{task.end_time ? ' – ' + formatTime(task.end_time) : ''}
             </p>
           )}
           {catBadge && (

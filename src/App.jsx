@@ -15,6 +15,7 @@ import GoalsBar from './components/GoalsBar'
 import MobileLayout from './components/MobileLayout'
 import DailyReflection from './components/DailyReflection'
 import Dashboard from './components/Dashboard'
+import VisionMission from './components/VisionMission'
 import ExportMenu from './components/ExportMenu'
 import MonthView from './components/MonthView'
 import DayView from './components/DayView'
@@ -147,6 +148,7 @@ export default function App() {
   const [showCollab, setShowCollab] = useState(false)
   const [showReflect, setShowReflect] = useState(false)
   const [showDashboard, setShowDashboard] = useState(false)
+  const [showVisionMission, setShowVisionMission] = useState(false)
   const [collaborations, setCollaborations] = useState([])
   const [collabMembersMap, setCollabMembersMap] = useState({})
   const [activeView, setActiveView] = useState('all')
@@ -650,8 +652,18 @@ export default function App() {
       if (extra.smartAchievable) payload.smart_achievable = extra.smartAchievable
       if (extra.smartRelevant) payload.smart_relevant = extra.smartRelevant
       if (extra.smartTimebound) payload.smart_timebound = extra.smartTimebound
+      if (extra.softDeadline) payload.soft_deadline = extra.softDeadline
+      if (extra.goalDueDate) payload.due_date = extra.goalDueDate
+      if (extra.term) payload.term = extra.term
+      if (extra.assigneeId) payload.assigned_to = extra.assigneeId
     }
-    const { data, error } = await supabase.from('goals').insert(payload).select().single()
+    let { data, error } = await supabase.from('goals').insert(payload).select().single()
+    if (error && error.message && error.message.includes('column')) {
+      const safePayload = { ...payload }
+      delete safePayload.soft_deadline; delete safePayload.due_date; delete safePayload.term; delete safePayload.assigned_to
+      const retry = await supabase.from('goals').insert(safePayload).select().single()
+      data = retry.data; error = retry.error
+    }
     if (error) { console.error('addGoal failed:', error); throw error }
     setGoals(prev => [...prev, data])
     return data
@@ -675,7 +687,7 @@ export default function App() {
       smart_timebound: src.smart_timebound || null,
     }
     const { data, error } = await supabase.from('goals').insert(payload).select().single()
-    if (error) { console.error('duplicateGoal failed:', error); return }
+    if (error) { console.error('duplicateGoal failed:', error); return null }
     setGoals(prev => {
       const idx = prev.findIndex(g => g.id === goalId)
       const next = [...prev]
@@ -700,6 +712,7 @@ export default function App() {
         setGoalTasks(prev => [...newTasks.map(t => ({ id: t.id, title: t.title, goal_id: t.goal_id, status: t.status, due_date: t.due_date, start_time: t.start_time, priority: t.priority, collaboration_id: t.collaboration_id, assigned_to: t.assigned_to })), ...prev])
       }
     }
+    return data
   }
 
   async function editGoal(goalId, title, extra, collaborationId) {
@@ -714,8 +727,18 @@ export default function App() {
       if ('smartAchievable' in extra) payload.smart_achievable = extra.smartAchievable || null
       if ('smartRelevant' in extra) payload.smart_relevant = extra.smartRelevant || null
       if ('smartTimebound' in extra) payload.smart_timebound = extra.smartTimebound || null
+      if ('softDeadline' in extra) payload.soft_deadline = extra.softDeadline || null
+      if ('goalDueDate' in extra) payload.due_date = extra.goalDueDate || null
+      if ('term' in extra) payload.term = extra.term || null
+      if ('assigneeId' in extra) payload.assigned_to = extra.assigneeId || null
     }
-    const { data, error } = await supabase.from('goals').update(payload).eq('id', goalId).select().single()
+    let { data, error } = await supabase.from('goals').update(payload).eq('id', goalId).select().single()
+    if (error && error.message && error.message.includes('column')) {
+      const safePayload = { ...payload }
+      delete safePayload.soft_deadline; delete safePayload.due_date; delete safePayload.term; delete safePayload.assigned_to
+      const retry = await supabase.from('goals').update(safePayload).eq('id', goalId).select().single()
+      data = retry.data; error = retry.error
+    }
     if (error) { console.error('editGoal failed:', error); throw error }
     setGoals(prev => prev.map(g => g.id === goalId ? data : g))
   }
@@ -977,6 +1000,7 @@ export default function App() {
                 <button onClick={rolloverOverdue} className="px-3 py-1.5 text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100">Roll over {overdueTasks.length} overdue</button>
               )}
               <ExportMenu tasks={visibleTasks} goals={visibleGoals} weekStart={weekStart} />
+              <button onClick={() => setShowVisionMission(true)} className="px-3 py-1.5 text-sm font-medium text-indigo-600 border border-indigo-200 rounded-lg hover:bg-indigo-50" title="Vision &amp; Mission">Vision</button>
               <button onClick={() => setShowDashboard(true)} className="px-3 py-1.5 text-sm font-medium text-indigo-600 border border-indigo-200 rounded-lg hover:bg-indigo-50">Dashboard</button>
               <button onClick={() => setShowReflect(true)} className="px-3 py-1.5 text-sm font-medium text-indigo-600 border border-indigo-200 rounded-lg hover:bg-indigo-50">Reflect</button>
               <button onClick={() => setShowAdd(true)} className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700">+ Add task</button>
@@ -984,7 +1008,7 @@ export default function App() {
             </div>
           </header>
           <div className="mx-3 mt-3 rounded-xl border border-gray-200 shadow-sm overflow-hidden shrink-0">
-            <GoalsBar goals={visibleGoals} goalTasks={visibleGoalTasks} allTasks={visibleTasks} collabMap={collabMap} collaborations={collaborations} defaultCollaborationId={defaultCollaborationId} onAddGoal={addGoal} onEditGoal={editGoal} onDeleteGoal={deleteGoal} onDuplicateGoal={duplicateGoal} onMarkDone={markDone} onDelete={requestDeleteTask} onDuplicateTask={duplicateTask} onCreateTask={addTask} onEditTask={setEditingTask} />
+            <GoalsBar goals={visibleGoals} goalTasks={visibleGoalTasks} allTasks={visibleTasks} collabMap={collabMap} collaborations={collaborations} collabMembersMap={collabMembersMap} defaultCollaborationId={defaultCollaborationId} onAddGoal={addGoal} onEditGoal={editGoal} onDeleteGoal={deleteGoal} onDuplicateGoal={duplicateGoal} onMarkDone={markDone} onDelete={requestDeleteTask} onDuplicateTask={duplicateTask} onCreateTask={addTask} onEditTask={setEditingTask} />
           </div>
           <div className="flex flex-1 overflow-hidden gap-3 p-3">
             <main className="flex-1 overflow-x-auto overflow-y-auto rounded-xl border border-gray-200 shadow-sm bg-white p-4">
@@ -1007,7 +1031,8 @@ export default function App() {
       {editingTask && <AddTaskModal editingTask={editingTask} onEdit={editTask} onClose={() => setEditingTask(null)} goals={visibleGoals} onAddGoal={addGoal} existingTaskCategories={taskCategories} collaborations={collaborations} collabMembersMap={collabMembersMap} defaultCollaborationId={defaultCollaborationId} onCreateFollowUp={(prefill) => { setEditingTask(null); setFollowUpPrefill(prefill); setShowAdd(true) }} />}
       {showCollab && <CollaborationPanel onClose={() => setShowCollab(false)} />}
       {showReflect && <DailyReflection onClose={() => setShowReflect(false)} />}
-      {showDashboard && <Dashboard tasks={tasks} goals={visibleGoals} goalTasks={goalTasks} collaborations={collaborations} collabMap={collabMap} collabMembersMap={collabMembersMap} profileMap={profileMap} weekStart={weekStart} onClose={() => setShowDashboard(false)} />}
+      {showDashboard && <Dashboard tasks={tasks} goals={visibleGoals} goalTasks={goalTasks} collaborations={collaborations} collabMap={collabMap} collabMembersMap={collabMembersMap} profileMap={profileMap} weekStart={weekStart} onClose={() => setShowDashboard(false)} onEditGoal={editGoal} />}
+      {showVisionMission && <VisionMission onClose={() => setShowVisionMission(false)} />}
       {deleteScopePrompt && (
         <>
           <div className="fixed inset-0 z-[1999]" onClick={() => setDeleteScopePrompt(null)} />
