@@ -1008,7 +1008,7 @@ export default function App() {
             </div>
           </header>
           <div className="mx-3 mt-3 rounded-xl border border-gray-200 shadow-sm overflow-hidden shrink-0">
-            <GoalsBar goals={visibleGoals} goalTasks={visibleGoalTasks} allTasks={visibleTasks} collabMap={collabMap} collaborations={collaborations} collabMembersMap={collabMembersMap} defaultCollaborationId={defaultCollaborationId} onAddGoal={addGoal} onEditGoal={editGoal} onDeleteGoal={deleteGoal} onDuplicateGoal={duplicateGoal} onMarkDone={markDone} onDelete={requestDeleteTask} onDuplicateTask={duplicateTask} onCreateTask={addTask} onEditTask={setEditingTask} />
+            <GoalsBar goals={visibleGoals} goalTasks={visibleGoalTasks} allTasks={visibleTasks} collabMap={collabMap} collaborations={collaborations} collabMembersMap={collabMembersMap} defaultCollaborationId={defaultCollaborationId} onAddGoal={addGoal} onEditGoal={editGoal} onDeleteGoal={deleteGoal} onDuplicateGoal={duplicateGoal} onMarkDone={markDone} onDelete={requestDeleteTask} onDuplicateTask={duplicateTask} onCreateTask={addTask} onEditTask={setEditingTask} activeView={activeView} onChangeView={setActiveView} />
           </div>
           <div className="flex flex-1 overflow-hidden gap-3 p-3">
             <main className="flex-1 overflow-x-auto overflow-y-auto rounded-xl border border-gray-200 shadow-sm bg-white p-4">
