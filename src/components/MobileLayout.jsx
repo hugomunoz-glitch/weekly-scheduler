@@ -111,7 +111,7 @@ function NotificationSettings({ tasks }) {
   )
 }
 
-function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations, defaultCollaborationId, onAddGoal, onEditGoal, onDeleteGoal, onMarkDone, onDelete, onCreateTask, onEditTask }) {
+function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations, defaultCollaborationId, onAddGoal, onEditGoal, onDeleteGoal, onDuplicateGoal, onMarkDone, onDelete, onCreateTask, onEditTask }) {
   const [adding, setAdding] = useState(false)
   const [newTitle, setNewTitle] = useState('')
   const [newCategory, setNewCategory] = useState('')
@@ -1220,7 +1220,7 @@ export default function MobileLayout({
       )}
 
       {mobileCalView === 'week' && activeTab === 'goals' && (
-        <MobileGoalsBar goals={goals} goalTasks={goalTasks} allTasks={tasks} collabMap={collabMap} collaborations={collaborations} defaultCollaborationId={defaultCollaborationId} onAddGoal={onAddGoal} onEditGoal={onEditGoal} onDeleteGoal={onDeleteGoal} onMarkDone={onMarkDone} onDelete={onDelete} onCreateTask={onCreateTask} onEditTask={onEdit} />
+        <MobileGoalsBar goals={goals} goalTasks={goalTasks} allTasks={tasks} collabMap={collabMap} collaborations={collaborations} defaultCollaborationId={defaultCollaborationId} onAddGoal={onAddGoal} onEditGoal={onEditGoal} onDeleteGoal={onDeleteGoal} onDuplicateGoal={onDuplicateGoal} onMarkDone={onMarkDone} onDelete={onDelete} onCreateTask={onCreateTask} onEditTask={onEdit} />
       )}
 
       {mobileCalView === 'week' && activeTab === 'inbox' && (
