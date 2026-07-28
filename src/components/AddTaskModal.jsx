@@ -15,7 +15,12 @@ const DURATION_OPTIONS = [
   { minutes: 90, label: '1.5 hours' },
   { minutes: 120, label: '2 hours' },
   { minutes: 180, label: '3 hours' },
-  { minutes: 240, label: '4 hours' }
+  { minutes: 240, label: '4 hours' },
+  { minutes: 300, label: '5 hours' },
+  { minutes: 360, label: '6 hours' },
+  { minutes: 480, label: '8 hours' },
+  { minutes: 600, label: '10 hours' },
+  { minutes: 720, label: '12 hours' }
 ]
 
 const WEEKDAYS = [

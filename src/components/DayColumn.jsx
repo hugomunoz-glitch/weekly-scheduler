@@ -41,9 +41,15 @@ export default function DayColumn({ date, tasks, dueCards, goalMap, collabMap, p
           const bucketActiveCount = tasks.filter(t => t.status !== 'done' && (t.bucket || 'morning') === bucket.id).length
             + (dueCards || []).filter(t => t.status !== 'done' && (t.due_date_card_bucket || 'morning') === bucket.id).length
           const bucketAll = tasks.filter(t => (t.bucket || 'morning') === bucket.id).sort((a, b) => {
-            if (a.start_time && b.start_time) return a.start_time < b.start_time ? -1 : a.start_time > b.start_time ? 1 : 0
-            if (a.start_time && !b.start_time) return -1
-            if (!a.start_time && b.start_time) return 1
+            const aDone = a.status === 'done', bDone = b.status === 'done'
+            const aHasTime = !!a.start_time, bHasTime = !!b.start_time
+            // done-without-time goes to bottom
+            if (aDone && !aHasTime && !(bDone && !bHasTime)) return 1
+            if (bDone && !bHasTime && !(aDone && !aHasTime)) return -1
+            // both in same group: sort by time then position
+            if (aHasTime && bHasTime) return a.start_time < b.start_time ? -1 : a.start_time > b.start_time ? 1 : 0
+            if (aHasTime) return -1
+            if (bHasTime) return 1
             return (a.position || 0) - (b.position || 0)
           })
           const bucketDueCards = (dueCards || []).filter(t => (t.due_date_card_bucket || 'morning') === bucket.id).sort((a, b) => (a.due_date_card_position || 0) - (b.due_date_card_position || 0))

@@ -166,8 +166,15 @@ function MobileDonutChart({ data, size = 110 }) {
 
 // ── Dashboard modal ───────────────────────────────────────────────────────────
 
-export default function Dashboard({ tasks, goals, goalTasks, collaborations, collabMap, collabMembersMap, profileMap, weekStart, onClose, isMobile = false }) {
+const DASHBOARD_GOAL_CATEGORIES = [
+  'Career/Professional', 'Family', 'Financial', 'Intellectual',
+  'Physical (Health/Wellness)', 'Relationships',
+  'Social (Community/Volunteering)', 'Spiritual (Prayer/Church)'
+]
+
+export default function Dashboard({ tasks, goals, goalTasks, collaborations, collabMap, collabMembersMap, profileMap, weekStart, onClose, onEditGoal, isMobile = false }) {
   const [view, setView] = useState('personal')
+  const [inlineCatGoalId, setInlineCatGoalId] = useState(null)
   const [selectedCollab, setSelectedCollab] = useState('all') // 'all' or a collab id
   const [rangeMode, setRangeMode] = useState('week') // 'week' | 'custom'
   const defaultStart = format(weekStart, 'yyyy-MM-dd')
@@ -587,12 +594,41 @@ export default function Dashboard({ tasks, goals, goalTasks, collaborations, col
             <section>
               <h3 className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Goal Momentum</h3>
               <div className="flex flex-col gap-2">
-                {goalsWithProgress.map(g => (
+                {goalsWithProgress.map(g => {
+                  const badge = g.category ? categoryBadge(g.category) : null
+                  return (
                   <div key={g.id} className="rounded-xl border border-gray-200 bg-white px-4 py-3 flex items-center gap-4">
                     <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: g.displayColor }} />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2 mb-1.5">
-                        <p className="text-sm font-medium text-gray-800 truncate">{g.title}</p>
+                        <div className="flex items-center gap-2 min-w-0">
+                          <p className="text-sm font-medium text-gray-800 truncate">{g.title}</p>
+                          {inlineCatGoalId === g.id && onEditGoal ? (
+                            <select
+                              autoFocus
+                              defaultValue={g.category || ''}
+                              onClick={e => e.stopPropagation()}
+                              onChange={async e => {
+                                await onEditGoal(g.id, g.title, { ...g, category: e.target.value || null }, g.collaboration_id || null)
+                                setInlineCatGoalId(null)
+                              }}
+                              onBlur={() => setInlineCatGoalId(null)}
+                              className="text-[10px] border border-indigo-300 rounded px-1 py-0.5 focus:outline-none"
+                            >
+                              <option value="">No category</option>
+                              {DASHBOARD_GOAL_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                            </select>
+                          ) : badge ? (
+                            <span
+                              className="text-[9px] font-medium px-1.5 py-0.5 rounded cursor-pointer hover:opacity-75 shrink-0"
+                              style={{ color: badge.color, background: badge.color + '1a' }}
+                              onClick={() => onEditGoal && setInlineCatGoalId(g.id)}
+                              title="Click to change category"
+                            >{badge.name}</span>
+                          ) : onEditGoal ? (
+                            <button onClick={() => setInlineCatGoalId(g.id)} className="text-[9px] text-gray-300 hover:text-indigo-400 shrink-0">+ cat</button>
+                          ) : null}
+                        </div>
                         <div className="flex items-center gap-2 shrink-0">
                           {g.streak > 0 && (
                             <span className="text-xs text-orange-500 font-medium tabular-nums">🔥 {g.streak}d</span>
@@ -609,7 +645,8 @@ export default function Dashboard({ tasks, goals, goalTasks, collaborations, col
                     </div>
                     <span className="text-sm font-semibold tabular-nums text-gray-700 w-9 text-right shrink-0">{g.pct}%</span>
                   </div>
-                ))}
+                  )
+                })}
               </div>
             </section>
           )}
