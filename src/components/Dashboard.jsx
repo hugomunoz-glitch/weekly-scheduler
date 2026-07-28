@@ -402,24 +402,57 @@ export default function Dashboard({ tasks, goals, goalTasks, collaborations, col
               <section>
                 <p style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#9ca3af', marginBottom: 8 }}>Goal Momentum</p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  {goalsWithProgress.map(g => (
+                  {goalsWithProgress.map(g => {
+                    const badge = g.category ? categoryBadge(g.category) : null
+                    return (
                     <div key={g.id} style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
                       <div style={{ width: 8, height: 8, borderRadius: '50%', background: g.displayColor, flexShrink: 0 }} />
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 6 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 4 }}>
                           <p style={{ fontSize: 13, fontWeight: 500, color: '#1f2937', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{g.title}</p>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
                             {g.streak > 0 && <span style={{ fontSize: 11, color: '#f97316', fontWeight: 500 }}>🔥{g.streak}d</span>}
                             <span style={{ fontSize: 11, color: '#9ca3af', fontVariantNumeric: 'tabular-nums' }}>{g.done}/{g.total}</span>
                           </div>
                         </div>
+                        {inlineCatGoalId === g.id && onEditGoal ? (
+                          <select
+                            autoFocus
+                            defaultValue={g.category || ''}
+                            onChange={async e => {
+                              await onEditGoal(g.id, g.title, { ...g, category: e.target.value || null }, g.collaboration_id || null)
+                              setInlineCatGoalId(null)
+                            }}
+                            onBlur={() => setInlineCatGoalId(null)}
+                            style={{ fontSize: 11, border: '1px solid #a5b4fc', borderRadius: 6, padding: '2px 4px', marginBottom: 6, width: '100%', background: 'white', outline: 'none' }}
+                          >
+                            <option value="">No category</option>
+                            {DASHBOARD_GOAL_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                          </select>
+                        ) : (
+                          <div style={{ marginBottom: 6 }}>
+                            {badge ? (
+                              <span
+                                onClick={() => onEditGoal && setInlineCatGoalId(g.id)}
+                                style={{ fontSize: 10, fontWeight: 500, padding: '2px 7px', borderRadius: 4, color: badge.color, background: badge.color + '1a', cursor: onEditGoal ? 'pointer' : 'default' }}
+                                title="Tap to change category"
+                              >{badge.name}</span>
+                            ) : onEditGoal ? (
+                              <span
+                                onClick={() => setInlineCatGoalId(g.id)}
+                                style={{ fontSize: 10, color: '#d1d5db', cursor: 'pointer', borderBottom: '1px dashed #e5e7eb' }}
+                              >+ category</span>
+                            ) : null}
+                          </div>
+                        )}
                         <div style={{ height: 5, borderRadius: 99, background: '#f1f5f9', overflow: 'hidden' }}>
                           <div style={{ height: '100%', borderRadius: 99, background: g.displayColor, width: `${g.pct}%` }} />
                         </div>
                       </div>
                       <span style={{ fontSize: 13, fontWeight: 600, color: '#374151', width: 34, textAlign: 'right', flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>{g.pct}%</span>
                     </div>
-                  ))}
+                    )
+                  })}
                 </div>
               </section>
             )}
