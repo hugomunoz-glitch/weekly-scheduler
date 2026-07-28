@@ -10,10 +10,10 @@ function utcDateStr(date) {
   return date.toISOString().slice(0, 10)
 }
 
-export default function DailyReflection({ onClose, isMobile = false }) {
+export default function DailyReflection({ onClose, isMobile = false, date }) {
   const { user } = useAuth()
-  const todayUTC = utcDateStr(new Date())
-  const yesterdayUTC = utcDateStr(subDays(new Date(), 1))
+  const targetUTC = date ? utcDateStr(parseISO(date)) : utcDateStr(new Date())
+  const prevUTC = utcDateStr(subDays(parseISO(targetUTC), 1))
 
   const [todayReflection, setTodayReflection] = useState({ completed_notes: '', goals_notes: '' })
   const [yesterdayReflection, setYesterdayReflection] = useState(null)
@@ -28,15 +28,15 @@ export default function DailyReflection({ onClose, isMobile = false }) {
       .from('daily_reflections')
       .select('*')
       .eq('user_id', user.id)
-      .in('date', [todayUTC, yesterdayUTC])
+      .in('date', [targetUTC, prevUTC])
     if (data) {
-      const today = data.find(r => r.date === todayUTC)
-      const yesterday = data.find(r => r.date === yesterdayUTC)
+      const today = data.find(r => r.date === targetUTC)
+      const yesterday = data.find(r => r.date === prevUTC)
       if (today) setTodayReflection({ completed_notes: today.completed_notes || '', goals_notes: today.goals_notes || '' })
       if (yesterday) setYesterdayReflection(yesterday)
     }
     setLoading(false)
-  }, [user, todayUTC, yesterdayUTC])
+  }, [user, targetUTC, prevUTC])
 
   useEffect(() => { loadReflections() }, [loadReflections])
 
@@ -45,7 +45,7 @@ export default function DailyReflection({ onClose, isMobile = false }) {
     setSaving(true)
     await supabase.from('daily_reflections').upsert({
       user_id: user.id,
-      date: todayUTC,
+      date: targetUTC,
       completed_notes: todayReflection.completed_notes,
       goals_notes: todayReflection.goals_notes,
       updated_at: new Date().toISOString()
@@ -54,6 +54,8 @@ export default function DailyReflection({ onClose, isMobile = false }) {
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
   }
+
+  const displayDate = parseISO(targetUTC)
 
   const containerStyle = isMobile ? {
     display: 'flex', flexDirection: 'column', height: '100%', background: 'white', overflow: 'hidden'
@@ -75,7 +77,7 @@ export default function DailyReflection({ onClose, isMobile = false }) {
       <div style={{ padding: isMobile ? '16px 16px 12px' : '20px 24px 16px', borderBottom: '1px solid #f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
         <div>
           <h2 style={{ margin: 0, fontSize: '17px', fontWeight: 700, color: '#111827' }}>Daily Reflection</h2>
-          <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#9ca3af' }}>{format(new Date(), 'EEEE, MMMM d')}</p>
+          <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#9ca3af' }}>{format(displayDate, 'EEEE, MMMM d')}</p>
         </div>
         {onClose && (
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '20px', color: '#9ca3af', padding: '4px', lineHeight: 1 }}>×</button>
