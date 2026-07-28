@@ -72,6 +72,15 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
   const [sortMode, setSortMode] = useState('deadline')
   const [sortDir, setSortDir] = useState(1)
   const [categoryFilter, setCategoryFilter] = useState('all')
+  // localStorage-backed term map so long/short-term sort works even before DB column exists
+  const [localTerms, setLocalTerms] = useState(() => { try { return JSON.parse(localStorage.getItem('goal_terms') || '{}') } catch { return {} } })
+  function saveLocalTerm(goalId, term) {
+    setLocalTerms(prev => {
+      const next = { ...prev, [goalId]: term || null }
+      try { localStorage.setItem('goal_terms', JSON.stringify(next)) } catch {}
+      return next
+    })
+  }
   const allCategories = [...new Set([...GOAL_CATEGORIES, ...goals.map(g => g.category).filter(Boolean)])].sort()
   const [popupPos, setPopupPos] = useState(null)
   const dragRef = useRef(null)
@@ -126,7 +135,9 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
     return linked.length > 0 && linked.every(t => t.status === 'done')
   }).length
 
-  let visibleGoals = goalSearch.trim() ? goals.filter(g => g.title.toLowerCase().includes(goalSearch.trim().toLowerCase())) : goals
+  // Merge localStorage terms into goals so sort-by-term works regardless of DB schema
+  const goalsWithTerm = goals.map(g => ({ ...g, term: g.term || localTerms[g.id] || null }))
+  let visibleGoals = goalSearch.trim() ? goalsWithTerm.filter(g => g.title.toLowerCase().includes(goalSearch.trim().toLowerCase())) : goalsWithTerm
   if (categoryFilter !== 'all') visibleGoals = visibleGoals.filter(g => g.category === categoryFilter)
 
   visibleGoals = [...visibleGoals].sort((a, b) => {
@@ -218,6 +229,7 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
         assigneeId: newGoalAssignee || null
       }, newGoalCollaborationId || null)
       setAddGoalError('')
+      if (savedGoal?.id && newTerm) saveLocalTerm(savedGoal.id, newTerm)
       // Create any initial tasks the user entered
       const taskTitles = newGoalTasks.map(t => t.trim()).filter(Boolean)
       for (const title of taskTitles) {
@@ -334,6 +346,7 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
         term: editingTerm || null,
         assigneeId: editingAssigneeId || null
       }, editingCollaborationId || null)
+      saveLocalTerm(goalId, editingTerm)
       setEditingId(null)
     } catch {
       setEditError('Could not save. Try again.')
@@ -345,7 +358,10 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
       <div className="flex items-start gap-3 overflow-x-auto">
       <div className="sticky left-0 z-10 bg-white self-stretch flex items-center gap-3 pr-3 shrink-0">
         <div className="flex flex-col gap-0.5 shrink-0">
-          <span className="text-sm font-semibold text-gray-900 tracking-wide">Goals</span>
+          <span className="text-sm font-semibold text-gray-900 tracking-wide flex items-center gap-1">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-indigo-500"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+            Goals
+          </span>
           <span className="text-[11px] text-gray-400">{completedGoalsCount} of {goals.length} done</span>
         </div>
         {adding ? (
@@ -534,7 +550,7 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
         return (
           <div
             key={goal.id}
-            className={'flex items-start gap-2 border rounded-lg px-3 py-1.5 shrink-0 min-w-[160px] group cursor-pointer relative ' + (isFullyCompleted ? 'border-gray-100 bg-gray-50 opacity-70' : 'border-gray-200')}
+            className={'flex items-start gap-2 border rounded-lg px-3 py-1.5 shrink-0 min-w-[160px] group cursor-pointer relative ' + (isFullyCompleted ? 'border-emerald-100 bg-white' : 'border-gray-200')}
             style={goal.priority && PRIORITY_BORDER[goal.priority] ? { borderLeft: '4px solid ' + PRIORITY_BORDER[goal.priority] } : undefined}
             title={goal.priority ? PRIORITY_LABELS[goal.priority] + ' priority' : undefined}
             onClick={(e) => openPopup(goal.id, e)}
