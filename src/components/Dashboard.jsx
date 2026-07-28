@@ -105,7 +105,7 @@ function DonutChart({ data }) {
         ) : (
           <>
             <span className="text-lg font-bold tabular-nums text-gray-800">{total}</span>
-            <span className="text-[10px] text-gray-400 mt-0.5">tasks</span>
+            <span className="text-[10px] text-gray-400 mt-0.5">goals</span>
           </>
         )}
       </div>
@@ -155,7 +155,7 @@ function MobileDonutChart({ data, size = 110 }) {
       </svg>
       <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
         <span style={{ fontSize: 18, fontWeight: 700, color: '#111827', fontVariantNumeric: 'tabular-nums' }}>{total}</span>
-        <span style={{ fontSize: 10, color: '#9ca3af' }}>tasks</span>
+        <span style={{ fontSize: 10, color: '#9ca3af' }}>goals</span>
       </div>
     </div>
   )
@@ -198,19 +198,20 @@ export default function Dashboard({ tasks, goals, goalTasks, collaborations, col
     return { ...g, done, total: linked.length, pct, streak, displayColor }
   }).sort((a, b) => b.pct - a.pct)
 
-  // donut: tasks this week by category
-  const catCounts = {}
-  weekTasks.forEach(t => {
-    const key = t.category || 'Uncategorized'
-    catCounts[key] = (catCounts[key] || 0) + 1
-  })
+  // donut: goals by category
   const DONUT_COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#06b6d4', '#ec4899', '#84cc16']
-  const chartData = Object.entries(catCounts)
+  const goalCatCounts = {}
+  goals.forEach(g => {
+    const badge = g.category ? categoryBadge(g.category) : null
+    const key = badge ? badge.name : 'Uncategorized'
+    goalCatCounts[key] = (goalCatCounts[key] || 0) + 1
+  })
+  const chartData = Object.entries(goalCatCounts)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 7)
     .map(([cat, count], i) => {
       const badge = categoryBadge(cat)
-      return { label: cat === 'Uncategorized' ? cat : badge?.name || cat, value: count, color: badge?.color || DONUT_COLORS[i % DONUT_COLORS.length] }
+      return { label: cat, value: count, color: badge?.color || DONUT_COLORS[i % DONUT_COLORS.length] }
     })
 
   // ── team stats ──
@@ -311,7 +312,7 @@ export default function Dashboard({ tasks, goals, goalTasks, collaborations, col
             <section>
               <p style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#9ca3af', marginBottom: 8 }}>Where Your Time Goes</p>
               {chartData.length === 0 ? (
-                <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: 20, textAlign: 'center', fontSize: 13, color: '#d1d5db' }}>No tasks this week.</div>
+                <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: 20, textAlign: 'center', fontSize: 13, color: '#d1d5db' }}>No goals yet.</div>
               ) : (
                 <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 16 }}>
                   <MobileDonutChart data={chartData} size={110} />
@@ -464,7 +465,7 @@ export default function Dashboard({ tasks, goals, goalTasks, collaborations, col
                 <h3 className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Where Your Time Goes</h3>
                 {chartData.length === 0 ? (
                   <div className="rounded-xl border border-gray-200 bg-white p-6 text-center text-sm text-gray-300">
-                    No tasks scheduled this week yet.
+                    No goals yet.
                   </div>
                 ) : (
                   <div className="rounded-xl border border-gray-200 bg-white p-4 flex items-center gap-6">
