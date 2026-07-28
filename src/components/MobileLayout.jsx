@@ -541,13 +541,6 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
               title="More actions"
             >&#8942;</button>
           </div>
-          {pressedGoalId === goal.id && (
-            <div onClick={e => e.stopPropagation()} style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '8px' }}>
-              <button onClick={(e) => { e.stopPropagation(); setPressedGoalId(null); startEditGoal(goal) }} style={{ fontSize: '24px', color: '#6366f1', background: 'none', border: 'none', padding: 0, cursor: 'pointer', lineHeight: 1 }} title="Edit goal">&#9998;</button>
-              {onDuplicateGoal && <button onClick={(e) => { e.stopPropagation(); setPressedGoalId(null); onDuplicateGoal(goal.id) }} style={{ fontSize: '20px', color: '#6b7280', background: 'none', border: 'none', padding: 0, cursor: 'pointer', lineHeight: 1 }} title="Duplicate goal">&#10697;</button>}
-              <button onClick={(e) => { e.stopPropagation(); setPressedGoalId(null); onDeleteGoal(goal.id) }} style={{ fontSize: '18px', color: '#ef4444', background: 'none', border: 'none', padding: 0, cursor: 'pointer', lineHeight: 1 }} title="Delete goal">&#128465;</button>
-            </div>
-          )}
           {categoryBadge(goal.category) && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px', paddingLeft: '2px' }}>
               <span style={{ fontSize: '10px', fontWeight: 500, padding: '2px 6px', borderRadius: '4px', color: categoryBadge(goal.category).color, background: categoryBadge(goal.category).color + '1a' }}>{categoryBadge(goal.category).name}</span>
@@ -560,6 +553,13 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
             <span style={{ fontSize: "11px", color: "#9ca3af", flexShrink: 0 }}>{pct}%</span>
             <span style={{ fontSize: "11px", color: "#9ca3af", flexShrink: 0 }}>{done.length}/{linked.length}</span>
           </div>
+          {pressedGoalId === goal.id && (
+            <div onClick={e => e.stopPropagation()} style={{ display: 'flex', alignItems: 'center', gap: '14px', marginTop: '8px', paddingTop: '8px', borderTop: '1px solid #f3f4f6' }}>
+              <button onClick={(e) => { e.stopPropagation(); setPressedGoalId(null); startEditGoal(goal) }} style={{ fontSize: '24px', color: '#6b7280', background: 'none', border: 'none', padding: 0, cursor: 'pointer', lineHeight: 1 }} title="Edit goal">&#9998;</button>
+              {onDuplicateGoal && <button onClick={(e) => { e.stopPropagation(); setPressedGoalId(null); onDuplicateGoal(goal.id) }} style={{ fontSize: '20px', color: '#6b7280', background: 'none', border: 'none', padding: 0, cursor: 'pointer', lineHeight: 1 }} title="Duplicate goal">&#10697;</button>}
+              <button onClick={(e) => { e.stopPropagation(); setPressedGoalId(null); onDeleteGoal(goal.id) }} style={{ fontSize: '18px', color: '#ef4444', background: 'none', border: 'none', padding: 0, cursor: 'pointer', lineHeight: 1, marginLeft: 'auto' }} title="Delete goal">&#128465;</button>
+            </div>
+          )}
           {editingGoalId === goal.id && (
             <div onClick={(e) => { e.stopPropagation(); closeEditingGoal() }} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <form onSubmit={handleEditGoalSubmit} onClick={e => e.stopPropagation()} style={{ background: 'white', borderRadius: '12px', padding: '16px', width: '85vw', maxWidth: '320px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
