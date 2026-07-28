@@ -688,6 +688,13 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
                                       {t.start_time && (
                                         <span className="text-sm text-indigo-400 shrink-0 whitespace-nowrap">{formatTime(t.start_time)}</span>
                                       )}
+                                      <button
+                                        onClick={(e) => { e.stopPropagation(); handleEditTask(t.id) }}
+                                        className="text-[18px] text-gray-400 hover:text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 leading-none px-0.5"
+                                        title="Edit task"
+                                      >
+                                        &#9998;
+                                      </button>
                                       {onDuplicateTask && (
                                         <button
                                           onClick={(e) => { e.stopPropagation(); onDuplicateTask(t.id) }}
@@ -699,10 +706,10 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
                                       )}
                                       <button
                                         onClick={(e) => { e.stopPropagation(); onDelete(t.id, e) }}
-                                        className="w-5 h-5 rounded-full bg-red-500 hover:bg-red-600 text-white text-[11px] font-semibold flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                                        className="text-base text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 px-0.5 leading-none"
                                         title="Delete task"
                                       >
-                                        &#10005;
+                                        &#128465;
                                       </button>
                                     </li>
                                   )}

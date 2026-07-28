@@ -168,6 +168,7 @@ function MobileDonutChart({ data, size = 110 }) {
 
 export default function Dashboard({ tasks, goals, goalTasks, collaborations, collabMap, collabMembersMap, profileMap, weekStart, onClose, isMobile = false }) {
   const [view, setView] = useState('personal')
+  const [selectedCollab, setSelectedCollab] = useState('all') // 'all' or a collab id
   const [rangeMode, setRangeMode] = useState('week') // 'week' | 'custom'
   const defaultStart = format(weekStart, 'yyyy-MM-dd')
   const defaultEnd = format(addDays(weekStart, 6), 'yyyy-MM-dd')
@@ -190,8 +191,15 @@ export default function Dashboard({ tasks, goals, goalTasks, collaborations, col
   const dailyStreak = computeDailyStreak(tasks)
   const activeGoals = goals.filter(g => goalTasks.some(t => t.goal_id === g.id && t.status === 'done')).length
 
+  // view-scoped goals
+  const viewGoals = view === 'personal'
+    ? goals.filter(g => !g.collaboration_id)
+    : view === 'collaborations'
+      ? goals.filter(g => g.collaboration_id && (selectedCollab === 'all' || g.collaboration_id === selectedCollab))
+      : goals
+
   // goals with progress + per-goal streak
-  const goalsWithProgress = goals.map(g => {
+  const goalsWithProgress = viewGoals.map(g => {
     const linked = goalTasks.filter(t => t.goal_id === g.id)
     const done = linked.filter(t => t.status === 'done').length
     const pct = linked.length > 0 ? Math.round((done / linked.length) * 100) : 0
@@ -209,7 +217,7 @@ export default function Dashboard({ tasks, goals, goalTasks, collaborations, col
     'Social (Community/Volunteering)', 'Spiritual (Prayer/Church)'
   ]
   const goalCatCounts = {}
-  goals.forEach(g => {
+  viewGoals.forEach(g => {
     const badge = g.category ? categoryBadge(g.category) : null
     const key = badge ? badge.name : 'Uncategorized'
     goalCatCounts[key] = (goalCatCounts[key] || 0) + 1
@@ -271,6 +279,36 @@ export default function Dashboard({ tasks, goals, goalTasks, collaborations, col
                 aria-label="Close"
               >✕</button>
             </div>
+            {/* view toggle */}
+            <div style={{ display: 'flex', background: '#f3f4f6', borderRadius: 8, padding: 2, gap: 2, marginTop: 10 }}>
+              {[['personal', 'Personal'], ['collaborations', 'Collaborations'], ['all', 'All']].map(([v, label]) => (
+                <button
+                  key={v}
+                  onClick={() => setView(v)}
+                  style={{
+                    flex: 1, padding: '4px 8px', borderRadius: 6, border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 500,
+                    background: view === v ? 'white' : 'transparent',
+                    color: view === v ? '#111827' : '#6b7280',
+                    boxShadow: view === v ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            {/* collab filter */}
+            {view === 'collaborations' && collaborations.length > 1 && (
+              <select
+                value={selectedCollab}
+                onChange={e => setSelectedCollab(e.target.value)}
+                style={{ marginTop: 8, width: '100%', fontSize: 12, border: '1px solid #e5e7eb', borderRadius: 8, padding: '4px 8px', background: 'white', outline: 'none' }}
+              >
+                <option value="all">All collaborations</option>
+                {collaborations.map(c => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            )}
             {/* date range picker */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
               <div style={{ display: 'flex', background: '#f3f4f6', borderRadius: 8, padding: 2, gap: 2 }}>
@@ -378,6 +416,37 @@ export default function Dashboard({ tasks, goals, goalTasks, collaborations, col
                 </div>
               </section>
             )}
+
+            {/* members (collaborations view only) */}
+            {view === 'collaborations' && (
+              <section>
+                <p style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#9ca3af', marginBottom: 8 }}>Members</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {collaborations
+                    .filter(c => selectedCollab === 'all' || c.id === selectedCollab)
+                    .map(collab => {
+                      const members = collabMembersMap[collab.id] || []
+                      const color = collabMap[collab.id]?.color || '#6366f1'
+                      return members.map(m => {
+                        const done = memberDone[m.id] || 0
+                        const weekDoneCount = memberWeekDone[m.id] || 0
+                        return (
+                          <div key={m.id} style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 12, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <div style={{ width: 32, height: 32, borderRadius: '50%', background: color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 600, color: 'white', flexShrink: 0 }}>
+                              {m.username.slice(0, 2).toUpperCase()}
+                            </div>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <p style={{ fontSize: 13, fontWeight: 500, color: '#1f2937', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.username}</p>
+                              <p style={{ fontSize: 11, color: '#9ca3af', margin: '2px 0 0', fontVariantNumeric: 'tabular-nums' }}>{weekDoneCount} done this week · {done} total</p>
+                            </div>
+                            <span style={{ width: 8, height: 8, borderRadius: '50%', background: color, flexShrink: 0 }} />
+                          </div>
+                        )
+                      })
+                    })}
+                </div>
+              </section>
+            )}
           </div>
         </div>
       </div>
@@ -404,22 +473,34 @@ export default function Dashboard({ tasks, goals, goalTasks, collaborations, col
               <p className="text-xs text-gray-400 mt-0.5">{weekLabel}</p>
             </div>
             <div className="flex items-center gap-3">
-              {/* personal / team toggle */}
+              {/* view toggle */}
               <div className="flex items-center p-0.5 rounded-lg bg-gray-200 text-xs font-medium">
-                {['personal', 'team'].map(v => (
+                {[['personal', 'Personal'], ['collaborations', 'Collaborations'], ['all', 'All']].map(([v, label]) => (
                   <button
                     key={v}
                     onClick={() => setView(v)}
-                    className={`px-3 py-1.5 rounded-md capitalize transition-all ${
+                    className={`px-3 py-1.5 rounded-md transition-all ${
                       view === v
                         ? 'bg-white text-gray-900 shadow-sm'
                         : 'text-gray-500 hover:text-gray-700'
                     }`}
                   >
-                    {v}
+                    {label}
                   </button>
                 ))}
               </div>
+              {view === 'collaborations' && collaborations.length > 1 && (
+                <select
+                  value={selectedCollab}
+                  onChange={e => setSelectedCollab(e.target.value)}
+                  className="text-xs border border-gray-200 rounded-lg px-2 py-1 bg-white focus:outline-none focus:border-indigo-400"
+                >
+                  <option value="all">All collaborations</option>
+                  {collaborations.map(c => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              )}
               <button
                 onClick={onClose}
                 className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-200 transition-colors"
@@ -467,197 +548,101 @@ export default function Dashboard({ tasks, goals, goalTasks, collaborations, col
         </div>
 
         <div className="p-5 flex flex-col gap-5">
-          {view === 'personal' ? (
-            <>
-              {/* ── quick stats ── */}
-              <div className="flex gap-3">
-                <StatTile value={dailyStreak === 0 ? '—' : `${dailyStreak}d`} label="Daily streak" accent={dailyStreak > 0 ? '#f97316' : undefined} />
-                <StatTile value={weekDone.length} label="Done this week" accent="#6366f1" />
-                <StatTile value={`${weekTasks.length > 0 ? Math.round((weekDone.length / weekTasks.length) * 100) : 0}%`} label="Completion rate" accent="#10b981" />
-                <StatTile value={activeGoals} label="Goals with progress" />
+          {/* ── quick stats ── */}
+          <div className="flex gap-3">
+            <StatTile value={dailyStreak === 0 ? '—' : `${dailyStreak}d`} label="Daily streak" accent={dailyStreak > 0 ? '#f97316' : undefined} />
+            <StatTile value={weekDone.length} label="Done this week" accent="#6366f1" />
+            <StatTile value={`${weekTasks.length > 0 ? Math.round((weekDone.length / weekTasks.length) * 100) : 0}%`} label="Completion rate" accent="#10b981" />
+            <StatTile value={activeGoals} label="Goals with progress" />
+          </div>
+
+          {/* ── task breakdown ── */}
+          <section>
+            <h3 className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Where Your Time Goes</h3>
+            {chartData.length === 0 ? (
+              <div className="rounded-xl border border-gray-200 bg-white p-6 text-center text-sm text-gray-300">
+                No goals yet.
               </div>
-
-              {/* ── task breakdown ── */}
-              <section>
-                <h3 className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Where Your Time Goes</h3>
-                {chartData.length === 0 ? (
-                  <div className="rounded-xl border border-gray-200 bg-white p-6 text-center text-sm text-gray-300">
-                    No goals yet.
-                  </div>
-                ) : (
-                  <div className="rounded-xl border border-gray-200 bg-white p-4 flex items-center gap-6">
-                    <DonutChart data={chartData} />
-                    <div className="flex flex-col gap-1.5 flex-1 min-w-0">
-                      {chartData.map(d => (
-                        <div key={d.label} className="flex items-center gap-2">
-                          <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: d.value > 0 ? d.color : '#d1d5db' }} />
-                          <span className={`text-sm truncate flex-1 min-w-0 ${d.value === 0 ? 'text-gray-300' : 'text-gray-600'}`}>{d.label}</span>
-                          <span className={`text-sm tabular-nums font-medium shrink-0 ${d.value === 0 ? 'text-gray-300' : 'text-gray-800'}`}>{d.value}</span>
-                          <span className="text-xs tabular-nums text-gray-400 w-9 text-right shrink-0">
-                            {d.value === 0 ? '—' : Math.round((d.value / chartData.reduce((s, x) => s + x.value, 0)) * 100) + '%'}
-                          </span>
-                        </div>
-                      ))}
+            ) : (
+              <div className="rounded-xl border border-gray-200 bg-white p-4 flex items-center gap-6">
+                <DonutChart data={chartData} />
+                <div className="flex flex-col gap-1.5 flex-1 min-w-0">
+                  {chartData.map(d => (
+                    <div key={d.label} className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: d.value > 0 ? d.color : '#d1d5db' }} />
+                      <span className={`text-sm truncate flex-1 min-w-0 ${d.value === 0 ? 'text-gray-300' : 'text-gray-600'}`}>{d.label}</span>
+                      <span className={`text-sm tabular-nums font-medium shrink-0 ${d.value === 0 ? 'text-gray-300' : 'text-gray-800'}`}>{d.value}</span>
+                      <span className="text-xs tabular-nums text-gray-400 w-9 text-right shrink-0">
+                        {d.value === 0 ? '—' : Math.round((d.value / chartData.reduce((s, x) => s + x.value, 0)) * 100) + '%'}
+                      </span>
                     </div>
-                  </div>
-                )}
-              </section>
-
-              {/* ── goal momentum ── */}
-              {goalsWithProgress.length > 0 && (
-                <section>
-                  <h3 className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Goal Momentum</h3>
-                  <div className="flex flex-col gap-2">
-                    {goalsWithProgress.map(g => (
-                      <div key={g.id} className="rounded-xl border border-gray-200 bg-white px-4 py-3 flex items-center gap-4">
-                        <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: g.displayColor }} />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between gap-2 mb-1.5">
-                            <p className="text-sm font-medium text-gray-800 truncate">{g.title}</p>
-                            <div className="flex items-center gap-2 shrink-0">
-                              {g.streak > 0 && (
-                                <span className="text-xs text-orange-500 font-medium tabular-nums">🔥 {g.streak}d</span>
-                              )}
-                              <span className="text-xs text-gray-400 tabular-nums">{g.done}/{g.total}</span>
-                            </div>
-                          </div>
-                          <div className="h-1.5 rounded-full bg-gray-100 overflow-hidden">
-                            <div
-                              className="h-full rounded-full transition-all duration-500"
-                              style={{ width: `${g.pct}%`, backgroundColor: g.displayColor }}
-                            />
-                          </div>
-                        </div>
-                        <span className="text-sm font-semibold tabular-nums text-gray-700 w-9 text-right shrink-0">{g.pct}%</span>
-                      </div>
-                    ))}
-                  </div>
-                </section>
-              )}
-            </>
-          ) : (
-            /* ── team view — mirrors personal layout ── */
-            (() => {
-              if (collaborations.length === 0) return (
-                <div className="rounded-xl border border-gray-200 bg-white p-6 text-center text-sm text-gray-300">
-                  No collaborations yet. Add one via Settings.
+                  ))}
                 </div>
-              )
-              const sharedGoals = goalsWithProgress.filter(g => g.collaboration_id)
-              const teamTasksDone = weekDone.filter(t => t.collaboration_id)
-              const teamTasksTotal = weekTasks.filter(t => t.collaboration_id)
-              const totalMemberDone = Object.values(memberWeekDone).reduce((s, v) => s + v, 0)
-              const activeSharedGoals = sharedGoals.filter(g => g.done > 0).length
+              </div>
+            )}
+          </section>
 
-              // donut: shared goals by category
-              const teamCatCounts = {}
-              sharedGoals.forEach(g => {
-                const badge = g.category ? categoryBadge(g.category) : null
-                const key = badge ? badge.name : 'Uncategorized'
-                teamCatCounts[key] = (teamCatCounts[key] || 0) + 1
-              })
-              const teamAllCats = STANDARD_GOAL_CATEGORIES.map(cat => {
-                const badge = categoryBadge(cat)
-                return { label: badge.name, value: teamCatCounts[badge.name] || 0, color: badge.color }
-              })
-              Object.entries(teamCatCounts).forEach(([name, count]) => {
-                if (!teamAllCats.find(c => c.label === name)) {
-                  const badge = categoryBadge(name)
-                  teamAllCats.push({ label: name, value: count, color: badge?.color || DONUT_COLORS[teamAllCats.length % DONUT_COLORS.length] })
-                }
-              })
-              const teamChartData = teamAllCats.sort((a, b) => b.value - a.value)
-
-              return (
-                <>
-                  {/* stat tiles */}
-                  <div className="flex gap-3">
-                    <StatTile value={collaborations.length} label="Collaborations" accent="#6366f1" />
-                    <StatTile value={totalMemberDone} label="Done this week" accent="#10b981" />
-                    <StatTile value={`${teamTasksTotal.length > 0 ? Math.round((teamTasksDone.length / teamTasksTotal.length) * 100) : 0}%`} label="Completion rate" accent="#f59e0b" />
-                    <StatTile value={activeSharedGoals} label="Goals with progress" />
-                  </div>
-
-                  {/* where your time goes */}
-                  <section>
-                    <h3 className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Where Your Time Goes</h3>
-                    {teamChartData.every(d => d.value === 0) ? (
-                      <div className="rounded-xl border border-gray-200 bg-white p-6 text-center text-sm text-gray-300">No shared goals yet.</div>
-                    ) : (
-                      <div className="rounded-xl border border-gray-200 bg-white p-4 flex items-center gap-6">
-                        <DonutChart data={teamChartData} />
-                        <div className="flex flex-col gap-1.5 flex-1 min-w-0">
-                          {teamChartData.map(d => (
-                            <div key={d.label} className="flex items-center gap-2">
-                              <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: d.value > 0 ? d.color : '#d1d5db' }} />
-                              <span className={`text-sm truncate flex-1 min-w-0 ${d.value === 0 ? 'text-gray-300' : 'text-gray-600'}`}>{d.label}</span>
-                              <span className={`text-sm tabular-nums font-medium shrink-0 ${d.value === 0 ? 'text-gray-300' : 'text-gray-800'}`}>{d.value}</span>
-                              <span className="text-xs tabular-nums text-gray-400 w-9 text-right shrink-0">
-                                {d.value === 0 ? '—' : Math.round((d.value / teamChartData.reduce((s, x) => s + x.value, 0)) * 100) + '%'}
-                              </span>
-                            </div>
-                          ))}
+          {/* ── goal momentum ── */}
+          {goalsWithProgress.length > 0 && (
+            <section>
+              <h3 className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Goal Momentum</h3>
+              <div className="flex flex-col gap-2">
+                {goalsWithProgress.map(g => (
+                  <div key={g.id} className="rounded-xl border border-gray-200 bg-white px-4 py-3 flex items-center gap-4">
+                    <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: g.displayColor }} />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2 mb-1.5">
+                        <p className="text-sm font-medium text-gray-800 truncate">{g.title}</p>
+                        <div className="flex items-center gap-2 shrink-0">
+                          {g.streak > 0 && (
+                            <span className="text-xs text-orange-500 font-medium tabular-nums">🔥 {g.streak}d</span>
+                          )}
+                          <span className="text-xs text-gray-400 tabular-nums">{g.done}/{g.total}</span>
                         </div>
                       </div>
-                    )}
-                  </section>
-
-                  {/* members */}
-                  <section>
-                    <h3 className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Members</h3>
-                    <div className="flex flex-col gap-2">
-                      {collaborations.map(collab => {
-                        const members = collabMembersMap[collab.id] || []
-                        const color = collabMap[collab.id]?.color || '#6366f1'
-                        return members.map(m => {
-                          const done = memberDone[m.id] || 0
-                          const weekDoneCount = memberWeekDone[m.id] || 0
-                          return (
-                            <div key={m.id} className="rounded-xl border border-gray-200 bg-white px-4 py-3 flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 text-white" style={{ backgroundColor: color }}>
-                                {m.username.slice(0, 2).toUpperCase()}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm text-gray-800 font-medium truncate">{m.username}</p>
-                                <p className="text-xs text-gray-400 tabular-nums">{weekDoneCount} done this week · {done} total</p>
-                              </div>
-                              <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
-                            </div>
-                          )
-                        })
-                      })}
-                    </div>
-                  </section>
-
-                  {/* shared goal momentum */}
-                  {sharedGoals.length > 0 && (
-                    <section>
-                      <h3 className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Goal Momentum</h3>
-                      <div className="flex flex-col gap-2">
-                        {sharedGoals.map(g => (
-                          <div key={g.id} className="rounded-xl border border-gray-200 bg-white px-4 py-3 flex items-center gap-4">
-                            <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: g.displayColor }} />
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center justify-between gap-2 mb-1.5">
-                                <p className="text-sm font-medium text-gray-800 truncate">{g.title}</p>
-                                <div className="flex items-center gap-2 shrink-0">
-                                  {g.streak > 0 && <span className="text-xs text-orange-500 font-medium tabular-nums">🔥 {g.streak}d</span>}
-                                  <span className="text-xs text-gray-400 tabular-nums">{g.done}/{g.total}</span>
-                                </div>
-                              </div>
-                              <div className="h-1.5 rounded-full bg-gray-100 overflow-hidden">
-                                <div className="h-full rounded-full transition-all duration-500" style={{ width: `${g.pct}%`, backgroundColor: g.displayColor }} />
-                              </div>
-                            </div>
-                            <span className="text-sm font-semibold tabular-nums text-gray-700 w-9 text-right shrink-0">{g.pct}%</span>
-                          </div>
-                        ))}
+                      <div className="h-1.5 rounded-full bg-gray-100 overflow-hidden">
+                        <div
+                          className="h-full rounded-full transition-all duration-500"
+                          style={{ width: `${g.pct}%`, backgroundColor: g.displayColor }}
+                        />
                       </div>
-                    </section>
-                  )}
-                </>
-              )
-            })()
+                    </div>
+                    <span className="text-sm font-semibold tabular-nums text-gray-700 w-9 text-right shrink-0">{g.pct}%</span>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* ── members (collaborations view only) ── */}
+          {view === 'collaborations' && (
+            <section>
+              <h3 className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Members</h3>
+              <div className="flex flex-col gap-2">
+                {collaborations
+                  .filter(c => selectedCollab === 'all' || c.id === selectedCollab)
+                  .map(collab => {
+                    const members = collabMembersMap[collab.id] || []
+                    const color = collabMap[collab.id]?.color || '#6366f1'
+                    return members.map(m => {
+                      const done = memberDone[m.id] || 0
+                      const weekDoneCount = memberWeekDone[m.id] || 0
+                      return (
+                        <div key={m.id} className="rounded-xl border border-gray-200 bg-white px-4 py-3 flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 text-white" style={{ backgroundColor: color }}>
+                            {m.username.slice(0, 2).toUpperCase()}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm text-gray-800 font-medium truncate">{m.username}</p>
+                            <p className="text-xs text-gray-400 tabular-nums">{weekDoneCount} done this week · {done} total</p>
+                          </div>
+                          <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                        </div>
+                      )
+                    })
+                  })}
+              </div>
+            </section>
           )}
         </div>
       </div>
