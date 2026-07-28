@@ -81,7 +81,7 @@ export default function VisionMission({ onClose }) {
           {/* Mission */}
           <section>
             <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-semibold text-gray-800">🎯 My Mission</h3>
+              <h3 className="text-sm font-semibold text-gray-800">🌠 My Mission</h3>
               <span className="text-xs text-gray-300 tabular-nums">{mission.length}/500</span>
             </div>
             <p className="text-xs text-gray-500 mb-3">Your mission is your daily purpose — the &apos;why&apos; behind your actions. Think: What do you stand for? What drives you every day? How do you want to show up for others?</p>
