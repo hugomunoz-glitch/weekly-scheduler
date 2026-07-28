@@ -573,7 +573,7 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
                   </p>
                 </div>
               )}
-              {categoryBadge(goal.category) && (
+              {categoryBadge(goal.category) ? (
                 <div className="flex items-center gap-1 mt-0.5">
                   <span
                     className="text-[10px] font-medium px-1.5 py-0.5 rounded"
@@ -582,6 +582,14 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
                     {categoryBadge(goal.category).name}
                   </span>
                 </div>
+              ) : editingId !== goal.id && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); startEdit(goal) }}
+                  className="mt-0.5 text-[10px] font-medium px-1.5 py-0.5 rounded border border-dashed border-gray-300 text-gray-400 hover:border-indigo-400 hover:text-indigo-500 transition-colors"
+                  title="Add category"
+                >
+                  + Category
+                </button>
               )}
               <div className="flex items-center gap-1.5 mt-1">
                 <div className="flex-1 h-1 bg-gray-100 rounded-full overflow-hidden">
