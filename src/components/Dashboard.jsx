@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { format, addDays, startOfDay } from 'date-fns'
+import { format, addDays, startOfDay, parseISO } from 'date-fns'
 import { categoryBadge } from './TaskCard'
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -12,6 +12,10 @@ function weekRange(weekStart) {
 
 function tasksThisWeek(tasks, weekStart) {
   const { start, end } = weekRange(weekStart)
+  return tasks.filter(t => t.scheduled_date >= start && t.scheduled_date <= end)
+}
+
+function tasksInRange(tasks, start, end) {
   return tasks.filter(t => t.scheduled_date >= start && t.scheduled_date <= end)
 }
 
@@ -124,6 +128,11 @@ function StatTile({ value, label, accent }) {
 
 export default function Dashboard({ tasks, goals, goalTasks, collaborations, collabMap, collabMembersMap, profileMap, weekStart, onClose }) {
   const [view, setView] = useState('personal')
+  const [rangeMode, setRangeMode] = useState('week') // 'week' | 'custom'
+  const defaultStart = format(weekStart, 'yyyy-MM-dd')
+  const defaultEnd = format(addDays(weekStart, 6), 'yyyy-MM-dd')
+  const [customStart, setCustomStart] = useState(defaultStart)
+  const [customEnd, setCustomEnd] = useState(defaultEnd)
   const overlayRef = useRef(null)
 
   useEffect(() => {
@@ -132,8 +141,11 @@ export default function Dashboard({ tasks, goals, goalTasks, collaborations, col
     return () => window.removeEventListener('keydown', handler)
   }, [onClose])
 
+  const rangeStart = rangeMode === 'week' ? defaultStart : customStart
+  const rangeEnd = rangeMode === 'week' ? defaultEnd : customEnd
+
   // ── personal stats ──
-  const weekTasks = tasksThisWeek(tasks, weekStart)
+  const weekTasks = rangeMode === 'week' ? tasksThisWeek(tasks, weekStart) : tasksInRange(tasks, rangeStart, rangeEnd)
   const weekDone = weekTasks.filter(t => t.status === 'done')
   const dailyStreak = computeDailyStreak(tasks)
   const activeGoals = goals.filter(g => goalTasks.some(t => t.goal_id === g.id && t.status === 'done')).length
@@ -171,7 +183,9 @@ export default function Dashboard({ tasks, goals, goalTasks, collaborations, col
     memberWeekDone[t.assigned_to] = (memberWeekDone[t.assigned_to] || 0) + 1
   })
 
-  const weekLabel = `${format(weekStart, 'MMM d')} – ${format(addDays(weekStart, 6), 'MMM d, yyyy')}`
+  const weekLabel = rangeMode === 'week'
+    ? `${format(weekStart, 'MMM d')} – ${format(addDays(weekStart, 6), 'MMM d, yyyy')}`
+    : `${format(parseISO(rangeStart), 'MMM d')} – ${format(parseISO(rangeEnd), 'MMM d, yyyy')}`
 
   return (
     <div
@@ -186,37 +200,72 @@ export default function Dashboard({ tasks, goals, goalTasks, collaborations, col
         aria-label="Dashboard"
       >
         {/* ── header ── */}
-        <div className="sticky top-0 z-10 flex items-center justify-between px-5 pt-5 pb-4 border-b border-gray-200 bg-gray-50 rounded-t-2xl">
-          <div>
-            <h2 className="text-base font-semibold text-gray-900">Dashboard</h2>
-            <p className="text-xs text-gray-400 mt-0.5">{weekLabel}</p>
+        <div className="sticky top-0 z-10 flex flex-col gap-3 px-5 pt-5 pb-4 border-b border-gray-200 bg-gray-50 rounded-t-2xl">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-base font-semibold text-gray-900">Dashboard</h2>
+              <p className="text-xs text-gray-400 mt-0.5">{weekLabel}</p>
+            </div>
+            <div className="flex items-center gap-3">
+              {/* personal / team toggle */}
+              <div className="flex items-center p-0.5 rounded-lg bg-gray-200 text-xs font-medium">
+                {['personal', 'team'].map(v => (
+                  <button
+                    key={v}
+                    onClick={() => setView(v)}
+                    className={`px-3 py-1.5 rounded-md capitalize transition-all ${
+                      view === v
+                        ? 'bg-white text-gray-900 shadow-sm'
+                        : 'text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    {v}
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={onClose}
+                className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-200 transition-colors"
+                aria-label="Close dashboard"
+              >
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                  <path d="M1 1l12 12M13 1L1 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                </svg>
+              </button>
+            </div>
           </div>
-          <div className="flex items-center gap-3">
-            {/* personal / team toggle */}
+          {/* ── date range ── */}
+          <div className="flex items-center gap-2">
             <div className="flex items-center p-0.5 rounded-lg bg-gray-200 text-xs font-medium">
-              {['personal', 'team'].map(v => (
+              {['week', 'custom'].map(m => (
                 <button
-                  key={v}
-                  onClick={() => setView(v)}
-                  className={`px-3 py-1.5 rounded-md capitalize transition-all ${
-                    view === v
-                      ? 'bg-white text-gray-900 shadow-sm'
-                      : 'text-gray-500 hover:text-gray-700'
+                  key={m}
+                  onClick={() => setRangeMode(m)}
+                  className={`px-2.5 py-1 rounded-md capitalize transition-all ${
+                    rangeMode === m ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
                   }`}
                 >
-                  {v}
+                  {m === 'week' ? 'This week' : 'Custom'}
                 </button>
               ))}
             </div>
-            <button
-              onClick={onClose}
-              className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-200 transition-colors"
-              aria-label="Close dashboard"
-            >
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                <path d="M1 1l12 12M13 1L1 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-              </svg>
-            </button>
+            {rangeMode === 'custom' && (
+              <div className="flex items-center gap-1.5 text-xs text-gray-600">
+                <input
+                  type="date"
+                  value={customStart}
+                  onChange={e => setCustomStart(e.target.value)}
+                  className="border border-gray-200 rounded-lg px-2 py-1 text-xs bg-white focus:outline-none focus:border-indigo-400"
+                />
+                <span className="text-gray-400">–</span>
+                <input
+                  type="date"
+                  value={customEnd}
+                  onChange={e => setCustomEnd(e.target.value)}
+                  className="border border-gray-200 rounded-lg px-2 py-1 text-xs bg-white focus:outline-none focus:border-indigo-400"
+                />
+              </div>
+            )}
           </div>
         </div>
 

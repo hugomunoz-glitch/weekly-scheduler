@@ -4,6 +4,7 @@ import { useAssistantHistory } from '../hooks/useAssistantHistory'
 import { useAuth } from '../contexts/AuthContext'
 import CollaborationPanel from './CollaborationPanel'
 import DailyReflection from './DailyReflection'
+import Dashboard from './Dashboard'
 import ExportMenu from './ExportMenu'
 import MonthView from './MonthView'
 import YearView from './YearView'
@@ -1069,6 +1070,8 @@ export default function MobileLayout({
   const [settingsMessage, setSettingsMessage] = useState(null)
   const [settingsError, setSettingsError] = useState(null)
   const [settingsSubmitting, setSettingsSubmitting] = useState(false)
+  const [reflectDay, setReflectDay] = useState(null)
+  const [showDashboard, setShowDashboard] = useState(false)
 
   async function handleUsernameSubmit(e) {
     e.preventDefault()
@@ -1183,7 +1186,14 @@ export default function MobileLayout({
         <>
           <div style={{ padding: '10px 16px 6px', flexShrink: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: '15px', fontWeight: 500, color: '#111827' }}>{format(parseISO(selectedDay), 'EEEE, MMM d')}</span>
-            <span style={{ fontSize: '11px', color: '#9ca3af' }}>Tap, Drag &amp; Drop to move</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <button
+                onClick={() => setReflectDay(selectedDay)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px', lineHeight: 1, padding: '2px 4px', color: '#9ca3af' }}
+                title="Reflect on this day"
+              >&#129488;</button>
+              <span style={{ fontSize: '11px', color: '#9ca3af' }}>Tap, Drag &amp; Drop to move</span>
+            </div>
           </div>
           {(() => {
             const dayTasks = [...tasksForDay(parseISO(selectedDay)), ...dueCardsForDay(parseISO(selectedDay))]
@@ -1270,10 +1280,6 @@ export default function MobileLayout({
           </div>
           <MobileInbox tasks={loading ? [] : inboxTasks} goalMap={goalMap} collabMap={collabMap} collabMembersMap={collabMembersMap} profileMap={profileMap} onAssignTask={onAssignTask} onMarkDone={onMarkDone} onAddTask={onAddTask} onEdit={onEdit} onDelete={onDelete} onDuplicate={onDuplicateTask} search={taskSearch} sortMode={taskSort} sortDir={taskSortDir} categoryFilter={taskCategoryFilter} />
         </>
-      )}
-
-      {mobileCalView === 'week' && activeTab === 'reflect' && (
-        <DailyReflection isMobile={true} />
       )}
 
       {mobileCalView === 'week' && activeTab === 'assistant' && (
@@ -1386,16 +1392,38 @@ export default function MobileLayout({
 
       {showCollab && <CollaborationPanel onClose={() => setShowCollab(false)} />}
 
+      {reflectDay && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 60, background: 'rgba(0,0,0,0.4)', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }} onClick={e => { if (e.target === e.currentTarget) setReflectDay(null) }}>
+          <div style={{ background: 'white', borderRadius: '16px 16px 0 0', maxHeight: '85vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <DailyReflection isMobile={true} date={reflectDay} onClose={() => setReflectDay(null)} />
+          </div>
+        </div>
+      )}
+
+      {showDashboard && (
+        <Dashboard
+          tasks={tasks}
+          goals={goals}
+          goalTasks={goalTasks}
+          collaborations={collaborations}
+          collabMap={collabMap}
+          collabMembersMap={collabMembersMap}
+          profileMap={profileMap}
+          weekStart={weekStart}
+          onClose={() => setShowDashboard(false)}
+        />
+      )}
+
       <div style={{ background: 'white', borderTop: '1px solid #e5e7eb', padding: '6px 0 8px', display: 'flex', flexShrink: 0 }}>
         {[
           { id: 'day', label: 'Today', emoji: '&#128197;' },
           { id: 'goals', label: 'Goals', emoji: '&#127919;' },
           { id: 'inbox', label: 'Task List', emoji: '&#128221;', badge: inboxTasks.filter(t => t.status !== 'done').length },
-          { id: 'reflect', label: 'Reflect', emoji: '&#129488;' },
+          { id: 'dashboard', label: 'Dashboard', emoji: '&#128202;' },
           { id: 'assistant', label: 'Assistant', emoji: '&#129302;' },
           { id: 'settings', label: 'Settings', emoji: '&#9881;' }
         ].map(tab => (
-          <button key={tab.id} onClick={() => { setActiveTab(tab.id); setMobileCalView('week') }}
+          <button key={tab.id} onClick={() => { if (tab.id === 'dashboard') { setShowDashboard(true) } else { setActiveTab(tab.id); setMobileCalView('week') } }}
             style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0', position: 'relative' }}>
             <div style={{ width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               {tab.id === 'day' ? (
