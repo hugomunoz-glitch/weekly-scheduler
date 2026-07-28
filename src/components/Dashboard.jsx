@@ -210,7 +210,7 @@ export default function Dashboard({ tasks, goals, goalTasks, collaborations, col
     .slice(0, 7)
     .map(([cat, count], i) => {
       const badge = categoryBadge(cat)
-      return { label: cat === 'Uncategorized' ? cat : badge?.name || cat, value: count, color: DONUT_COLORS[i % DONUT_COLORS.length] }
+      return { label: cat === 'Uncategorized' ? cat : badge?.name || cat, value: count, color: badge?.color || DONUT_COLORS[i % DONUT_COLORS.length] }
     })
 
   // ── team stats ──
