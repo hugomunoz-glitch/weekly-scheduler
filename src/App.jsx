@@ -682,6 +682,24 @@ export default function App() {
       next.splice(idx + 1, 0, data)
       return next
     })
+    // Copy linked tasks to the new goal
+    const linkedTasks = goalTasks.filter(t => t.goal_id === goalId)
+    if (linkedTasks.length > 0) {
+      const taskRows = linkedTasks.map(t => ({
+        title: t.title,
+        status: 'inbox',
+        goal_id: data.id,
+        owner_id: user.id,
+        priority: t.priority || null,
+        category: t.category || null,
+        collaboration_id: t.collaboration_id || null,
+      }))
+      const { data: newTasks, error: taskError } = await supabase.from('tasks').insert(taskRows).select()
+      if (!taskError && newTasks) {
+        setTasks(prev => [...newTasks, ...prev])
+        setGoalTasks(prev => [...newTasks.map(t => ({ id: t.id, title: t.title, goal_id: t.goal_id, status: t.status, due_date: t.due_date, start_time: t.start_time, priority: t.priority, collaboration_id: t.collaboration_id, assigned_to: t.assigned_to })), ...prev])
+      }
+    }
   }
 
   async function editGoal(goalId, title, extra, collaborationId) {
