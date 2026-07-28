@@ -85,31 +85,29 @@ export default function DayColumn({ date, tasks, dueCards, goalMap, collabMap, p
                   </div>
                 )}
               </Droppable>
-              {bucketDueCards.length > 0 && (
-                <Droppable droppableId={dueDroppableId}>
-                  {(provided, snapshot) => (
-                    <div
-                      ref={provided.innerRef}
-                      {...provided.droppableProps}
-                      className={'px-2 pb-2 min-h-[10px] transition-colors ' + (snapshot.isDraggingOver ? 'bg-indigo-50' : '')}
-                    >
-                      {bucketDueCards.map((task, index) => (
-                        <Draggable key={task.id + '__due__'} draggableId={task.id + '__due__'} index={index} isDragDisabled={task.status === 'done'}>
-                          {(provided, snapshot) => {
-                            const card = (
-                              <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps} className="mb-1.5" style={provided.draggableProps.style}>
-                                <TaskCard task={task} isDone={task.status === 'done'} isDragging={snapshot.isDragging} isDueCard collabBadge={task.collaboration_id && collabMap ? collabMap[task.collaboration_id] : null} assigneeName={task.assigned_to && profileMap ? profileMap[task.assigned_to] : null} onMarkDone={onMarkDone} onRescheduleToTomorrow={onRescheduleToTomorrow} onMoveToInbox={onMoveToInbox} onDelete={onDelete} onEdit={onEdit} onDuplicate={onDuplicate} />
-                              </div>
-                            )
-                            return snapshot.isDragging ? createPortal(card, document.body) : card
-                          }}
-                        </Draggable>
-                      ))}
-                      {provided.placeholder}
-                    </div>
-                  )}
-                </Droppable>
-              )}
+              <Droppable droppableId={dueDroppableId}>
+                {(provided, snapshot) => (
+                  <div
+                    ref={provided.innerRef}
+                    {...provided.droppableProps}
+                    className={'px-2 pb-2 min-h-[4px] transition-colors ' + (snapshot.isDraggingOver ? 'bg-indigo-50' : '')}
+                  >
+                    {bucketDueCards.map((task, index) => (
+                      <Draggable key={task.id + '__due__'} draggableId={task.id + '__due__'} index={index} isDragDisabled={task.status === 'done'}>
+                        {(provided, snapshot) => {
+                          const card = (
+                            <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps} className="mb-1.5" style={provided.draggableProps.style}>
+                              <TaskCard task={task} isDone={task.status === 'done'} isDragging={snapshot.isDragging} isDueCard collabBadge={task.collaboration_id && collabMap ? collabMap[task.collaboration_id] : null} assigneeName={task.assigned_to && profileMap ? profileMap[task.assigned_to] : null} onMarkDone={onMarkDone} onRescheduleToTomorrow={onRescheduleToTomorrow} onMoveToInbox={onMoveToInbox} onDelete={onDelete} onEdit={onEdit} onDuplicate={onDuplicate} />
+                            </div>
+                          )
+                          return snapshot.isDragging ? createPortal(card, document.body) : card
+                        }}
+                      </Draggable>
+                    ))}
+                    {provided.placeholder}
+                  </div>
+                )}
+              </Droppable>
             </div>
           )
         })}
