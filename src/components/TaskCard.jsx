@@ -20,13 +20,28 @@ const PRIORITY_LABELS = { high: 'High', medium: 'Medium', low: 'Low' }
 const PRIORITY_BORDER = { high: '#ef4444', medium: '#f59e0b', low: '#22c55e' }
 const CATEGORY_COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316', '#ec4899']
 
+// Fixed colors for the 8 standard goal categories — no hash collisions
+const FIXED_CATEGORY_COLORS = {
+  'Career/Professional': '#6366f1',   // indigo
+  'Family':              '#f97316',   // orange
+  'Financial':           '#10b981',   // green
+  'Intellectual':        '#8b5cf6',   // violet
+  'Physical':            '#ef4444',   // red  (matches "Physical (Health/Wellness)")
+  'Relationships':       '#ec4899',   // pink
+  'Social':              '#06b6d4',   // cyan (matches "Social (Community/Volunteering)")
+  'Spiritual':           '#f59e0b',   // amber (matches "Spiritual (Prayer/Church)")
+}
+
 export function categoryBadge(category) {
   if (!category) return null
   const clean = category.replace(/\s*\([^)]*\)\s*/g, '').trim()
   if (!clean) return null
-  let hash = 0
-  for (let i = 0; i < clean.length; i++) hash = (hash * 31 + clean.charCodeAt(i)) >>> 0
-  return { name: clean, color: CATEGORY_COLORS[hash % CATEGORY_COLORS.length] }
+  const color = FIXED_CATEGORY_COLORS[clean] || (() => {
+    let hash = 0
+    for (let i = 0; i < clean.length; i++) hash = (hash * 31 + clean.charCodeAt(i)) >>> 0
+    return CATEGORY_COLORS[hash % CATEGORY_COLORS.length]
+  })()
+  return { name: clean, color }
 }
 
 export default function TaskCard({ task, isDone, isDragging, collabBadge, assigneeName, isDueCard, onMarkDone, onRescheduleToTomorrow, onMoveToInbox, onDelete, onEdit, onDuplicate }) {
