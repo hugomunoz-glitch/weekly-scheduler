@@ -536,78 +536,112 @@ export default function Dashboard({ tasks, goals, goalTasks, collaborations, col
               )}
             </>
           ) : (
-            /* ── team view ── */
-            <>
-              <section>
-                <h3 className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Team This Week</h3>
-                {collaborations.length === 0 ? (
-                  <div className="rounded-xl border border-gray-200 bg-white p-6 text-center text-sm text-gray-300">
-                    No collaborations yet. Add one via Settings.
-                  </div>
-                ) : (
-                  <div className="flex flex-col gap-3">
-                    {collaborations.map(collab => {
-                      const members = collabMembersMap[collab.id] || []
-                      const color = collabMap[collab.id]?.color || '#6366f1'
-                      return (
-                        <div key={collab.id} className="rounded-xl border border-gray-200 bg-white p-4">
-                          <div className="flex items-center gap-2 mb-3">
-                            <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
-                            <p className="text-sm font-semibold text-gray-800">{collab.name}</p>
-                          </div>
-                          {members.length === 0 ? (
-                            <p className="text-xs text-gray-300">No members yet.</p>
-                          ) : (
-                            <div className="flex flex-col gap-2">
-                              {members.map(m => {
-                                const done = memberDone[m.id] || 0
-                                const weekDoneCount = memberWeekDone[m.id] || 0
-                                return (
-                                  <div key={m.id} className="flex items-center gap-3">
-                                    <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 text-white" style={{ backgroundColor: color }}>
-                                      {m.username.slice(0, 2).toUpperCase()}
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                      <p className="text-sm text-gray-800 font-medium truncate">{m.username}</p>
-                                      <p className="text-xs text-gray-400 tabular-nums">
-                                        {weekDoneCount} done this week · {done} total
-                                      </p>
-                                    </div>
-                                  </div>
-                                )
-                              })}
-                            </div>
-                          )}
-                        </div>
-                      )
-                    })}
-                  </div>
-                )}
-              </section>
+            /* ── team view — mirrors personal layout ── */
+            (() => {
+              if (collaborations.length === 0) return (
+                <div className="rounded-xl border border-gray-200 bg-white p-6 text-center text-sm text-gray-300">
+                  No collaborations yet. Add one via Settings.
+                </div>
+              )
+              const sharedGoals = goalsWithProgress.filter(g => g.collaboration_id)
+              const teamTasksDone = weekDone.filter(t => t.collaboration_id)
+              const teamTasksTotal = weekTasks.filter(t => t.collaboration_id)
+              const totalMemberDone = Object.values(memberWeekDone).reduce((s, v) => s + v, 0)
+              const activeSharedGoals = sharedGoals.filter(g => g.done > 0).length
 
-              {/* ── shared goal momentum ── */}
-              {(() => {
-                const sharedGoals = goalsWithProgress.filter(g => g.collaboration_id)
-                if (sharedGoals.length === 0) return null
-                return (
+              // donut: shared goals by category
+              const teamCatCounts = {}
+              sharedGoals.forEach(g => {
+                const badge = g.category ? categoryBadge(g.category) : null
+                const key = badge ? badge.name : 'Uncategorized'
+                teamCatCounts[key] = (teamCatCounts[key] || 0) + 1
+              })
+              const teamAllCats = STANDARD_GOAL_CATEGORIES.map(cat => {
+                const badge = categoryBadge(cat)
+                return { label: badge.name, value: teamCatCounts[badge.name] || 0, color: badge.color }
+              })
+              Object.entries(teamCatCounts).forEach(([name, count]) => {
+                if (!teamAllCats.find(c => c.label === name)) {
+                  const badge = categoryBadge(name)
+                  teamAllCats.push({ label: name, value: count, color: badge?.color || DONUT_COLORS[teamAllCats.length % DONUT_COLORS.length] })
+                }
+              })
+              const teamChartData = teamAllCats.sort((a, b) => b.value - a.value)
+
+              return (
+                <>
+                  {/* stat tiles */}
+                  <div className="flex gap-3">
+                    <StatTile value={collaborations.length} label="Collaborations" accent="#6366f1" />
+                    <StatTile value={totalMemberDone} label="Done this week" accent="#10b981" />
+                    <StatTile value={`${teamTasksTotal.length > 0 ? Math.round((teamTasksDone.length / teamTasksTotal.length) * 100) : 0}%`} label="Completion rate" accent="#f59e0b" />
+                    <StatTile value={activeSharedGoals} label="Goals with progress" />
+                  </div>
+
+                  {/* where your time goes */}
                   <section>
-                    <h3 className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Shared Goal Momentum</h3>
+                    <h3 className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Where Your Time Goes</h3>
+                    {teamChartData.every(d => d.value === 0) ? (
+                      <div className="rounded-xl border border-gray-200 bg-white p-6 text-center text-sm text-gray-300">No shared goals yet.</div>
+                    ) : (
+                      <div className="rounded-xl border border-gray-200 bg-white p-4 flex items-center gap-6">
+                        <DonutChart data={teamChartData} />
+                        <div className="flex flex-col gap-1.5 flex-1 min-w-0">
+                          {teamChartData.map(d => (
+                            <div key={d.label} className="flex items-center gap-2">
+                              <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: d.value > 0 ? d.color : '#d1d5db' }} />
+                              <span className={`text-sm truncate flex-1 min-w-0 ${d.value === 0 ? 'text-gray-300' : 'text-gray-600'}`}>{d.label}</span>
+                              <span className={`text-sm tabular-nums font-medium shrink-0 ${d.value === 0 ? 'text-gray-300' : 'text-gray-800'}`}>{d.value}</span>
+                              <span className="text-xs tabular-nums text-gray-400 w-9 text-right shrink-0">
+                                {d.value === 0 ? '—' : Math.round((d.value / teamChartData.reduce((s, x) => s + x.value, 0)) * 100) + '%'}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </section>
+
+                  {/* members */}
+                  <section>
+                    <h3 className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Members</h3>
                     <div className="flex flex-col gap-2">
-                      {sharedGoals.map(g => {
-                        const collabColor = g.collaboration_id && collabMap[g.collaboration_id]?.color
-                        return (
+                      {collaborations.map(collab => {
+                        const members = collabMembersMap[collab.id] || []
+                        const color = collabMap[collab.id]?.color || '#6366f1'
+                        return members.map(m => {
+                          const done = memberDone[m.id] || 0
+                          const weekDoneCount = memberWeekDone[m.id] || 0
+                          return (
+                            <div key={m.id} className="rounded-xl border border-gray-200 bg-white px-4 py-3 flex items-center gap-3">
+                              <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 text-white" style={{ backgroundColor: color }}>
+                                {m.username.slice(0, 2).toUpperCase()}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm text-gray-800 font-medium truncate">{m.username}</p>
+                                <p className="text-xs text-gray-400 tabular-nums">{weekDoneCount} done this week · {done} total</p>
+                              </div>
+                              <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                            </div>
+                          )
+                        })
+                      })}
+                    </div>
+                  </section>
+
+                  {/* shared goal momentum */}
+                  {sharedGoals.length > 0 && (
+                    <section>
+                      <h3 className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Goal Momentum</h3>
+                      <div className="flex flex-col gap-2">
+                        {sharedGoals.map(g => (
                           <div key={g.id} className="rounded-xl border border-gray-200 bg-white px-4 py-3 flex items-center gap-4">
                             <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: g.displayColor }} />
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center justify-between gap-2 mb-1.5">
                                 <p className="text-sm font-medium text-gray-800 truncate">{g.title}</p>
                                 <div className="flex items-center gap-2 shrink-0">
-                                  {collabColor && (
-                                    <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: collabColor }} title={collabMap[g.collaboration_id]?.name} />
-                                  )}
-                                  {g.streak > 0 && (
-                                    <span className="text-xs text-orange-500 font-medium tabular-nums">🔥 {g.streak}d</span>
-                                  )}
+                                  {g.streak > 0 && <span className="text-xs text-orange-500 font-medium tabular-nums">🔥 {g.streak}d</span>}
                                   <span className="text-xs text-gray-400 tabular-nums">{g.done}/{g.total}</span>
                                 </div>
                               </div>
@@ -617,13 +651,13 @@ export default function Dashboard({ tasks, goals, goalTasks, collaborations, col
                             </div>
                             <span className="text-sm font-semibold tabular-nums text-gray-700 w-9 text-right shrink-0">{g.pct}%</span>
                           </div>
-                        )
-                      })}
-                    </div>
-                  </section>
-                )
-              })()}
-            </>
+                        ))}
+                      </div>
+                    </section>
+                  )}
+                </>
+              )
+            })()
           )}
         </div>
       </div>
