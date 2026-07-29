@@ -7,9 +7,9 @@ function loadPrefs() { try { return JSON.parse(localStorage.getItem(NOTIF_PREFS_
 function savePrefs(p) { try { localStorage.setItem(NOTIF_PREFS_KEY, JSON.stringify(p)) } catch {} }
 
 const BUCKET_CONFIG = [
-  { key: 'morning',   label: 'Morning',   time: '8:00 AM' },
-  { key: 'afternoon', label: 'Afternoon', time: '12:00 PM' },
-  { key: 'evening',   label: 'Evening',   time: '5:00 PM' },
+  { key: 'morning',   label: 'Morning',   time: '8:00 AM (8:00)' },
+  { key: 'afternoon', label: 'Afternoon', time: '12:00 PM (12:00)' },
+  { key: 'evening',   label: 'Evening',   time: '5:00 PM (17:00)' },
 ]
 
 function Toggle({ on, onChange, disabled }) {

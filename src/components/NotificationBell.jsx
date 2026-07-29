@@ -142,7 +142,7 @@ function NotifSettings({ onClose, prefs, onPrefsChange, permission, onRequestPer
               <span style={{ fontSize: 16 }}>{emoji}</span>
               <div>
                 <p style={{ margin: 0, fontSize: 12, fontWeight: 500, color: '#374151' }}>{label}</p>
-                <p style={{ margin: 0, fontSize: 11, color: '#9ca3af' }}>{hour}:{String(minute).padStart(2, '0')} {hour < 12 ? 'AM' : 'PM'}</p>
+                <p style={{ margin: 0, fontSize: 11, color: '#9ca3af' }}>{hour <= 12 ? hour : hour - 12}:{String(minute).padStart(2, '0')} {hour < 12 ? 'AM' : 'PM'} ({hour}:{String(minute).padStart(2, '0')})</p>
               </div>
             </div>
             <button
