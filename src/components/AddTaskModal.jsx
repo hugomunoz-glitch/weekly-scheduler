@@ -230,7 +230,7 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-end sm:items-center justify-center z-50 overflow-y-auto sm:py-8" onClick={(e) => e.target === e.currentTarget && closeModal()}>
-      <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-xl w-full max-w-md mx-0 sm:mx-4 p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] overflow-y-auto" style={{ maxHeight: 'calc(92vh - env(safe-area-inset-top))' }} onClick={(e) => e.stopPropagation()}>
+      <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-xl w-full max-w-md mx-0 sm:mx-4 p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] overflow-y-auto" style={{ maxHeight: 'calc(92vh - env(safe-area-inset-top))', fontSize: 16 }} onClick={(e) => e.stopPropagation()}>
         <h2 className="text-base font-semibold text-gray-900 mb-4">{editingTask ? 'Edit task' : initialScheduledDate ? 'Add task for ' + initialScheduledDate : 'Add task'}</h2>
         <form onSubmit={bulkMode ? handleBulkSubmit : (e) => handleSubmitCore(e, false)} className="space-y-3">
           {!editingTask && (

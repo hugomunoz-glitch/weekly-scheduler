@@ -23,3 +23,10 @@ html, body {
 [data-rbd-drag-handle-draggable-id] {
   touch-action: manipulation;
 }
+
+/* Prevent iOS auto-zoom on input focus (triggered when font-size < 16px) */
+@media (max-width: 768px) {
+  input, textarea, select {
+    font-size: 16px !important;
+  }
+}
