@@ -11,7 +11,7 @@ const BUCKETS = [
 export default function DayView({ tasks, goalMap, collabMap, profileMap, onMarkDone, onRescheduleToTomorrow, onMoveToInbox, onDelete, onEdit, onDuplicate, onAddTaskForBucket }) {
   const [currentDay, setCurrentDay] = useState(new Date())
   const dateStr = format(currentDay, 'yyyy-MM-dd')
-  const dayTasks = tasks.filter(t => t.scheduled_date === dateStr || t.due_date_card_date === dateStr)
+  const dayTasks = tasks.filter(t => String(t.scheduled_date || '').slice(0, 10) === dateStr || String(t.due_date_card_date || '').slice(0, 10) === dateStr)
   const done = dayTasks.filter(t => t.status === 'done')
   const pct = dayTasks.length > 0 ? Math.round((done.length / dayTasks.length) * 100) : 0
   const today = isToday(currentDay)
@@ -70,6 +70,7 @@ export default function DayView({ tasks, goalMap, collabMap, profileMap, onMarkD
                     key={task.id}
                     task={task}
                     index={idx}
+                    isDone={task.status === 'done'}
                     goalMap={goalMap}
                     collabMap={collabMap}
                     profileMap={profileMap}
