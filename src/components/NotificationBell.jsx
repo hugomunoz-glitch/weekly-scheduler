@@ -315,17 +315,14 @@ export default function NotificationBell({ tasks, isMobile = false }) {
           onClick={() => { setOpen(o => !o); setShowSettings(false) }}
           title="Notifications"
           style={{
-            position: 'relative', background: 'none', border: '1px solid #e5e7eb',
-            borderRadius: 8, padding: '6px 8px', cursor: 'pointer',
+            position: 'relative', background: 'none', border: 'none',
+            padding: '2px 4px', cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: '#f59e0b', transition: 'background 0.15s',
           }}
-          onMouseEnter={e => e.currentTarget.style.background = '#fffbeb'}
-          onMouseLeave={e => e.currentTarget.style.background = 'none'}
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="#f59e0b" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="#f59e0b" stroke="#d97706" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+            <path d="M13.73 21a2 2 0 0 1-3.46 0" fill="none" stroke="#d97706" strokeWidth="1.5" />
           </svg>
         </button>
 
