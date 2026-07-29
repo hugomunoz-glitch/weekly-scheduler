@@ -140,7 +140,9 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
     ].join(' ')
     document.head.appendChild(style)
     resetViewportZoom()
-    inputRef.current?.focus()
+    // Delay focus so the browser applies the 16px CSS rule before iOS
+    // processes the focus event and decides whether to zoom.
+    setTimeout(() => { inputRef.current?.focus() }, 50)
     return () => style.remove()
   }, [])
   useEffect(() => {
