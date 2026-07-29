@@ -17,6 +17,7 @@ import DailyReflection from './components/DailyReflection'
 import Dashboard from './components/Dashboard'
 import VisionMission from './components/VisionMission'
 import ExportMenu from './components/ExportMenu'
+import NotificationBell from './components/NotificationBell'
 import MonthView from './components/MonthView'
 import DayView from './components/DayView'
 import YearView from './components/YearView'
@@ -999,6 +1000,7 @@ export default function App() {
               {overdueTasks.length > 0 && rolloverMode === 'manual' && (
                 <button onClick={rolloverOverdue} className="px-3 py-1.5 text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100">Roll over {overdueTasks.length} overdue</button>
               )}
+              <NotificationBell tasks={tasks} />
               <ExportMenu tasks={visibleTasks} goals={visibleGoals} weekStart={weekStart} />
               <button onClick={() => setShowDashboard(true)} className="px-3 py-1.5 text-sm font-medium text-indigo-600 border border-indigo-200 rounded-lg hover:bg-indigo-50">Dashboard</button>
               <button onClick={() => setShowReflect(true)} className="px-3 py-1.5 text-sm font-medium text-indigo-600 border border-indigo-200 rounded-lg hover:bg-indigo-50">Reflect</button>
