@@ -140,9 +140,12 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
     ].join(' ')
     document.head.appendChild(style)
     resetViewportZoom()
-    // Delay focus so the browser applies the 16px CSS rule before iOS
-    // processes the focus event and decides whether to zoom.
-    setTimeout(() => { inputRef.current?.focus() }, 50)
+    // Only auto-focus on non-native (PWA/desktop). On WKWebView, focusing an
+    // input programmatically triggers iOS to zoom in even with font-size:16px,
+    // causing the modal to appear cut off on the right side.
+    if (!window.Capacitor?.isNativePlatform?.()) {
+      setTimeout(() => { inputRef.current?.focus() }, 50)
+    }
     return () => style.remove()
   }, [])
   useEffect(() => {
@@ -274,7 +277,6 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
           )}
           {bulkMode ? (
             <textarea
-              autoFocus
               placeholder={'One task per line, e.g.\nCall dentist\nBuy groceries\nReview budget'}
               value={bulkTitles}
               onChange={e => setBulkTitles(e.target.value)}
