@@ -12,7 +12,7 @@ import MonthView from './MonthView'
 import YearView from './YearView'
 import { resetViewportZoom } from '../lib/resetZoom'
 import { format, isToday, parseISO } from 'date-fns'
-import { requestNotificationPermission, getNotificationPermission, scheduleDailyNotifications, updateAppBadge } from '../lib/notifications'
+import { updateAppBadge } from '../lib/notifications'
 import { Droppable, Draggable } from '@hello-pangea/dnd'
 import TaskCard, { categoryBadge } from './TaskCard'
 import ViewSwitcher from './ViewSwitcher'
@@ -62,56 +62,6 @@ function longPressHandlers(timerRef, firedRef, onLongPress, ms = 550) {
   }
 }
 
-function NotificationSettings({ tasks }) {
-  const [permission, setPermission] = useState(getNotificationPermission())
-  const [scheduled, setScheduled] = useState(false)
-
-  async function enable() {
-    const result = await requestNotificationPermission()
-    setPermission(result)
-    if (result === 'granted') {
-      await scheduleDailyNotifications(tasks)
-      setScheduled(true)
-    }
-  }
-
-  const BUCKET_LABELS = { morning: '8:00 AM', afternoon: '12:00 PM', evening: '5:00 PM' }
-
-  if (permission === 'unsupported') {
-    return <p style={{ fontSize: '12px', color: '#9ca3af', margin: 0 }}>Notifications not supported on this device.</p>
-  }
-  if (permission === 'denied') {
-    return <p style={{ fontSize: '12px', color: '#9ca3af', margin: 0 }}>Notifications blocked. Enable them in your browser settings, then revisit here.</p>
-  }
-  if (permission === 'granted') {
-    return (
-      <div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
-          <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#22c55e', display: 'inline-block', flexShrink: 0 }} />
-          <span style={{ fontSize: '12px', color: '#374151' }}>Notifications enabled</span>
-        </div>
-        <p style={{ fontSize: '11px', color: '#9ca3af', margin: '0 0 6px' }}>Daily reminders for today's tasks:</p>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-          {Object.entries(BUCKET_LABELS).map(([bucket, time]) => (
-            <div key={bucket} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#6b7280' }}>
-              <span style={{ textTransform: 'capitalize' }}>{bucket}</span>
-              <span>{time}</span>
-            </div>
-          ))}
-        </div>
-        {scheduled && <p style={{ fontSize: '11px', color: '#059669', margin: '6px 0 0' }}>Today's notifications scheduled ✓</p>}
-      </div>
-    )
-  }
-  return (
-    <div>
-      <p style={{ fontSize: '12px', color: '#6b7280', margin: '0 0 8px' }}>Get daily reminders for morning, afternoon, and evening tasks.</p>
-      <button onClick={enable} style={{ background: '#6366f1', color: 'white', border: 'none', borderRadius: '8px', padding: '7px 14px', fontSize: '13px', cursor: 'pointer' }}>
-        Enable notifications
-      </button>
-    </div>
-  )
-}
 
 function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations, defaultCollaborationId, onAddGoal, onEditGoal, onDeleteGoal, onDuplicateGoal, onMarkDone, onDelete, onCreateTask, onEditTask }) {
   const [adding, setAdding] = useState(false)
@@ -1328,10 +1278,7 @@ export default function MobileLayout({
               ))}
             </div>
           </div>
-          <div style={{ border: '1px solid #e5e7eb', borderRadius: '10px', padding: '14px', marginBottom: '10px', background: 'white' }}>
-            <p style={{ margin: '0 0 6px', fontSize: '13px', fontWeight: 600, color: '#374151' }}>Notifications</p>
-            <NotificationSettings tasks={tasks} />
-          </div>
+
           <div style={{ border: '1px solid #e5e7eb', borderRadius: '10px', padding: '14px', marginBottom: '10px', background: 'white' }}>
             <p style={{ margin: '0 0 10px', fontSize: '13px', fontWeight: 600, color: '#374151' }}>Export</p>
             <ExportMenu tasks={tasks} goals={goals} weekStart={weekDays[0]} isMobile />
