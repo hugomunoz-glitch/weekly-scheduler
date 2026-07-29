@@ -17,14 +17,19 @@ function savePrefs(prefs) {
   try { localStorage.setItem(PREFS_KEY, JSON.stringify(prefs)) } catch {}
 }
 
+function notifBucket(task) {
+  if (!task.start_time) return task.bucket === 'afternoon' ? 'evening' : 'morning'
+  const [h] = task.start_time.split(':').map(Number)
+  if (h >= 17) return 'evening'
+  if (h >= 12) return 'afternoon'
+  return 'morning'
+}
+
 function getTodayBuckets(tasks) {
   const today = format(new Date(), 'yyyy-MM-dd')
   const todayTasks = tasks.filter(t => t.scheduled_date === today && t.status !== 'done')
   const buckets = { morning: [], afternoon: [], evening: [] }
-  for (const t of todayTasks) {
-    const b = t.bucket || 'morning'
-    if (buckets[b]) buckets[b].push(t)
-  }
+  for (const t of todayTasks) buckets[notifBucket(t)].push(t)
   return buckets
 }
 
@@ -322,17 +327,6 @@ export default function NotificationBell({ tasks, isMobile = false }) {
             <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
             <path d="M13.73 21a2 2 0 0 1-3.46 0" />
           </svg>
-          {count > 0 && (
-            <span style={{
-              position: 'absolute', top: -5, right: -5,
-              background: '#6366f1', color: 'white',
-              fontSize: 9, fontWeight: 700, borderRadius: '50%',
-              width: 16, height: 16, display: 'flex', alignItems: 'center', justifyContent: 'center',
-              border: '2px solid white',
-            }}>
-              {count > 9 ? '9+' : count}
-            </span>
-          )}
         </button>
 
         {open && isMobile && (

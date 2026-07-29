@@ -44,11 +44,16 @@ function buildTodayNotifications(tasks) {
   const today = format(new Date(), 'yyyy-MM-dd')
   const todayTasks = tasks.filter(t => t.scheduled_date === today && t.status !== 'done')
 
-  const byBucket = { morning: [], afternoon: [], evening: [] }
-  for (const t of todayTasks) {
-    const bucket = t.bucket || 'morning'
-    if (byBucket[bucket]) byBucket[bucket].push(t.title)
+  function notifBucket(task) {
+    if (!task.start_time) return task.bucket === 'afternoon' ? 'evening' : 'morning'
+    const [h] = task.start_time.split(':').map(Number)
+    if (h >= 17) return 'evening'
+    if (h >= 12) return 'afternoon'
+    return 'morning'
   }
+
+  const byBucket = { morning: [], afternoon: [], evening: [] }
+  for (const t of todayTasks) byBucket[notifBucket(t)].push(t.title)
 
   const notifications = []
   const now = new Date()
