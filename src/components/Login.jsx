@@ -8,7 +8,6 @@ export default function Login() {
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [username, setUsername] = useState('')
-  const [inviteCode, setInviteCode] = useState('')
   const [error, setError] = useState(null)
   const [submitting, setSubmitting] = useState(false)
   const [signedUp, setSignedUp] = useState(false)
@@ -19,7 +18,7 @@ export default function Login() {
     setSubmitting(true)
     const result = mode === 'signin'
       ? await signIn(email, password)
-      : await signUp(email, password, username, inviteCode)
+      : await signUp(email, password, username)
     setSubmitting(false)
     if (result.error) {
       setError(result.error.message)
@@ -76,12 +75,8 @@ export default function Login() {
             </button>
           </div>
           {mode === 'signup' && (
-            <>
-              <input type="text" required placeholder="Username" value={username} onChange={e => setUsername(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-base" />
-              <input type="text" required placeholder="Invite code" value={inviteCode} onChange={e => setInviteCode(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-base" />
-            </>
+            <input type="text" required placeholder="Username" value={username} onChange={e => setUsername(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-base" />
           )}
         </div>
 

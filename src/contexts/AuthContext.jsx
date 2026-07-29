@@ -30,35 +30,12 @@ export function AuthProvider({ children }) {
     return { error }
   }
 
-  async function signUp(email, password, username, inviteCode) {
-    const { data: invite, error: inviteError } = await supabase
-      .from('invite_codes')
-      .select('*')
-      .eq('code', inviteCode)
-      .is('used_by', null)
-      .maybeSingle()
-
-    if (inviteError || !invite) {
-      return { error: { message: 'Invalid or already-used invite code' } }
-    }
-    if (invite.expires_at && new Date(invite.expires_at) < new Date()) {
-      return { error: { message: 'This invite code has expired' } }
-    }
-
-    const { data, error } = await supabase.auth.signUp({
+  async function signUp(email, password, username) {
+    const { error } = await supabase.auth.signUp({
       email, password,
       options: { data: { username } }
     })
-    if (error) return { error }
-
-    const userId = data.user?.id
-    if (userId) {
-      await supabase.from('invite_codes').update({ used_by: userId, used_at: new Date().toISOString() }).eq('code', inviteCode)
-      if (invite.collaboration_id) {
-        await supabase.from('collaboration_members').insert({ collaboration_id: invite.collaboration_id, user_id: userId, role: 'member' })
-      }
-    }
-    return { error: null }
+    return { error: error ?? null }
   }
 
   async function signOut() {
