@@ -7,6 +7,7 @@ import DailyReflection from './DailyReflection'
 import Dashboard from './Dashboard'
 import VisionMission from './VisionMission'
 import ExportMenu from './ExportMenu'
+import NotificationBell, { NotificationToast } from './NotificationBell'
 import MonthView from './MonthView'
 import YearView from './YearView'
 import { resetViewportZoom } from '../lib/resetZoom'
@@ -1209,6 +1210,7 @@ export default function MobileLayout({
                 style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px', lineHeight: 1, padding: '2px 4px', color: '#9ca3af' }}
                 title="Vision &amp; Mission"
               >&#11088;</button>
+              <NotificationBell tasks={tasks} />
               <span style={{ fontSize: '11px', color: '#9ca3af' }}>Tap, Drag &amp; Drop to move</span>
             </div>
           </div>
