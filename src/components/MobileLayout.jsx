@@ -1443,7 +1443,7 @@ export default function MobileLayout({
 
       {showVisionMission && <VisionMission onClose={() => setShowVisionMission(false)} />}
 
-      <div style={{ background: 'white', borderTop: '1px solid #e5e7eb', padding: '6px 0 8px', display: 'flex', flexShrink: 0 }}>
+      <div style={{ background: 'white', borderTop: '1px solid #e5e7eb', paddingTop: '6px', paddingBottom: 'max(10px, env(safe-area-inset-bottom))', display: 'flex', flexShrink: 0 }}>
         {[
           { id: 'day', label: 'Today' },
           { id: 'goals', label: 'Goals' },
