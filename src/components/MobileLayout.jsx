@@ -1445,12 +1445,12 @@ export default function MobileLayout({
 
       <div style={{ background: 'white', borderTop: '1px solid #e5e7eb', padding: '6px 0 8px', display: 'flex', flexShrink: 0 }}>
         {[
-          { id: 'day', label: 'Today', emoji: '&#128197;' },
-          { id: 'goals', label: 'Goals', emoji: '&#127919;' },
-          { id: 'inbox', label: 'Task List', emoji: '&#128221;' },
-          { id: 'dashboard', label: 'Dashboard', emoji: '&#128202;' },
-          { id: 'assistant', label: 'Assistant', emoji: '&#129302;' },
-          { id: 'settings', label: 'Settings', emoji: '&#9881;' }
+          { id: 'day', label: 'Today', emoji: '📅' },
+          { id: 'goals', label: 'Goals', emoji: '🎯' },
+          { id: 'inbox', label: 'Task List', emoji: '📝' },
+          { id: 'dashboard', label: 'Dashboard', emoji: '📊' },
+          { id: 'assistant', label: 'Assistant', emoji: '🤖' },
+          { id: 'settings', label: 'Settings', emoji: '⚙️' }
         ].map(tab => (
           <button key={tab.id} onClick={() => { if (tab.id === 'dashboard') { setShowDashboard(true) } else { setActiveTab(tab.id); setMobileCalView('week') } }}
             style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0', position: 'relative' }}>
@@ -1464,7 +1464,7 @@ export default function MobileLayout({
                   <text x="17" y="24" textAnchor="middle" fill={activeTab === 'day' ? '#4338ca' : '#374151'} fontSize="13" fontWeight="600">{new Date().getDate()}</text>
                 </svg>
               ) : (
-                <span style={{ fontSize: '22px', lineHeight: 1 }} dangerouslySetInnerHTML={{ __html: tab.emoji }} />
+                <span style={{ fontSize: '22px', lineHeight: 1 }}>{tab.emoji}</span>
               )}
             </div>
             <span style={{ fontSize: '10px', color: activeTab === tab.id ? '#6366f1' : '#6b7280', fontWeight: activeTab === tab.id ? 600 : 500 }}>{tab.label}</span>
