@@ -27,7 +27,9 @@ function notifBucket(task) {
 
 function getTodayBuckets(tasks) {
   const today = format(new Date(), 'yyyy-MM-dd')
-  const todayTasks = tasks.filter(t => t.scheduled_date === today && t.status !== 'done')
+  const todayTasks = tasks.filter(t =>
+    t.scheduled_date && String(t.scheduled_date).slice(0, 10) === today && t.status !== 'done'
+  )
   const buckets = { morning: [], afternoon: [], evening: [] }
   for (const t of todayTasks) buckets[notifBucket(t)].push(t)
   return buckets
@@ -320,9 +322,19 @@ export default function NotificationBell({ tasks, isMobile = false }) {
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}
         >
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="#f59e0b" stroke="#d97706" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-            <path d="M13.73 21a2 2 0 0 1-3.46 0" fill="none" stroke="#d97706" strokeWidth="1.5" />
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="bell-grad" x1="6" y1="2" x2="18" y2="20" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stopColor="#fde68a"/>
+                <stop offset="100%" stopColor="#d97706"/>
+              </linearGradient>
+              <filter id="bell-shadow" x="-30%" y="-20%" width="160%" height="180%">
+                <feDropShadow dx="0" dy="2.5" stdDeviation="2" floodColor="#b45309" floodOpacity="0.55"/>
+              </filter>
+            </defs>
+            <path filter="url(#bell-shadow)" fill="url(#bell-grad)" d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9z"/>
+            <path d="M9.5 6.5 Q10.5 4.5 12 4" stroke="white" strokeWidth="1.1" strokeLinecap="round" opacity="0.6" fill="none"/>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0" stroke="#b45309" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
           </svg>
         </button>
 

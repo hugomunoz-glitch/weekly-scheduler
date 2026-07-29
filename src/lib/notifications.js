@@ -32,7 +32,9 @@ export function updateAppBadge(tasks) {
   if (!('setAppBadge' in navigator)) return
   const today = new Date()
   const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
-  const count = tasks.filter(t => t.scheduled_date === todayStr && t.status !== 'done').length
+  const count = tasks.filter(t =>
+    t.scheduled_date && String(t.scheduled_date).slice(0, 10) === todayStr && t.status !== 'done'
+  ).length
   if (count > 0) {
     navigator.setAppBadge(count).catch(() => {})
   } else {
@@ -54,7 +56,9 @@ export async function registerServiceWorker() {
 // Build the list of notifications for today based on tasks
 function buildTodayNotifications(tasks) {
   const today = format(new Date(), 'yyyy-MM-dd')
-  const todayTasks = tasks.filter(t => t.scheduled_date === today && t.status !== 'done')
+  const todayTasks = tasks.filter(t =>
+    t.scheduled_date && String(t.scheduled_date).slice(0, 10) === today && t.status !== 'done'
+  )
 
   function notifBucket(task) {
     if (!task.start_time) return task.bucket === 'afternoon' ? 'evening' : 'morning'
@@ -109,7 +113,7 @@ export async function scheduleUpcomingReminders(tasks) {
   const sw = await getSwRegistration()
 
   for (const t of tasks) {
-    if (t.scheduled_date !== todayStr || !t.start_time || t.status === 'done') continue
+    if (!t.scheduled_date || String(t.scheduled_date).slice(0, 10) !== todayStr || !t.start_time || t.status === 'done') continue
     const [h, m] = t.start_time.split(':').map(Number)
     const taskTime = new Date()
     taskTime.setHours(h, m, 0, 0)

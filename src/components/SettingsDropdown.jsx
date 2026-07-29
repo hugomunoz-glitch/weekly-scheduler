@@ -76,9 +76,15 @@ function NotificationSection({ tasks }) {
         className="w-full flex items-center justify-between px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
       >
         <span className="flex items-center gap-1.5">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill={permission === 'granted' && enabled ? '#f59e0b' : '#d1d5db'} stroke={permission === 'granted' && enabled ? '#d97706' : '#9ca3af'} strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-            <path d="M13.73 21a2 2 0 0 1-3.46 0" fill="none" strokeWidth="1.5" />
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="sd-bell-grad" x1="6" y1="2" x2="18" y2="20" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stopColor={permission === 'granted' && enabled ? '#fde68a' : '#e5e7eb'}/>
+                <stop offset="100%" stopColor={permission === 'granted' && enabled ? '#d97706' : '#9ca3af'}/>
+              </linearGradient>
+            </defs>
+            <path fill="url(#sd-bell-grad)" d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9z"/>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0" stroke={permission === 'granted' && enabled ? '#b45309' : '#9ca3af'} strokeWidth="1.5" strokeLinecap="round" fill="none"/>
           </svg>
           Notifications
         </span>
