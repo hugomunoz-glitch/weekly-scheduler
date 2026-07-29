@@ -1003,16 +1003,6 @@ export default function App() {
               {overdueTasks.length > 0 && rolloverMode === 'manual' && (
                 <button onClick={rolloverOverdue} className="px-3 py-1.5 text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100">Roll over {overdueTasks.length} overdue</button>
               )}
-              <button
-                onClick={() => { setShowGoals(v => { localStorage.setItem('showGoals', !v); return !v }) }}
-                title={showGoals ? 'Hide Goals' : 'Show Goals'}
-                className={'px-2 py-1.5 text-xs rounded-lg border transition-colors ' + (showGoals ? 'border-indigo-200 text-indigo-600 bg-indigo-50 hover:bg-indigo-100' : 'border-gray-200 text-gray-400 bg-white hover:bg-gray-50')}
-              >Goals</button>
-              <button
-                onClick={() => { setShowSidebar(v => { localStorage.setItem('showSidebar', !v); return !v }) }}
-                title={showSidebar ? 'Hide Task List' : 'Show Task List'}
-                className={'px-2 py-1.5 text-xs rounded-lg border transition-colors ' + (showSidebar ? 'border-indigo-200 text-indigo-600 bg-indigo-50 hover:bg-indigo-100' : 'border-gray-200 text-gray-400 bg-white hover:bg-gray-50')}
-              >Task List</button>
               <ExportMenu tasks={visibleTasks} goals={visibleGoals} weekStart={weekStart} />
               <button onClick={() => setShowDashboard(true)} className="px-3 py-1.5 text-sm font-medium text-indigo-600 border border-indigo-200 rounded-lg hover:bg-indigo-50">Dashboard</button>
               <button onClick={() => setShowReflect(true)} className="px-3 py-1.5 text-sm font-medium text-indigo-600 border border-indigo-200 rounded-lg hover:bg-indigo-50">Reflect</button>
@@ -1022,11 +1012,16 @@ export default function App() {
               <SettingsDropdown onOpenCollaborations={() => setShowCollab(true)} tasks={tasks} rolloverMode={rolloverMode} onRolloverModeChange={mode => { setRolloverMode(mode); localStorage.setItem('rolloverMode', mode) }} />
             </div>
           </header>
-          {showGoals && (
-            <div className="mx-3 mt-3 rounded-xl border border-gray-200 shadow-sm overflow-hidden shrink-0">
-              <GoalsBar goals={visibleGoals} goalTasks={visibleGoalTasks} allTasks={visibleTasks} collabMap={collabMap} collaborations={collaborations} collabMembersMap={collabMembersMap} defaultCollaborationId={defaultCollaborationId} onAddGoal={addGoal} onEditGoal={editGoal} onDeleteGoal={deleteGoal} onDuplicateGoal={duplicateGoal} onMarkDone={markDone} onDelete={requestDeleteTask} onDuplicateTask={duplicateTask} onCreateTask={addTask} onEditTask={setEditingTask} activeView={activeView} onChangeView={setActiveView} />
-            </div>
-          )}
+          <div className="mx-3 mt-3 rounded-xl border border-gray-200 shadow-sm overflow-hidden shrink-0 relative">
+            {showGoals && <GoalsBar goals={visibleGoals} goalTasks={visibleGoalTasks} allTasks={visibleTasks} collabMap={collabMap} collaborations={collaborations} collabMembersMap={collabMembersMap} defaultCollaborationId={defaultCollaborationId} onAddGoal={addGoal} onEditGoal={editGoal} onDeleteGoal={deleteGoal} onDuplicateGoal={duplicateGoal} onMarkDone={markDone} onDelete={requestDeleteTask} onDuplicateTask={duplicateTask} onCreateTask={addTask} onEditTask={setEditingTask} activeView={activeView} onChangeView={setActiveView} />}
+            <button
+              onClick={() => { setShowGoals(v => { localStorage.setItem('showGoals', !v); return !v }) }}
+              title={showGoals ? 'Collapse Goals' : 'Expand Goals'}
+              className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 z-10 w-6 h-6 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-400 hover:text-indigo-600 hover:border-indigo-300 transition-colors"
+            >
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d={showGoals ? 'M2 6.5L5 3.5L8 6.5' : 'M2 3.5L5 6.5L8 3.5'} stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </button>
+          </div>
           <div className="flex flex-1 overflow-hidden gap-3 p-3">
             <main className="flex-1 overflow-x-auto overflow-y-auto rounded-xl border border-gray-200 shadow-sm bg-white p-4">
               {loading ? <div className="flex items-center justify-center h-full text-sm text-gray-400">Loading</div> : (
@@ -1038,11 +1033,20 @@ export default function App() {
                 </>
               )}
             </main>
-            {showSidebar && (
-              <div className="rounded-xl border border-gray-200 shadow-sm overflow-hidden shrink-0">
-                <Sidebar tasks={inboxTasks} goalMap={goalMap} collabMap={collabMap} collabMembersMap={collabMembersMap} profileMap={profileMap} onAssignTask={assignTask} onMarkDone={markDone} goals={visibleGoals} allTasks={visibleTasks} onAddTask={() => setShowAdd(true)} onCreateTask={addTask} onAddGoal={addGoal} onEdit={setEditingTask} onDelete={requestDeleteTask} onDuplicate={duplicateTask} />
-              </div>
-            )}
+            <div className="relative flex shrink-0">
+              <button
+                onClick={() => { setShowSidebar(v => { localStorage.setItem('showSidebar', !v); return !v }) }}
+                title={showSidebar ? 'Collapse Task List' : 'Expand Task List'}
+                className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 z-10 w-6 h-6 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-400 hover:text-indigo-600 hover:border-indigo-300 transition-colors"
+              >
+                <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d={showSidebar ? 'M6.5 2L3.5 5L6.5 8' : 'M3.5 2L6.5 5L3.5 8'} stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              </button>
+              {showSidebar && (
+                <div className="rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                  <Sidebar tasks={inboxTasks} goalMap={goalMap} collabMap={collabMap} collabMembersMap={collabMembersMap} profileMap={profileMap} onAssignTask={assignTask} onMarkDone={markDone} goals={visibleGoals} allTasks={visibleTasks} onAddTask={() => setShowAdd(true)} onCreateTask={addTask} onAddGoal={addGoal} onEdit={setEditingTask} onDelete={requestDeleteTask} onDuplicate={duplicateTask} />
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
