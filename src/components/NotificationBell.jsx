@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { format } from 'date-fns'
-import { registerServiceWorker, scheduleDailyNotifications, requestNotificationPermission, getNotificationPermission } from '../lib/notifications'
+import { registerServiceWorker, scheduleDailyNotifications, scheduleUpcomingReminders, requestNotificationPermission, getNotificationPermission } from '../lib/notifications'
 
 const BUCKET_TIMES = {
   morning:   { hour: 8,  minute: 0,  label: 'Morning',   emoji: '🌅', defaultOn: true },
@@ -165,6 +165,32 @@ function NotifSettings({ onClose, prefs, onPrefsChange, permission, onRequestPer
         ))}
       </div>
 
+      {/* 15-min reminder toggle */}
+      <div style={{ borderTop: '1px solid #f3f4f6', paddingTop: 12, marginTop: 4 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div>
+            <p style={{ margin: 0, fontSize: 12, fontWeight: 500, color: '#374151' }}>⏰ 15-minute reminders</p>
+            <p style={{ margin: '2px 0 0', fontSize: 11, color: '#9ca3af' }}>Alert before tasks with a set time</p>
+          </div>
+          <button
+            onClick={() => onPrefsChange({ ...prefs, reminders15: !(prefs.reminders15 ?? true) })}
+            disabled={!enabled || permission !== 'granted'}
+            style={{
+              width: 34, height: 18, borderRadius: 9, border: 'none', cursor: 'pointer',
+              background: (prefs.reminders15 ?? true) && enabled && permission === 'granted' ? '#6366f1' : '#d1d5db',
+              position: 'relative', transition: 'background 0.2s', flexShrink: 0,
+              opacity: !enabled || permission !== 'granted' ? 0.4 : 1,
+            }}
+          >
+            <span style={{
+              position: 'absolute', top: 2, left: (prefs.reminders15 ?? true) && enabled && permission === 'granted' ? 17 : 2,
+              width: 14, height: 14, borderRadius: '50%', background: 'white',
+              transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+            }} />
+          </button>
+        </div>
+      </div>
+
       <p style={{ margin: '12px 0 0', fontSize: 10, color: '#d1d5db', textAlign: 'center' }}>
         Notifications fire for tasks scheduled today in each time slot.
       </p>
@@ -205,6 +231,9 @@ export default function NotificationBell({ tasks }) {
       return activeBuckets[b] !== false
     })
     scheduleDailyNotifications(filteredTasks)
+    if (prefs.reminders15 ?? true) {
+      scheduleUpcomingReminders(tasks)
+    }
   }, [tasks, prefs, permission])
 
   // In-app toasts at bucket times
@@ -229,6 +258,33 @@ export default function NotificationBell({ tasks }) {
           ? titles[0]
           : `${titles.length} tasks: ${titles.slice(0, 2).join(', ')}${titles.length > 2 ? '…' : ''}`
         setToast({ title: `${label} tasks`, body, emoji })
+      }, delay)
+
+      handles.push(handle)
+    }
+    return () => handles.forEach(clearTimeout)
+  }, [tasks, prefs])
+
+  // In-app toasts 15 min before timed tasks
+  useEffect(() => {
+    if (!(prefs.enabled ?? true) || !(prefs.reminders15 ?? true)) return
+    const today = format(new Date(), 'yyyy-MM-dd')
+    const now = Date.now()
+    const handles = []
+
+    for (const t of tasks) {
+      if (t.scheduled_date !== today || !t.start_time || t.status === 'done') continue
+      const [h, m] = t.start_time.split(':').map(Number)
+      const taskTime = new Date()
+      taskTime.setHours(h, m, 0, 0)
+      const fireAt = taskTime.getTime() - 15 * 60 * 1000
+      const delay = fireAt - now
+      if (delay <= 0 || firedRef.current.has(`reminder-${t.id}`)) continue
+
+      const handle = setTimeout(() => {
+        firedRef.current.add(`reminder-${t.id}`)
+        const timeStr = t.start_time.slice(0, 5)
+        setToast({ title: 'Starting in 15 min', body: `${t.title} at ${timeStr}`, emoji: '⏰' })
       }, delay)
 
       handles.push(handle)
