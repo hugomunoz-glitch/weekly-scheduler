@@ -19,20 +19,20 @@ function metersApart(lat1, lng1, lat2, lng2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
 }
 
-async function getLocalNotifications() {
-  try { return (await import('@capacitor/local-notifications')).LocalNotifications } catch { return null }
+function getLocalNotifications() {
+  return window.Capacitor?.Plugins?.LocalNotifications ?? null
 }
-async function getGeolocation() {
-  try { return (await import('@capacitor/geolocation')).Geolocation } catch { return null }
+function getGeolocation() {
+  return window.Capacitor?.Plugins?.Geolocation ?? null
 }
-async function getBackgroundGeolocation() {
-  try { return (await import('@capacitor-community/background-geolocation')).BackgroundGeolocation } catch { return null }
+function getBackgroundGeolocation() {
+  return window.Capacitor?.Plugins?.BackgroundGeolocation ?? null
 }
 
 async function checkProximity(lat, lng) {
   const now = Date.now()
   const today = new Date().toISOString().slice(0, 10)
-  const LocalNotifications = await getLocalNotifications()
+  const LocalNotifications = getLocalNotifications()
   if (!LocalNotifications) return
 
   for (const task of _tasks) {
@@ -66,7 +66,7 @@ async function checkProximity(lat, lng) {
 }
 
 export async function requestLocationPermission() {
-  const Geolocation = await getGeolocation()
+  const Geolocation = getGeolocation()
   if (!Geolocation) return 'denied'
   try {
     const status = await Geolocation.requestPermissions()
@@ -75,7 +75,7 @@ export async function requestLocationPermission() {
 }
 
 export async function getLocationPermission() {
-  const Geolocation = await getGeolocation()
+  const Geolocation = getGeolocation()
   if (!Geolocation) return 'denied'
   try {
     const status = await Geolocation.checkPermissions()
@@ -99,11 +99,11 @@ export async function startGeofencing(tasks) {
   const perm = await getLocationPermission()
   if (perm !== 'granted') return false
 
-  const LocalNotifications = await getLocalNotifications()
+  const LocalNotifications = getLocalNotifications()
   if (LocalNotifications) await LocalNotifications.requestPermissions()
 
   if (!_bgRegistered) {
-    const BackgroundGeolocation = await getBackgroundGeolocation()
+    const BackgroundGeolocation = getBackgroundGeolocation()
     if (BackgroundGeolocation) {
       _bgRegistered = true
       await BackgroundGeolocation.addWatcher(

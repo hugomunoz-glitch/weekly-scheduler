@@ -11,13 +11,13 @@ function isNative() {
   return typeof window !== 'undefined' && window.Capacitor?.isNativePlatform?.()
 }
 
-async function getLocalNotifications() {
-  try { return (await import('@capacitor/local-notifications')).LocalNotifications } catch { return null }
+function getLocalNotifications() {
+  return window.Capacitor?.Plugins?.LocalNotifications ?? null
 }
 
 export async function requestNotificationPermission() {
   if (isNative()) {
-    const LN = await getLocalNotifications()
+    const LN = getLocalNotifications()
     if (!LN) return 'unsupported'
     const result = await LN.requestPermissions()
     return result.display === 'granted' ? 'granted' : result.display === 'denied' ? 'denied' : 'default'
@@ -31,7 +31,7 @@ export async function requestNotificationPermission() {
 
 export async function getNotificationPermission() {
   if (isNative()) {
-    const LN = await getLocalNotifications()
+    const LN = getLocalNotifications()
     if (!LN) return 'unsupported'
     try {
       const result = await LN.checkPermissions()
@@ -174,7 +174,7 @@ export async function scheduleDailyNotifications(tasks) {
 
   // Native Capacitor path
   if (isNative()) {
-    const LN = await getLocalNotifications()
+    const LN = getLocalNotifications()
     if (!LN) return
     const notifications = buildTodayNotifications(tasks)
     if (notifications.length === 0) return
