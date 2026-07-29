@@ -58,6 +58,17 @@ function formatTimeShort(t) {
 }
 
 export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTask, onAddGoal, initialScheduledDate, initialStartTime, initialBucket, existingTaskCategories, collaborations, collabMembersMap, defaultCollaborationId, onCreateFollowUp, followUpPrefill }) {
+  // Track visible viewport height so the modal shrinks correctly when the
+  // keyboard appears on native WKWebView (where dvh doesn't shrink with keyboard)
+  const [vpHeight, setVpHeight] = useState(() => window.visualViewport?.height ?? window.innerHeight)
+  useEffect(() => {
+    const vv = window.visualViewport
+    if (!vv) return
+    const update = () => setVpHeight(vv.height)
+    vv.addEventListener('resize', update)
+    return () => vv.removeEventListener('resize', update)
+  }, [])
+
   function closeModal() {
     resetViewportZoom()
     onClose()
@@ -230,7 +241,7 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-end sm:items-center justify-center z-50 sm:py-8" onClick={(e) => e.target === e.currentTarget && closeModal()}>
-      <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-xl w-full max-w-md mx-0 sm:mx-4 flex flex-col" style={{ height: '92dvh', fontSize: 16 }} onClick={(e) => e.stopPropagation()}>
+      <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-xl w-full max-w-md mx-0 sm:mx-4 flex flex-col" style={{ height: Math.floor(vpHeight * 0.92) + 'px', fontSize: 16 }} onClick={(e) => e.stopPropagation()}>
         <div style={{ overflowY: 'scroll', WebkitOverflowScrolling: 'touch', flex: 1, padding: '24px 24px 0' }}>
         <h2 className="text-base font-semibold text-gray-900 mb-4">{editingTask ? 'Edit task' : initialScheduledDate ? 'Add task for ' + initialScheduledDate : 'Add task'}</h2>
         <form id="task-form" onSubmit={bulkMode ? handleBulkSubmit : (e) => handleSubmitCore(e, false)} className="space-y-3">
