@@ -129,8 +129,19 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
   const [optionsOpen, setOptionsOpen] = useState(hasExistingOptions)
 
   useEffect(() => {
+    // iOS WKWebView zooms in on inputs with font-size < 16px. Inject a head
+    // stylesheet so the rule loads before any input is focused.
+    const style = document.createElement('style')
+    style.id = 'add-task-modal-no-zoom'
+    style.textContent = [
+      '.add-task-modal input:not([type="radio"]):not([type="checkbox"]),',
+      '.add-task-modal textarea,',
+      '.add-task-modal select { font-size: 16px !important; }',
+    ].join(' ')
+    document.head.appendChild(style)
     resetViewportZoom()
     inputRef.current?.focus()
+    return () => style.remove()
   }, [])
   useEffect(() => {
     function handleKey(e) { if (e.key === 'Escape') closeModal() }
@@ -244,11 +255,6 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-end sm:items-center justify-center z-50 sm:py-8" onClick={(e) => e.target === e.currentTarget && closeModal()}>
-      <style>{`
-        .add-task-modal input, .add-task-modal textarea, .add-task-modal select {
-          font-size: 16px !important;
-        }
-      `}</style>
       <div className="add-task-modal bg-white rounded-t-2xl sm:rounded-2xl shadow-xl w-full max-w-md mx-0 sm:mx-4 flex flex-col" style={{ height: Math.floor(vpHeight * 0.92) + 'px', fontSize: 16 }} onClick={(e) => e.stopPropagation()}>
         <div style={{ overflowY: 'scroll', WebkitOverflowScrolling: 'touch', flex: 1, padding: '24px 24px 0' }}>
         <h2 className="text-base font-semibold text-gray-900 mb-4">{editingTask ? 'Edit task' : initialScheduledDate ? 'Add task for ' + initialScheduledDate : 'Add task'}</h2>
