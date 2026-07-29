@@ -18,10 +18,15 @@ function savePrefs(prefs) {
 }
 
 function notifBucket(task) {
-  if (!task.start_time) return task.bucket === 'afternoon' ? 'evening' : 'morning'
-  const [h] = task.start_time.split(':').map(Number)
-  if (h >= 17) return 'evening'
-  if (h >= 12) return 'afternoon'
+  if (task.start_time) {
+    const [h] = task.start_time.split(':').map(Number)
+    if (h >= 17) return 'evening'
+    if (h >= 12) return 'afternoon'
+    return 'morning'
+  }
+  // no start_time — use DB bucket name
+  if (task.bucket === 'afternoon') return 'evening'    // Evening column
+  if (task.bucket === 'midday') return 'afternoon'     // Afternoon column
   return 'morning'
 }
 

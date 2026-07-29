@@ -61,10 +61,14 @@ function buildTodayNotifications(tasks) {
   )
 
   function notifBucket(task) {
-    if (!task.start_time) return task.bucket === 'afternoon' ? 'evening' : 'morning'
-    const [h] = task.start_time.split(':').map(Number)
-    if (h >= 17) return 'evening'
-    if (h >= 12) return 'afternoon'
+    if (task.start_time) {
+      const [h] = task.start_time.split(':').map(Number)
+      if (h >= 17) return 'evening'
+      if (h >= 12) return 'afternoon'
+      return 'morning'
+    }
+    if (task.bucket === 'afternoon') return 'evening'
+    if (task.bucket === 'midday') return 'afternoon'
     return 'morning'
   }
 
