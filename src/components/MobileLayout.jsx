@@ -1443,7 +1443,7 @@ export default function MobileLayout({
 
       {showVisionMission && <VisionMission onClose={() => setShowVisionMission(false)} />}
 
-      <div style={{ background: 'white', borderTop: '1px solid #e5e7eb', paddingTop: '6px', paddingBottom: 'max(10px, env(safe-area-inset-bottom))', display: 'flex', flexShrink: 0 }}>
+      <div style={{ background: 'white', borderTop: '1px solid #e5e7eb', paddingTop: '6px', paddingBottom: '8px', display: 'flex', flexShrink: 0 }}>
         {[
           { id: 'day', label: 'Today', emoji: null },
           { id: 'goals', label: 'Goals', emoji: '🎯' },
@@ -1472,6 +1472,7 @@ export default function MobileLayout({
           </button>
         ))}
       </div>
+      <div style={{ background: 'white', flexShrink: 0, height: 'env(safe-area-inset-bottom)' }} />
     </div>
   )
 }
