@@ -200,7 +200,7 @@ function NotifSettings({ onClose, prefs, onPrefsChange, permission, onRequestPer
 
 // ── Bell ──────────────────────────────────────────────────────────────────────
 
-export default function NotificationBell({ tasks }) {
+export default function NotificationBell({ tasks, isMobile = false }) {
   const [open, setOpen] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [toast, setToast] = useState(null)
@@ -313,12 +313,12 @@ export default function NotificationBell({ tasks }) {
             position: 'relative', background: 'none', border: '1px solid #e5e7eb',
             borderRadius: 8, padding: '6px 8px', cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: '#6b7280', transition: 'background 0.15s',
+            color: '#f59e0b', transition: 'background 0.15s',
           }}
-          onMouseEnter={e => e.currentTarget.style.background = '#f9fafb'}
+          onMouseEnter={e => e.currentTarget.style.background = '#fffbeb'}
           onMouseLeave={e => e.currentTarget.style.background = 'none'}
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="#f59e0b" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
             <path d="M13.73 21a2 2 0 0 1-3.46 0" />
           </svg>
@@ -335,8 +335,16 @@ export default function NotificationBell({ tasks }) {
           )}
         </button>
 
+        {open && isMobile && (
+          <div style={{ position: 'fixed', inset: 0, zIndex: 300, background: 'rgba(0,0,0,0.4)' }} onClick={() => { setOpen(false); setShowSettings(false) }} />
+        )}
         {open && (
-          <div style={{
+          <div style={isMobile ? {
+            position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 301,
+            background: 'white', borderRadius: '16px 16px 0 0',
+            boxShadow: '0 -4px 24px rgba(0,0,0,0.15)',
+            maxHeight: '80vh', overflowY: 'auto',
+          } : {
             position: 'absolute', top: 'calc(100% + 8px)', right: 0, zIndex: 200,
             background: 'white', border: '1px solid #e5e7eb', borderRadius: 12,
             boxShadow: '0 8px 24px rgba(0,0,0,0.10)', width: 290,
