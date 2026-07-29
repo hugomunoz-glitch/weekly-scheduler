@@ -57,7 +57,7 @@ async function checkProximity(lat, lng) {
         title: `📍 Near ${task.location}`,
         body: task.title,
         schedule: { at: new Date(Date.now() + 1000) },
-        sound: null,
+        sound: undefined,
         attachments: null,
         actionTypeId: '',
         extra: null,
