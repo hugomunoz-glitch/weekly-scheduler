@@ -11,6 +11,13 @@ html, body {
   height: 100%;
 }
 
+#root {
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
 /* Set touch-action via a real stylesheet rule (not a JS-computed inline style) so it's
    active from the very first paint. WebKit can be unreliable about respecting touch-action
    set via inline style on the very first touch of a freshly-inserted element. */
