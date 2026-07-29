@@ -1453,10 +1453,10 @@ export default function MobileLayout({
             <div style={{ width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               {tab.id === 'day' ? (
                 <svg width="22" height="20.7" viewBox="0 0 34 32">
-                  <line x1="10" y1="0" x2="10" y2="7" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" />
-                  <line x1="24" y1="0" x2="24" y2="7" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" />
-                  <rect x="0" y="4" width="34" height="26" rx="4" fill="white" stroke="#9ca3af" strokeWidth="1" />
-                  <rect x="0" y="4" width="34" height="9" fill={activeTab === 'day' ? '#6366f1' : '#9ca3af'} />
+                  <line x1="10" y1="0" x2="10" y2="7" stroke={activeTab === 'day' ? '#6366f1' : '#ef4444'} strokeWidth="2" strokeLinecap="round" />
+                  <line x1="24" y1="0" x2="24" y2="7" stroke={activeTab === 'day' ? '#6366f1' : '#ef4444'} strokeWidth="2" strokeLinecap="round" />
+                  <rect x="0" y="4" width="34" height="26" rx="4" fill="white" stroke={activeTab === 'day' ? '#6366f1' : '#d1d5db'} strokeWidth="1" />
+                  <rect x="0" y="4" width="34" height="9" fill={activeTab === 'day' ? '#6366f1' : '#ef4444'} />
                   <text x="17" y="24" textAnchor="middle" fill={activeTab === 'day' ? '#4338ca' : '#374151'} fontSize="13" fontWeight="600">{new Date().getDate()}</text>
                 </svg>
               ) : (
