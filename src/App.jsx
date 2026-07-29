@@ -21,7 +21,7 @@ import NotificationBell from './components/NotificationBell'
 import MonthView from './components/MonthView'
 import DayView from './components/DayView'
 import YearView from './components/YearView'
-import { registerServiceWorker, scheduleDailyNotifications, getNotificationPermission } from './lib/notifications'
+import { registerServiceWorker, scheduleDailyNotifications, getNotificationPermission, updateAppBadge } from './lib/notifications'
 
 function useWarmupSensor(api) {
   useEffect(() => {
@@ -187,11 +187,12 @@ export default function App() {
   // Register service worker once on mount
   useEffect(() => { registerServiceWorker() }, [])
 
-  // Reschedule notifications whenever tasks change
+  // Reschedule notifications and update home screen badge whenever tasks change
   useEffect(() => {
     if (tasks.length > 0 && getNotificationPermission() === 'granted') {
       scheduleDailyNotifications(tasks)
     }
+    updateAppBadge(tasks)
   }, [tasks])
 
   const rolloverRef = useRef(null)
