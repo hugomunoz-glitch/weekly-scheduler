@@ -26,7 +26,7 @@ function getGeolocation() {
   return window.Capacitor?.Plugins?.Geolocation ?? null
 }
 function getBackgroundGeolocation() {
-  return window.Capacitor?.Plugins?.BackgroundGeolocation ?? null
+  return null // requires UIBackgroundModes:location entitlement — disabled until configured
 }
 
 async function checkProximity(lat, lng) {
