@@ -230,9 +230,10 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-end sm:items-center justify-center z-50 sm:py-8" onClick={(e) => e.target === e.currentTarget && closeModal()}>
-      <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-xl w-full max-w-md mx-0 sm:mx-4 p-6" style={{ maxHeight: '92dvh', overflowY: 'scroll', WebkitOverflowScrolling: 'touch', paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))', fontSize: 16 }} onClick={(e) => e.stopPropagation()}>
+      <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-xl w-full max-w-md mx-0 sm:mx-4 flex flex-col" style={{ maxHeight: '92dvh', fontSize: 16 }} onClick={(e) => e.stopPropagation()}>
+        <div style={{ overflowY: 'scroll', WebkitOverflowScrolling: 'touch', flex: 1, padding: '24px 24px 0' }}>
         <h2 className="text-base font-semibold text-gray-900 mb-4">{editingTask ? 'Edit task' : initialScheduledDate ? 'Add task for ' + initialScheduledDate : 'Add task'}</h2>
-        <form onSubmit={bulkMode ? handleBulkSubmit : (e) => handleSubmitCore(e, false)} className="space-y-3">
+        <form id="task-form" onSubmit={bulkMode ? handleBulkSubmit : (e) => handleSubmitCore(e, false)} className="space-y-3">
           {!editingTask && (
             <div className="flex justify-end -mb-1">
               <button
@@ -625,7 +626,10 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
           {bulkMode && bulkError && <p className="text-xs text-red-500">{bulkError}</p>}
           {!bulkMode && submitError && <p className="text-xs text-red-500">{submitError}</p>}
           </>}
-          <div className="flex gap-2 pt-1">
+        </form>
+        </div>
+        {/* Sticky footer — always visible above the keyboard */}
+        <div className="flex-shrink-0 flex gap-2 px-6 pt-3 pb-3 border-t border-gray-100" style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}>
             {showScopeChoice ? (
               <>
                 <button type="button" onClick={(e) => handleSubmitCore(e, false, 'this')} disabled={submitting} className="flex-1 py-2 text-sm font-medium text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-40 transition-colors">Just this one</button>
@@ -635,7 +639,7 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
               <>
                 <button type="button" onClick={closeModal} className="flex-1 py-2 text-sm text-gray-500 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">Cancel</button>
                 {bulkMode ? (
-                  <button type="submit" disabled={bulkCount === 0 || bulkSubmitting} className="flex-1 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+                  <button form="task-form" type="submit" disabled={bulkCount === 0 || bulkSubmitting} className="flex-1 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
                     {bulkSubmitting ? 'Adding...' : bulkCount > 0 ? 'Add ' + bulkCount + ' tasks' : 'Add tasks'}
                   </button>
                 ) : editingTask ? (
@@ -647,18 +651,17 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
                     >
                       Follow-up
                     </button>
-                    <button type="submit" disabled={!title.trim() || submitting} className="flex-1 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">{submitting ? 'Saving...' : 'Save changes'}</button>
+                    <button form="task-form" type="submit" disabled={!title.trim() || submitting} className="flex-1 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">{submitting ? 'Saving...' : 'Save changes'}</button>
                   </>
                 ) : (
                   <>
                     <button type="button" onClick={(e) => handleSubmitCore(e, true)} disabled={!title.trim() || submitting} className="flex-1 py-2 text-sm font-medium text-indigo-600 border border-indigo-200 rounded-lg hover:bg-indigo-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">Add another</button>
-                    <button type="submit" disabled={!title.trim() || submitting} className="flex-1 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">{submitting ? 'Adding...' : 'Add'}</button>
+                    <button form="task-form" type="submit" disabled={!title.trim() || submitting} className="flex-1 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">{submitting ? 'Adding...' : 'Add'}</button>
                   </>
                 )}
               </>
             )}
-          </div>
-        </form>
+        </div>
       </div>
     </div>
   )
