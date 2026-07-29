@@ -6,7 +6,22 @@ const BUCKET_TIMES = {
   evening:   { hour: 17, minute: 0 },
 }
 
+// Detect if running inside a Capacitor native shell
+function isNative() {
+  return typeof window !== 'undefined' && window.Capacitor?.isNativePlatform?.()
+}
+
+async function getLocalNotifications() {
+  try { return (await import('@capacitor/local-notifications')).LocalNotifications } catch { return null }
+}
+
 export async function requestNotificationPermission() {
+  if (isNative()) {
+    const LN = await getLocalNotifications()
+    if (!LN) return 'unsupported'
+    const result = await LN.requestPermissions()
+    return result.display === 'granted' ? 'granted' : result.display === 'denied' ? 'denied' : 'default'
+  }
   if (!('Notification' in window)) return 'unsupported'
   if (Notification.permission === 'granted') return 'granted'
   if (Notification.permission === 'denied') return 'denied'
@@ -14,7 +29,15 @@ export async function requestNotificationPermission() {
   return result
 }
 
-export function getNotificationPermission() {
+export async function getNotificationPermission() {
+  if (isNative()) {
+    const LN = await getLocalNotifications()
+    if (!LN) return 'unsupported'
+    try {
+      const result = await LN.checkPermissions()
+      return result.display === 'granted' ? 'granted' : result.display === 'denied' ? 'denied' : 'default'
+    } catch { return 'unsupported' }
+  }
   if (!('Notification' in window)) return 'unsupported'
   return Notification.permission
 }
@@ -109,7 +132,8 @@ export async function scheduleUpcomingReminders(tasks) {
   for (const h of _reminderHandles) clearTimeout(h)
   _reminderHandles = []
 
-  if (getNotificationPermission() !== 'granted') return
+  const perm = await getNotificationPermission()
+  if (perm !== 'granted') return
 
   const today = new Date()
   const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
@@ -145,7 +169,30 @@ export async function scheduleUpcomingReminders(tasks) {
 
 // Schedule notifications via SW (works while app is open/backgrounded on mobile)
 export async function scheduleDailyNotifications(tasks) {
-  if (getNotificationPermission() !== 'granted') return
+  const perm = await getNotificationPermission()
+  if (perm !== 'granted') return
+
+  // Native Capacitor path
+  if (isNative()) {
+    const LN = await getLocalNotifications()
+    if (!LN) return
+    const notifications = buildTodayNotifications(tasks)
+    if (notifications.length === 0) return
+    await LN.cancel({ notifications: notifications.map((_, i) => ({ id: 1000 + i })) }).catch(() => {})
+    await LN.schedule({
+      notifications: notifications.map((n, i) => ({
+        id: 1000 + i,
+        title: n.title,
+        body: n.body,
+        schedule: { at: new Date(n.fireAt) },
+        sound: null,
+        attachments: null,
+        actionTypeId: '',
+        extra: null,
+      })),
+    })
+    return
+  }
 
   // Clear any previously scheduled timers (page-side fallback)
   for (const h of _scheduledHandles) clearTimeout(h)

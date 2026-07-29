@@ -100,13 +100,9 @@ function NotifSettings({ onClose, prefs, onPrefsChange, permission, onRequestPer
 
       {permission === 'denied' && (
         <div style={{ background: '#fef3c7', border: '1px solid #fcd34d', borderRadius: 8, padding: '8px 10px', marginBottom: 12, fontSize: 11, color: '#92400e' }}>
-          Notifications are blocked in your browser. Go to your browser settings → Site permissions → Notifications to allow them.
-        </div>
-      )}
-
-      {permission === 'unsupported' && (
-        <div style={{ background: '#f3f4f6', borderRadius: 8, padding: '8px 10px', marginBottom: 12, fontSize: 11, color: '#6b7280' }}>
-          Your browser doesn't support notifications.
+          {window.Capacitor?.isNativePlatform?.()
+            ? 'Notifications are blocked. Go to iPhone Settings → Schedulent → Notifications to allow them.'
+            : 'Notifications are blocked in your browser. Go to your browser settings → Site permissions → Notifications to allow them.'}
         </div>
       )}
 
@@ -216,7 +212,7 @@ export default function NotificationBell({ tasks, isMobile = false }) {
   const [open, setOpen] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [toast, setToast] = useState(null)
-  const [permission, setPermission] = useState(getNotificationPermission)
+  const [permission, setPermission] = useState('default')
   const [prefs, setPrefs] = useState(loadPrefs)
   const ref = useRef(null)
   const firedRef = useRef(new Set())
@@ -230,6 +226,9 @@ export default function NotificationBell({ tasks, isMobile = false }) {
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [])
+
+  // Load permission state on mount (async-safe)
+  useEffect(() => { getNotificationPermission().then(setPermission) }, [])
 
   // Register SW on mount
   useEffect(() => { registerServiceWorker() }, [])
