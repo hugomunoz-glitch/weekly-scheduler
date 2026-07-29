@@ -1443,7 +1443,7 @@ export default function MobileLayout({
         {[
           { id: 'day', label: 'Today', emoji: '&#128197;' },
           { id: 'goals', label: 'Goals', emoji: '&#127919;' },
-          { id: 'inbox', label: 'Task List', emoji: '&#128221;', badge: inboxTasks.filter(t => t.status !== 'done').length },
+          { id: 'inbox', label: 'Task List', emoji: '&#128221;' },
           { id: 'dashboard', label: 'Dashboard', emoji: '&#128202;' },
           { id: 'assistant', label: 'Assistant', emoji: '&#129302;' },
           { id: 'settings', label: 'Settings', emoji: '&#9881;' }
@@ -1464,9 +1464,6 @@ export default function MobileLayout({
               )}
             </div>
             <span style={{ fontSize: '10px', color: activeTab === tab.id ? '#6366f1' : (['goals', 'inbox', 'assistant'].includes(tab.id) ? '#4b5563' : '#9ca3af'), fontWeight: activeTab === tab.id ? 500 : 400 }}>{tab.label}</span>
-            {tab.badge > 0 && (
-              <div style={{ position: 'absolute', top: '2px', right: '22%', background: '#6366f1', color: 'white', borderRadius: '10px', padding: '1px 5px', fontSize: '10px', fontWeight: 500 }}>{tab.badge}</div>
-            )}
           </button>
         ))}
       </div>
