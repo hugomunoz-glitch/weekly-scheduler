@@ -69,9 +69,20 @@ export async function updateAppBadge(tasks) {
   }
 
   // Web API fallback (PWA on supported browsers)
+  // iOS requires notification permission for setAppBadge to work
   if ('setAppBadge' in navigator) {
+    if ('Notification' in window && Notification.permission === 'default') {
+      // Permission not yet asked — request it so badge can work
+      Notification.requestPermission().catch(() => {})
+    }
     if (count > 0) {
-      navigator.setAppBadge(count).catch(() => {})
+      navigator.setAppBadge(count).catch(async () => {
+        // Retry once after requesting permission (handles the case where
+        // permission was just granted by the requestPermission call above)
+        if ('Notification' in window && Notification.permission === 'granted') {
+          navigator.setAppBadge(count).catch(() => {})
+        }
+      })
     } else {
       navigator.clearAppBadge().catch(() => {})
     }
