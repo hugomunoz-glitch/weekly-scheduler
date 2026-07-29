@@ -353,7 +353,7 @@ export default function App() {
     }
   }
 
-  async function addTask(title, notes, goalId, startTime, dueDate, scheduledDate, priority, category, collaborationId, assignedTo, explicitBucket, familyMember, endTime, recurrenceRule) {
+  async function addTask(title, notes, goalId, startTime, dueDate, scheduledDate, priority, category, collaborationId, assignedTo, explicitBucket, familyMember, endTime, recurrenceRule, location, locationLat, locationLng) {
     const bucketValue = scheduledDate ? (startTime ? bucketFromTime(startTime) : (explicitBucket || 'morning')) : null
     const bucketSiblings = scheduledDate ? tasks.filter(t => t.scheduled_date === scheduledDate && (t.bucket || 'morning') === bucketValue) : []
     const newPosition = nextPosition(bucketSiblings, 'position')
@@ -385,6 +385,9 @@ export default function App() {
       due_date_card_date: dueDate || null,
       due_date_card_bucket: dueDate ? 'morning' : null,
       recurrence_group_id: null,
+      location: location || null,
+      location_lat: locationLat || null,
+      location_lng: locationLng || null,
       ...recurrenceFields
     }).select().single()
     if (error) { console.error('addTask failed:', error); throw error }
@@ -428,10 +431,10 @@ export default function App() {
     ])
   }
 
-  async function editTask(taskId, title, notes, goalId, startTime, dueDate, scheduledDate, priority, category, collaborationId, assignedTo, familyMember, endTime, scope, newRecurrenceRule, patternChangeRule) {
+  async function editTask(taskId, title, notes, goalId, startTime, dueDate, scheduledDate, priority, category, collaborationId, assignedTo, familyMember, endTime, scope, newRecurrenceRule, patternChangeRule, location, locationLat, locationLng) {
     const existing = tasks.find(t => t.id === taskId)
     const wasScheduled = existing && existing.scheduled_date
-    const updates = { title, notes: notes || null, goal_id: goalId || null, start_time: startTime || null, end_time: endTime || null, due_date: dueDate || null, priority: priority || null, category: category || null, family_member: familyMember || null }
+    const updates = { title, notes: notes || null, goal_id: goalId || null, start_time: startTime || null, end_time: endTime || null, due_date: dueDate || null, priority: priority || null, category: category || null, family_member: familyMember || null, location: location || null, location_lat: locationLat || null, location_lng: locationLng || null }
     if (collaborationId !== undefined) updates.collaboration_id = collaborationId || null
     if (assignedTo !== undefined) updates.assigned_to = assignedTo || null
     const oldDueDate = existing ? existing.due_date : null

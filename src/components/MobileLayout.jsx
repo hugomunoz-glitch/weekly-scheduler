@@ -13,9 +13,54 @@ import YearView from './YearView'
 import { resetViewportZoom } from '../lib/resetZoom'
 import { format, isToday, parseISO } from 'date-fns'
 import { updateAppBadge } from '../lib/notifications'
+import { startGeofencing, updateGeofencingTasks, requestLocationPermission, getLocationPermission } from '../lib/geofencing'
 import { Droppable, Draggable } from '@hello-pangea/dnd'
 import TaskCard, { categoryBadge } from './TaskCard'
 import ViewSwitcher from './ViewSwitcher'
+
+function LocationAlertsSection({ tasks }) {
+  const [perm, setPerm] = useState('unknown')
+
+  useEffect(() => {
+    getLocationPermission().then(setPerm)
+  }, [])
+
+  async function enable() {
+    const result = await requestLocationPermission()
+    setPerm(result)
+    if (result === 'granted') startGeofencing(tasks)
+  }
+
+  const locationTasks = tasks.filter(t => t.location && t.location_lat && t.location_lng && t.status !== 'done')
+
+  return (
+    <div style={{ border: '1px solid #e5e7eb', borderRadius: '10px', padding: '14px', marginBottom: '10px', background: 'white' }}>
+      <p style={{ margin: '0 0 6px', fontSize: '13px', fontWeight: 600, color: '#374151' }}>Location Alerts</p>
+      {perm === 'granted' ? (
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#22c55e', display: 'inline-block' }} />
+            <span style={{ fontSize: '12px', color: '#374151' }}>Location access enabled</span>
+          </div>
+          <p style={{ fontSize: '11px', color: '#9ca3af', margin: 0 }}>
+            {locationTasks.length === 0
+              ? 'Add a location to a task to get notified when you arrive.'
+              : `Watching ${locationTasks.length} task${locationTasks.length > 1 ? 's' : ''} with locations.`}
+          </p>
+        </div>
+      ) : perm === 'denied' ? (
+        <p style={{ fontSize: '12px', color: '#9ca3af', margin: 0 }}>Location blocked. Enable it in your device Settings → Schedulent → Location.</p>
+      ) : (
+        <div>
+          <p style={{ fontSize: '12px', color: '#6b7280', margin: '0 0 8px' }}>Get notified when you arrive at a task's location — even when the app is in the background.</p>
+          <button onClick={enable} style={{ background: '#6366f1', color: 'white', border: 'none', borderRadius: '8px', padding: '7px 14px', fontSize: '13px', cursor: 'pointer' }}>
+            Enable location alerts
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
 
 function formatTime(t) {
   if (!t) return null
@@ -1015,6 +1060,16 @@ export default function MobileLayout({
 
   // Reset selectedDay when week navigation changes and selected day is no longer in view
   useEffect(() => {
+    getLocationPermission().then(perm => {
+      if (perm === 'granted') {
+        startGeofencing(tasks)
+      } else {
+        updateGeofencingTasks(tasks)
+      }
+    })
+  }, [tasks])
+
+  useEffect(() => {
     const inWeek = weekDays.some(d => format(d, 'yyyy-MM-dd') === selectedDay)
     if (!inWeek) {
       const todayStr = format(new Date(), 'yyyy-MM-dd')
@@ -1278,6 +1333,8 @@ export default function MobileLayout({
               ))}
             </div>
           </div>
+
+          <LocationAlertsSection tasks={tasks} />
 
           <div style={{ border: '1px solid #e5e7eb', borderRadius: '10px', padding: '14px', marginBottom: '10px', background: 'white' }}>
             <p style={{ margin: '0 0 10px', fontSize: '13px', fontWeight: 600, color: '#374151' }}>Export</p>

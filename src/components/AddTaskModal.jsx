@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { resetViewportZoom } from '../lib/resetZoom'
+import { geocodeAddress } from '../lib/geofencing'
 
 const GOAL_CATEGORIES = [
   'Career/Professional', 'Family', 'Financial', 'Intellectual',
@@ -65,6 +66,11 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
   const [assignedTo, setAssignedTo] = useState(editingTask ? (editingTask.assigned_to || '') : '')
   const [title, setTitle] = useState(editingTask ? editingTask.title : (followUpPrefill?.title || ''))
   const [notes, setNotes] = useState(editingTask ? (editingTask.notes || '') : '')
+  const [location, setLocation] = useState(editingTask ? (editingTask.location || '') : '')
+  const [locationLat, setLocationLat] = useState(editingTask ? (editingTask.location_lat || null) : null)
+  const [locationLng, setLocationLng] = useState(editingTask ? (editingTask.location_lng || null) : null)
+  const [geocoding, setGeocoding] = useState(false)
+  const [geocodeError, setGeocodeError] = useState('')
   const [goalId, setGoalId] = useState(editingTask ? (editingTask.goal_id || '') : (followUpPrefill?.goalId || ''))
   const [startTime, setStartTime] = useState(editingTask ? (editingTask.start_time || '') : (initialStartTime || ''))
   const [dueDate, setDueDate] = useState(editingTask ? (editingTask.due_date || '') : '')
@@ -170,11 +176,11 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
     setSubmitting(true)
     try {
       if (editingTask) {
-        await onEdit(editingTask.id, title.trim(), notes.trim(), goalId || null, startTime || null, dueDate || null, scheduledDate || null, priority || null, category, collaborationId || null, assignedTo || null, category === 'Family' ? familyMember.trim() || null : null, endTime, scope || null, !isRecurring ? recurrenceRule : null, isRecurring && repeatOpen ? recurrenceRule : null)
+        await onEdit(editingTask.id, title.trim(), notes.trim(), goalId || null, startTime || null, dueDate || null, scheduledDate || null, priority || null, category, collaborationId || null, assignedTo || null, category === 'Family' ? familyMember.trim() || null : null, endTime, scope || null, !isRecurring ? recurrenceRule : null, isRecurring && repeatOpen ? recurrenceRule : null, location.trim() || null, locationLat, locationLng)
         closeModal()
         return
       }
-      await onAdd(title.trim(), notes.trim(), goalId || null, startTime || null, dueDate || null, scheduledDate || null, priority || null, category, collaborationId || null, assignedTo || null, initialBucket || null, category === 'Family' ? familyMember.trim() || null : null, endTime, recurrenceRule)
+      await onAdd(title.trim(), notes.trim(), goalId || null, startTime || null, dueDate || null, scheduledDate || null, priority || null, category, collaborationId || null, assignedTo || null, initialBucket || null, category === 'Family' ? familyMember.trim() || null : null, endTime, recurrenceRule, location.trim() || null, locationLat, locationLng)
       if (keepOpen) {
         setTitle('')
         setNotes('')
@@ -265,6 +271,36 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
             className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 resize-none"
           />
           )}
+          {!bulkMode && (
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">📍</span>
+              <input
+                placeholder="Location (optional)"
+                value={location}
+                onChange={e => { setLocation(e.target.value); setLocationLat(null); setLocationLng(null); setGeocodeError('') }}
+                className="w-full border border-gray-200 rounded-lg pl-8 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400"
+              />
+            </div>
+            {location.trim() && (
+              <button
+                type="button"
+                disabled={geocoding || (locationLat && locationLng)}
+                onClick={async () => {
+                  setGeocoding(true); setGeocodeError('')
+                  const result = await geocodeAddress(location.trim())
+                  setGeocoding(false)
+                  if (result) { setLocationLat(result.lat); setLocationLng(result.lng) }
+                  else setGeocodeError('Address not found')
+                }}
+                className={'px-3 py-2 text-xs rounded-lg border font-medium transition-colors ' + (locationLat && locationLng ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-indigo-50 border-indigo-200 text-indigo-600 hover:bg-indigo-100')}
+              >
+                {geocoding ? '…' : locationLat && locationLng ? '✓ Found' : 'Verify'}
+              </button>
+            )}
+          </div>
+          )}
+          {geocodeError && <p className="text-xs text-red-500 -mt-1">{geocodeError}</p>}
           <button type="button" onClick={() => setOptionsOpen(o => !o)}
             className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700 py-0.5">
             <span style={{ display: 'inline-block', transform: optionsOpen ? 'rotate(90deg)' : 'none', transition: 'transform 0.15s', fontSize: '9px' }}>▶</span>

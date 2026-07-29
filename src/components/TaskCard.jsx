@@ -92,6 +92,17 @@ export default function TaskCard({ task, isDone, isDragging, collabBadge, assign
               {formatTime(task.start_time)}{task.end_time ? ' – ' + formatTime(task.end_time) : ''}
             </p>
           )}
+          {task.location && (
+            <a
+              href={`https://maps.apple.com/?q=${encodeURIComponent(task.location)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={e => e.stopPropagation()}
+              className={'text-xs mt-0.5 flex items-center gap-1 ' + (isDone ? 'text-gray-300' : 'text-gray-500 hover:text-indigo-500')}
+            >
+              <span>📍</span>{task.location}
+            </a>
+          )}
           {catBadge && (
             <div className="mt-1">
               <span
