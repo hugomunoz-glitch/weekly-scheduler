@@ -4,6 +4,7 @@ const GEOFENCE_RADIUS_METERS = 500
 const NOTIF_COOLDOWN_MS = 30 * 60 * 1000
 
 let _bgRegistered = false
+let _pollInterval = null
 let _tasks = []
 const _notifiedAt = {}
 
@@ -124,6 +125,24 @@ export async function startGeofencing(tasks) {
             }
           )
         } catch { _bgRegistered = false }
+      }
+
+      // Fallback: poll every 30s while app is open (foreground only)
+      if (!_bgRegistered && !_pollInterval) {
+        const Geolocation = getGeolocation()
+        if (Geolocation) {
+          _pollInterval = setInterval(async () => {
+            try {
+              const pos = await Geolocation.getCurrentPosition({ enableHighAccuracy: false, timeout: 10000 })
+              checkProximity(pos.coords.latitude, pos.coords.longitude)
+            } catch {}
+          }, 30000)
+          // Run once immediately
+          try {
+            const pos = await Geolocation.getCurrentPosition({ enableHighAccuracy: false, timeout: 10000 })
+            checkProximity(pos.coords.latitude, pos.coords.longitude)
+          } catch {}
+        }
       }
     }
 
