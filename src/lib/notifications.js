@@ -58,10 +58,10 @@ export async function updateAppBadge(tasks) {
     t.scheduled_date && String(t.scheduled_date).slice(0, 10) === todayStr && t.status !== 'done'
   ).length
 
-  // Native Capacitor badge — import on demand so the web plugin never runs in a browser
-  if (window.Capacitor?.isNativePlatform?.()) {
+  // Native Capacitor badge via bridge (same pattern as LocalNotifications)
+  const Badge = window.Capacitor?.Plugins?.Badge
+  if (Badge && window.Capacitor?.isNativePlatform?.()) {
     try {
-      const { Badge } = await import('@capawesome/capacitor-badge')
       await Badge.requestPermissions()
       await Badge.set({ count })
     } catch {}
