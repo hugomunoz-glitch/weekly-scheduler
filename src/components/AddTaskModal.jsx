@@ -71,6 +71,7 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
   const [locationLng, setLocationLng] = useState(editingTask ? (editingTask.location_lng || null) : null)
   const [geocoding, setGeocoding] = useState(false)
   const [geocodeError, setGeocodeError] = useState('')
+  const geocodeTimerRef = useRef(null)
   const [goalId, setGoalId] = useState(editingTask ? (editingTask.goal_id || '') : (followUpPrefill?.goalId || ''))
   const [startTime, setStartTime] = useState(editingTask ? (editingTask.start_time || '') : (initialStartTime || ''))
   const [dueDate, setDueDate] = useState(editingTask ? (editingTask.due_date || '') : '')
@@ -272,32 +273,32 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
           />
           )}
           {!bulkMode && (
-          <div className="flex gap-2">
-            <div className="relative flex-1">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">📍</span>
-              <input
-                placeholder="Location (optional)"
-                value={location}
-                onChange={e => { setLocation(e.target.value); setLocationLat(null); setLocationLng(null); setGeocodeError('') }}
-                className="w-full border border-gray-200 rounded-lg pl-8 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400"
-              />
-            </div>
-            {location.trim() && (
-              <button
-                type="button"
-                disabled={geocoding || (locationLat && locationLng)}
-                onClick={async () => {
-                  setGeocoding(true); setGeocodeError('')
-                  const result = await geocodeAddress(location.trim())
-                  setGeocoding(false)
-                  if (result) { setLocationLat(result.lat); setLocationLng(result.lng) }
-                  else setGeocodeError('Address not found')
-                }}
-                className={'px-3 py-2 text-xs rounded-lg border font-medium transition-colors ' + (locationLat && locationLng ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-indigo-50 border-indigo-200 text-indigo-600 hover:bg-indigo-100')}
-              >
-                {geocoding ? '…' : locationLat && locationLng ? '✓ Found' : 'Verify'}
-              </button>
-            )}
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">📍</span>
+            {geocoding && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">…</span>}
+            {!geocoding && locationLat && locationLng && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-500 text-xs">✓</span>}
+            <input
+              placeholder="Location (optional)"
+              value={location}
+              onChange={e => {
+                const val = e.target.value
+                setLocation(val)
+                setLocationLat(null)
+                setLocationLng(null)
+                setGeocodeError('')
+                clearTimeout(geocodeTimerRef.current)
+                if (val.trim().length > 3) {
+                  geocodeTimerRef.current = setTimeout(async () => {
+                    setGeocoding(true)
+                    const result = await geocodeAddress(val.trim())
+                    setGeocoding(false)
+                    if (result) { setLocationLat(result.lat); setLocationLng(result.lng) }
+                    else setGeocodeError('Address not found — try a more specific address')
+                  }, 800)
+                }
+              }}
+              className="w-full border border-gray-200 rounded-lg pl-8 pr-8 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400"
+            />
           </div>
           )}
           {geocodeError && <p className="text-xs text-red-500 -mt-1">{geocodeError}</p>}
