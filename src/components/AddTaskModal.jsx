@@ -128,7 +128,10 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
   const hasExistingOptions = !!(editingTask && (editingTask.goal_id || editingTask.start_time || editingTask.due_date || editingTask.scheduled_date || editingTask.priority || editingTask.category || editingTask.collaboration_id))
   const [optionsOpen, setOptionsOpen] = useState(hasExistingOptions)
 
-  useEffect(() => { inputRef.current?.focus() }, [])
+  useEffect(() => {
+    resetViewportZoom()
+    inputRef.current?.focus()
+  }, [])
   useEffect(() => {
     function handleKey(e) { if (e.key === 'Escape') closeModal() }
     document.addEventListener('keydown', handleKey)
