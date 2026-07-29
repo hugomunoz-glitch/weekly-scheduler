@@ -58,13 +58,14 @@ export function updateAppBadge(tasks) {
     t.scheduled_date && String(t.scheduled_date).slice(0, 10) === todayStr && t.status !== 'done'
   ).length
 
-  // Native Capacitor badge (requires @capacitor/badge)
+  // Native Capacitor badge (@capawesome/capacitor-badge)
   const Badge = window.Capacitor?.Plugins?.Badge
   if (Badge) {
+    Badge.requestPermissions().catch(() => {})
     if (count > 0) {
       Badge.set({ count }).catch(() => {})
     } else {
-      Badge.clear().catch(() => {})
+      Badge.set({ count: 0 }).catch(() => {})
     }
     return
   }

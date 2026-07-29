@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client'
 import App from './App'
 import { AuthProvider } from './contexts/AuthContext'
 import './index.css'
+import '@capawesome/capacitor-badge'
 
 class ErrorBoundary extends React.Component {
   constructor(props) { super(props); this.state = { error: null } }
