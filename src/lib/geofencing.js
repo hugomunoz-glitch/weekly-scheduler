@@ -95,34 +95,42 @@ export async function geocodeAddress(address) {
 }
 
 export async function startGeofencing(tasks) {
-  _tasks = tasks
-  const perm = await getLocationPermission()
-  if (perm !== 'granted') return false
+  try {
+    _tasks = tasks
+    const perm = await getLocationPermission()
+    if (perm !== 'granted') return false
 
-  const LocalNotifications = getLocalNotifications()
-  if (LocalNotifications) await LocalNotifications.requestPermissions()
-
-  if (!_bgRegistered) {
-    const BackgroundGeolocation = getBackgroundGeolocation()
-    if (BackgroundGeolocation) {
-      _bgRegistered = true
-      await BackgroundGeolocation.addWatcher(
-        {
-          backgroundMessage: 'Schedulent is checking for nearby tasks.',
-          backgroundTitle: 'Location active',
-          requestPermissions: false,
-          stale: false,
-          distanceFilter: 50,
-        },
-        (location, error) => {
-          if (error || !location) return
-          checkProximity(location.latitude, location.longitude)
-        }
-      )
+    const LocalNotifications = getLocalNotifications()
+    if (LocalNotifications) {
+      try { await LocalNotifications.requestPermissions() } catch {}
     }
-  }
 
-  return true
+    if (!_bgRegistered) {
+      const BackgroundGeolocation = getBackgroundGeolocation()
+      if (BackgroundGeolocation) {
+        _bgRegistered = true
+        try {
+          await BackgroundGeolocation.addWatcher(
+            {
+              backgroundMessage: 'Schedulent is checking for nearby tasks.',
+              backgroundTitle: 'Location active',
+              requestPermissions: false,
+              stale: false,
+              distanceFilter: 50,
+            },
+            (location, error) => {
+              if (error || !location) return
+              checkProximity(location.latitude, location.longitude)
+            }
+          )
+        } catch { _bgRegistered = false }
+      }
+    }
+
+    return true
+  } catch {
+    return false
+  }
 }
 
 export function updateGeofencingTasks(tasks) {

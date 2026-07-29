@@ -1062,11 +1062,11 @@ export default function MobileLayout({
   useEffect(() => {
     getLocationPermission().then(perm => {
       if (perm === 'granted') {
-        startGeofencing(tasks)
+        startGeofencing(tasks).catch(() => {})
       } else {
         updateGeofencingTasks(tasks)
       }
-    })
+    }).catch(() => {})
   }, [tasks])
 
   useEffect(() => {
