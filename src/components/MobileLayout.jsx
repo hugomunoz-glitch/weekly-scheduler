@@ -1210,7 +1210,7 @@ export default function MobileLayout({
                 style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px', lineHeight: 1, padding: '2px 4px', color: '#9ca3af' }}
                 title="Vision &amp; Mission"
               >&#11088;</button>
-              <NotificationBell tasks={tasks} />
+              <NotificationBell tasks={tasks} isMobile={true} />
               <span style={{ fontSize: '11px', color: '#9ca3af' }}>Tap, Drag &amp; Drop to move</span>
             </div>
           </div>
