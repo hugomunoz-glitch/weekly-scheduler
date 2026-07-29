@@ -42,8 +42,30 @@ function getTodayBuckets(tasks) {
 
 // ── Toast ────────────────────────────────────────────────────────────────────
 
+function playChime() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)()
+    const notes = [523.25, 659.25, 783.99] // C5, E5, G5
+    notes.forEach((freq, i) => {
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+      osc.connect(gain)
+      gain.connect(ctx.destination)
+      osc.frequency.value = freq
+      osc.type = 'sine'
+      const start = ctx.currentTime + i * 0.12
+      gain.gain.setValueAtTime(0, start)
+      gain.gain.linearRampToValueAtTime(0.18, start + 0.02)
+      gain.gain.exponentialRampToValueAtTime(0.001, start + 0.35)
+      osc.start(start)
+      osc.stop(start + 0.35)
+    })
+  } catch {}
+}
+
 export function NotificationToast({ toast, onDismiss }) {
   useEffect(() => {
+    playChime()
     const t = setTimeout(onDismiss, 7000)
     return () => clearTimeout(t)
   }, [onDismiss])
