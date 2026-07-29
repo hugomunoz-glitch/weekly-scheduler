@@ -1001,12 +1001,12 @@ export default function App() {
               {overdueTasks.length > 0 && rolloverMode === 'manual' && (
                 <button onClick={rolloverOverdue} className="px-3 py-1.5 text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100">Roll over {overdueTasks.length} overdue</button>
               )}
-              <NotificationBell tasks={tasks} />
               <ExportMenu tasks={visibleTasks} goals={visibleGoals} weekStart={weekStart} />
               <button onClick={() => setShowDashboard(true)} className="px-3 py-1.5 text-sm font-medium text-indigo-600 border border-indigo-200 rounded-lg hover:bg-indigo-50">Dashboard</button>
               <button onClick={() => setShowReflect(true)} className="px-3 py-1.5 text-sm font-medium text-indigo-600 border border-indigo-200 rounded-lg hover:bg-indigo-50">Reflect</button>
               <button onClick={() => setShowVisionMission(true)} className="px-3 py-1.5 text-sm font-medium text-indigo-600 border border-indigo-200 rounded-lg hover:bg-indigo-50">Vision and Mission</button>
               <button onClick={() => setShowAdd(true)} className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700">+ Add task</button>
+              <NotificationBell tasks={tasks} />
               <SettingsDropdown onOpenCollaborations={() => setShowCollab(true)} tasks={tasks} rolloverMode={rolloverMode} onRolloverModeChange={mode => { setRolloverMode(mode); localStorage.setItem('rolloverMode', mode) }} />
             </div>
           </header>
