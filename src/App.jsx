@@ -1012,14 +1012,19 @@ export default function App() {
               <SettingsDropdown onOpenCollaborations={() => setShowCollab(true)} tasks={tasks} rolloverMode={rolloverMode} onRolloverModeChange={mode => { setRolloverMode(mode); localStorage.setItem('rolloverMode', mode) }} />
             </div>
           </header>
-          <div className="mx-3 mt-3 rounded-xl border border-gray-200 shadow-sm overflow-hidden shrink-0 relative">
-            {showGoals && <GoalsBar goals={visibleGoals} goalTasks={visibleGoalTasks} allTasks={visibleTasks} collabMap={collabMap} collaborations={collaborations} collabMembersMap={collabMembersMap} defaultCollaborationId={defaultCollaborationId} onAddGoal={addGoal} onEditGoal={editGoal} onDeleteGoal={deleteGoal} onDuplicateGoal={duplicateGoal} onMarkDone={markDone} onDelete={requestDeleteTask} onDuplicateTask={duplicateTask} onCreateTask={addTask} onEditTask={setEditingTask} activeView={activeView} onChangeView={setActiveView} />}
+          <div className="mx-3 mt-3 shrink-0">
+            {showGoals && (
+              <div className="rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                <GoalsBar goals={visibleGoals} goalTasks={visibleGoalTasks} allTasks={visibleTasks} collabMap={collabMap} collaborations={collaborations} collabMembersMap={collabMembersMap} defaultCollaborationId={defaultCollaborationId} onAddGoal={addGoal} onEditGoal={editGoal} onDeleteGoal={deleteGoal} onDuplicateGoal={duplicateGoal} onMarkDone={markDone} onDelete={requestDeleteTask} onDuplicateTask={duplicateTask} onCreateTask={addTask} onEditTask={setEditingTask} activeView={activeView} onChangeView={setActiveView} />
+              </div>
+            )}
             <button
               onClick={() => { setShowGoals(v => { localStorage.setItem('showGoals', !v); return !v }) }}
               title={showGoals ? 'Collapse Goals' : 'Expand Goals'}
-              className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 z-10 w-6 h-6 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-400 hover:text-indigo-600 hover:border-indigo-300 transition-colors"
+              className="mt-1 w-full flex items-center justify-center gap-1.5 py-1 rounded-lg bg-gray-100 hover:bg-indigo-50 hover:text-indigo-600 text-gray-500 text-xs font-medium transition-colors border border-gray-200 hover:border-indigo-200"
             >
-              <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d={showGoals ? 'M2 6.5L5 3.5L8 6.5' : 'M2 3.5L5 6.5L8 3.5'} stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d={showGoals ? 'M2 7.5L6 3.5L10 7.5' : 'M2 4.5L6 8.5L10 4.5'} stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              {showGoals ? 'Hide Goals' : 'Show Goals'}
             </button>
           </div>
           <div className="flex flex-1 overflow-hidden gap-3 p-3">
@@ -1033,13 +1038,14 @@ export default function App() {
                 </>
               )}
             </main>
-            <div className="relative flex shrink-0">
+            <div className="flex shrink-0 gap-1">
               <button
                 onClick={() => { setShowSidebar(v => { localStorage.setItem('showSidebar', !v); return !v }) }}
                 title={showSidebar ? 'Collapse Task List' : 'Expand Task List'}
-                className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 z-10 w-6 h-6 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-400 hover:text-indigo-600 hover:border-indigo-300 transition-colors"
+                className="flex flex-col items-center justify-center gap-1.5 px-1.5 rounded-lg bg-gray-100 hover:bg-indigo-50 hover:text-indigo-600 text-gray-500 transition-colors border border-gray-200 hover:border-indigo-200 self-stretch"
               >
-                <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d={showSidebar ? 'M6.5 2L3.5 5L6.5 8' : 'M3.5 2L6.5 5L3.5 8'} stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d={showSidebar ? 'M7.5 2L3.5 6L7.5 10' : 'M4.5 2L8.5 6L4.5 10'} stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                <span className="text-xs font-medium" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>Task List</span>
               </button>
               {showSidebar && (
                 <div className="rounded-xl border border-gray-200 shadow-sm overflow-hidden">
