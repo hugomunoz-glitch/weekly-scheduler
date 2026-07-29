@@ -1445,64 +1445,31 @@ export default function MobileLayout({
 
       <div style={{ background: 'white', borderTop: '1px solid #e5e7eb', padding: '6px 0 8px', display: 'flex', flexShrink: 0 }}>
         {[
-          { id: 'day', label: 'Today' },
-          { id: 'goals', label: 'Goals' },
-          { id: 'inbox', label: 'Task List' },
-          { id: 'dashboard', label: 'Dashboard' },
-          { id: 'assistant', label: 'Assistant' },
-          { id: 'settings', label: 'Settings' }
-        ].map(tab => {
-          const c = activeTab === tab.id ? '#6366f1' : '#9ca3af'
-          const icons = {
-            day: (
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                <rect x="3" y="4" width="18" height="17" rx="2" stroke={c} strokeWidth="1.5"/>
-                <path d="M3 9h18" stroke={c} strokeWidth="1.5"/>
-                <path d="M8 2v4M16 2v4" stroke={activeTab === 'day' ? '#6366f1' : '#ef4444'} strokeWidth="1.5" strokeLinecap="round"/>
-                <text x="12" y="19" textAnchor="middle" fill={c} fontSize="7" fontWeight="700">{new Date().getDate()}</text>
-              </svg>
-            ),
-            goals: (
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="9" stroke={c} strokeWidth="1.5"/>
-                <circle cx="12" cy="12" r="5" stroke={c} strokeWidth="1.5"/>
-                <circle cx="12" cy="12" r="1.5" fill={c}/>
-              </svg>
-            ),
-            inbox: (
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" stroke={c} strokeWidth="1.8" strokeLinecap="round"/>
-              </svg>
-            ),
-            dashboard: (
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                <rect x="3" y="12" width="4" height="9" rx="1" fill={c}/>
-                <rect x="10" y="7" width="4" height="14" rx="1" fill={c}/>
-                <rect x="17" y="3" width="4" height="18" rx="1" fill={c}/>
-              </svg>
-            ),
-            assistant: (
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke={c} strokeWidth="1.5" strokeLinejoin="round"/>
-              </svg>
-            ),
-            settings: (
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="3" stroke={c} strokeWidth="1.5"/>
-                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" stroke={c} strokeWidth="1.5"/>
-              </svg>
-            ),
-          }
-          return (
-            <button key={tab.id} onClick={() => { if (tab.id === 'dashboard') { setShowDashboard(true) } else { setActiveTab(tab.id); setMobileCalView('week') } }}
-              style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0', position: 'relative' }}>
-              <div style={{ width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {icons[tab.id]}
-              </div>
-              <span style={{ fontSize: '10px', color: activeTab === tab.id ? '#6366f1' : '#6b7280', fontWeight: activeTab === tab.id ? 600 : 500 }}>{tab.label}</span>
-            </button>
-          )
-        })}
+          { id: 'day', label: 'Today', emoji: '&#128197;' },
+          { id: 'goals', label: 'Goals', emoji: '&#127919;' },
+          { id: 'inbox', label: 'Task List', emoji: '&#128221;' },
+          { id: 'dashboard', label: 'Dashboard', emoji: '&#128202;' },
+          { id: 'assistant', label: 'Assistant', emoji: '&#129302;' },
+          { id: 'settings', label: 'Settings', emoji: '&#9881;' }
+        ].map(tab => (
+          <button key={tab.id} onClick={() => { if (tab.id === 'dashboard') { setShowDashboard(true) } else { setActiveTab(tab.id); setMobileCalView('week') } }}
+            style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0', position: 'relative' }}>
+            <div style={{ width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              {tab.id === 'day' ? (
+                <svg width="22" height="20.7" viewBox="0 0 34 32">
+                  <line x1="10" y1="0" x2="10" y2="7" stroke={activeTab === 'day' ? '#6366f1' : '#ef4444'} strokeWidth="2" strokeLinecap="round" />
+                  <line x1="24" y1="0" x2="24" y2="7" stroke={activeTab === 'day' ? '#6366f1' : '#ef4444'} strokeWidth="2" strokeLinecap="round" />
+                  <rect x="0" y="4" width="34" height="26" rx="4" fill="white" stroke={activeTab === 'day' ? '#6366f1' : '#d1d5db'} strokeWidth="1" />
+                  <rect x="0" y="4" width="34" height="9" fill={activeTab === 'day' ? '#6366f1' : '#ef4444'} />
+                  <text x="17" y="24" textAnchor="middle" fill={activeTab === 'day' ? '#4338ca' : '#374151'} fontSize="13" fontWeight="600">{new Date().getDate()}</text>
+                </svg>
+              ) : (
+                <span style={{ fontSize: '22px', lineHeight: 1 }} dangerouslySetInnerHTML={{ __html: tab.emoji }} />
+              )}
+            </div>
+            <span style={{ fontSize: '10px', color: activeTab === tab.id ? '#6366f1' : '#6b7280', fontWeight: activeTab === tab.id ? 600 : 500 }}>{tab.label}</span>
+          </button>
+        ))}
       </div>
     </div>
   )
