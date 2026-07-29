@@ -1,15 +1,11 @@
-import { Geolocation } from '@capacitor/geolocation'
-import { LocalNotifications } from '@capacitor/local-notifications'
-import { BackgroundGeolocation } from '@capacitor-community/background-geolocation'
-
+// Capacitor plugins are only available inside the native app shell.
+// Dynamic imports let the web build succeed while still loading them at runtime.
 const GEOFENCE_RADIUS_METERS = 500
-const CHECK_INTERVAL_MS = 60_000 // check every 60s while foreground
-const NOTIF_COOLDOWN_MS = 30 * 60 * 1000 // don't re-notify same task within 30 min
+const NOTIF_COOLDOWN_MS = 30 * 60 * 1000
 
-let _watchId = null
 let _bgRegistered = false
 let _tasks = []
-const _notifiedAt = {} // taskId → timestamp
+const _notifiedAt = {}
 
 function metersApart(lat1, lng1, lat2, lng2) {
   const R = 6371000
@@ -23,9 +19,21 @@ function metersApart(lat1, lng1, lat2, lng2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
 }
 
+async function getLocalNotifications() {
+  try { return (await import('@capacitor/local-notifications')).LocalNotifications } catch { return null }
+}
+async function getGeolocation() {
+  try { return (await import('@capacitor/geolocation')).Geolocation } catch { return null }
+}
+async function getBackgroundGeolocation() {
+  try { return (await import('@capacitor-community/background-geolocation')).BackgroundGeolocation } catch { return null }
+}
+
 async function checkProximity(lat, lng) {
   const now = Date.now()
   const today = new Date().toISOString().slice(0, 10)
+  const LocalNotifications = await getLocalNotifications()
+  if (!LocalNotifications) return
 
   for (const task of _tasks) {
     if (
@@ -58,30 +66,21 @@ async function checkProximity(lat, lng) {
 }
 
 export async function requestLocationPermission() {
+  const Geolocation = await getGeolocation()
+  if (!Geolocation) return 'denied'
   try {
     const status = await Geolocation.requestPermissions()
     return status.location
-  } catch {
-    return 'denied'
-  }
+  } catch { return 'denied' }
 }
 
 export async function getLocationPermission() {
+  const Geolocation = await getGeolocation()
+  if (!Geolocation) return 'denied'
   try {
     const status = await Geolocation.checkPermissions()
     return status.location
-  } catch {
-    return 'denied'
-  }
-}
-
-export async function requestNotificationPermission() {
-  try {
-    const result = await LocalNotifications.requestPermissions()
-    return result.display
-  } catch {
-    return 'denied'
-  }
+  } catch { return 'denied' }
 }
 
 // Geocode a plain-text address to lat/lng using OpenStreetMap Nominatim (free, no key)
@@ -92,35 +91,35 @@ export async function geocodeAddress(address) {
     const data = await res.json()
     if (data.length === 0) return null
     return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon), display: data[0].display_name }
-  } catch {
-    return null
-  }
+  } catch { return null }
 }
 
 export async function startGeofencing(tasks) {
   _tasks = tasks
-
   const perm = await getLocationPermission()
   if (perm !== 'granted') return false
 
-  await LocalNotifications.requestPermissions()
+  const LocalNotifications = await getLocalNotifications()
+  if (LocalNotifications) await LocalNotifications.requestPermissions()
 
-  // Background geolocation (works when app is in background/suspended)
   if (!_bgRegistered) {
-    _bgRegistered = true
-    await BackgroundGeolocation.addWatcher(
-      {
-        backgroundMessage: 'Schedulent is checking for nearby tasks.',
-        backgroundTitle: 'Location active',
-        requestPermissions: false,
-        stale: false,
-        distanceFilter: 50,
-      },
-      (location, error) => {
-        if (error || !location) return
-        checkProximity(location.latitude, location.longitude)
-      }
-    )
+    const BackgroundGeolocation = await getBackgroundGeolocation()
+    if (BackgroundGeolocation) {
+      _bgRegistered = true
+      await BackgroundGeolocation.addWatcher(
+        {
+          backgroundMessage: 'Schedulent is checking for nearby tasks.',
+          backgroundTitle: 'Location active',
+          requestPermissions: false,
+          stale: false,
+          distanceFilter: 50,
+        },
+        (location, error) => {
+          if (error || !location) return
+          checkProximity(location.latitude, location.longitude)
+        }
+      )
+    }
   }
 
   return true
@@ -128,12 +127,4 @@ export async function startGeofencing(tasks) {
 
 export function updateGeofencingTasks(tasks) {
   _tasks = tasks
-}
-
-export async function stopGeofencing() {
-  if (_watchId !== null) {
-    await Geolocation.clearWatch({ id: _watchId })
-    _watchId = null
-  }
-  // Background watcher persists intentionally until app is killed
 }
