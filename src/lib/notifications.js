@@ -77,6 +77,46 @@ function buildTodayNotifications(tasks) {
 }
 
 let _scheduledHandles = []
+let _reminderHandles = []
+
+// Schedule a 15-min-before reminder for each timed task today
+export async function scheduleUpcomingReminders(tasks) {
+  for (const h of _reminderHandles) clearTimeout(h)
+  _reminderHandles = []
+
+  if (getNotificationPermission() !== 'granted') return
+
+  const today = new Date()
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+  const now = Date.now()
+  const sw = await getSwRegistration()
+
+  for (const t of tasks) {
+    if (t.scheduled_date !== todayStr || !t.start_time || t.status === 'done') continue
+    const [h, m] = t.start_time.split(':').map(Number)
+    const taskTime = new Date()
+    taskTime.setHours(h, m, 0, 0)
+    const fireAt = taskTime.getTime() - 15 * 60 * 1000
+    const delay = fireAt - now
+    if (delay <= 0) continue
+
+    const notification = {
+      title: `Starting in 15 min`,
+      body: t.title,
+      tag: `schedulent-reminder-${t.id}`,
+      fireAt,
+    }
+
+    if (sw?.active) {
+      sw.active.postMessage({ type: 'SCHEDULE_NOTIFICATIONS', notifications: [notification] })
+    } else {
+      const handle = setTimeout(() => {
+        new Notification(notification.title, { body: notification.body, icon: '/icon-192.png', tag: notification.tag })
+      }, delay)
+      _reminderHandles.push(handle)
+    }
+  }
+}
 
 // Schedule notifications via SW (works while app is open/backgrounded on mobile)
 export async function scheduleDailyNotifications(tasks) {
