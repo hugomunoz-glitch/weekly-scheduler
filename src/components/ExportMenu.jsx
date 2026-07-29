@@ -51,6 +51,31 @@ export default function ExportMenu({ tasks, goals, weekStart, isMobile = false }
     setOpen(false)
   }
 
+  async function handleReflectionsCSV() {
+    setExporting('reflections')
+    const reflections = await fetchReflections()
+    const rows = [
+      ['Date', 'What I completed', 'Goals & notes'],
+      ...reflections.map(r => [
+        r.date,
+        r.completed_notes || '',
+        r.goals_notes || '',
+      ])
+    ]
+    const csv = rows.map(row =>
+      row.map(cell => '"' + String(cell).replace(/"/g, '""') + '"').join(',')
+    ).join('\r\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'reflections.csv'
+    a.click()
+    URL.revokeObjectURL(url)
+    setExporting(null)
+    setOpen(false)
+  }
+
   const panelContent = (
         <div style={{ padding: isMobile ? '0' : '12px' }}>
           {/* PDF — always exports everything */}
@@ -63,6 +88,18 @@ export default function ExportMenu({ tasks, goals, weekStart, isMobile = false }
               style={{ width: '100%', padding: '8px', background: '#6366f1', color: 'white', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: exporting ? 'default' : 'pointer', opacity: exporting ? 0.6 : 1 }}
             >
               {exporting === 'pdf' ? 'Generating…' : 'Download PDF'}
+            </button>
+          </div>
+
+          <div style={{ borderTop: '1px solid #f3f4f6', paddingTop: '12px', marginBottom: '12px' }}>
+            <p style={{ margin: '0 0 6px', fontSize: '11px', fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Reflections (.csv)</p>
+            <p style={{ margin: '0 0 8px', fontSize: '12px', color: '#6b7280' }}>All your daily reflections as a CSV file.</p>
+            <button
+              onClick={handleReflectionsCSV}
+              disabled={!!exporting}
+              style={{ width: '100%', padding: '8px', background: '#0891b2', color: 'white', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: exporting ? 'default' : 'pointer', opacity: exporting ? 0.6 : 1 }}
+            >
+              {exporting === 'reflections' ? 'Generating…' : 'Download Reflections'}
             </button>
           </div>
 
