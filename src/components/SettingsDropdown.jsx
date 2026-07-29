@@ -1,32 +1,145 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
-import { requestNotificationPermission, getNotificationPermission, scheduleDailyNotifications } from '../lib/notifications'
+import { requestNotificationPermission, getNotificationPermission, scheduleDailyNotifications, scheduleUpcomingReminders, registerServiceWorker } from '../lib/notifications'
 
-function NotificationRow({ tasks }) {
-  const [permission, setPermission] = useState(getNotificationPermission())
-  async function enable() {
-    const result = await requestNotificationPermission()
-    setPermission(result)
-    if (result === 'granted') scheduleDailyNotifications(tasks || [])
-  }
-  if (permission === 'unsupported') return null
-  if (permission === 'denied') return (
-    <div className="px-3 py-2 border-t border-gray-100">
-      <p className="text-xs text-gray-400">Notifications blocked — enable in browser settings.</p>
-    </div>
-  )
-  if (permission === 'granted') return (
-    <div className="px-3 py-2 border-t border-gray-100">
-      <p className="text-xs text-gray-500 font-medium mb-0.5">🔔 Notifications on</p>
-      <p className="text-[11px] text-gray-400">Morning 8 AM · Afternoon 12 PM · Evening 5 PM</p>
-    </div>
-  )
+const NOTIF_PREFS_KEY = 'schedulent_notif_prefs'
+function loadPrefs() { try { return JSON.parse(localStorage.getItem(NOTIF_PREFS_KEY) || '{}') } catch { return {} } }
+function savePrefs(p) { try { localStorage.setItem(NOTIF_PREFS_KEY, JSON.stringify(p)) } catch {} }
+
+const BUCKET_CONFIG = [
+  { key: 'morning',   label: 'Morning',   time: '8:00 AM' },
+  { key: 'afternoon', label: 'Afternoon', time: '12:00 PM' },
+  { key: 'evening',   label: 'Evening',   time: '5:00 PM' },
+]
+
+function Toggle({ on, onChange, disabled }) {
   return (
-    <div className="px-3 py-2 border-t border-gray-100">
-      <button onClick={enable} className="text-xs text-indigo-600 hover:text-indigo-800 font-medium">
-        Enable notifications
+    <button
+      type="button"
+      onClick={onChange}
+      disabled={disabled}
+      style={{
+        width: 34, height: 18, borderRadius: 9, border: 'none', cursor: disabled ? 'default' : 'pointer',
+        background: on ? '#6366f1' : '#d1d5db', position: 'relative',
+        transition: 'background 0.2s', flexShrink: 0, opacity: disabled ? 0.4 : 1,
+      }}
+    >
+      <span style={{
+        position: 'absolute', top: 2, left: on ? 17 : 2,
+        width: 14, height: 14, borderRadius: '50%', background: 'white',
+        transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+      }} />
+    </button>
+  )
+}
+
+function NotificationSection({ tasks }) {
+  const [permission, setPermission] = useState(getNotificationPermission)
+  const [prefs, setPrefs] = useState(loadPrefs)
+  const [expanded, setExpanded] = useState(false)
+
+  const enabled = prefs.enabled ?? true
+  const bucketPrefs = prefs.buckets || { morning: true, afternoon: true, evening: true }
+  const reminders15 = prefs.reminders15 ?? true
+
+  useEffect(() => { registerServiceWorker() }, [])
+
+  useEffect(() => {
+    if (permission !== 'granted' || !enabled) return
+    const activeTasks = tasks.filter(t => {
+      const b = t.bucket || 'morning'
+      return (prefs.buckets || {})[b] !== false
+    })
+    scheduleDailyNotifications(activeTasks)
+    if (reminders15) scheduleUpcomingReminders(tasks)
+  }, [tasks, prefs, permission])
+
+  function update(next) { setPrefs(next); savePrefs(next) }
+
+  async function handleEnable() {
+    if (permission !== 'granted') {
+      const result = await requestNotificationPermission()
+      setPermission(result)
+      if (result === 'granted') update({ ...prefs, enabled: true })
+    } else {
+      update({ ...prefs, enabled: !enabled })
+    }
+  }
+
+  if (permission === 'unsupported') return null
+
+  return (
+    <div className="border-t border-gray-100">
+      <button
+        type="button"
+        onClick={() => setExpanded(v => !v)}
+        className="w-full flex items-center justify-between px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+      >
+        <span className="flex items-center gap-1.5">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill={permission === 'granted' && enabled ? '#f59e0b' : 'none'} stroke={permission === 'granted' && enabled ? '#f59e0b' : 'currentColor'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+          </svg>
+          Notifications
+        </span>
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ transform: expanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
+          <path d="M6 9l6 6 6-6" />
+        </svg>
       </button>
-      <p className="text-[11px] text-gray-400 mt-0.5">Daily task reminders by bucket</p>
+
+      {expanded && (
+        <div className="px-3 pb-3 space-y-3">
+          {permission === 'denied' && (
+            <p className="text-[11px] text-amber-600 bg-amber-50 rounded-lg px-2 py-1.5">Blocked in browser — go to site settings to allow.</p>
+          )}
+
+          {/* Master toggle */}
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-medium text-gray-700">Enable notifications</p>
+              <p className="text-[11px] text-gray-400">{permission === 'granted' ? 'Including when screen is locked' : 'Click to grant permission'}</p>
+            </div>
+            <Toggle on={enabled && permission === 'granted'} onChange={handleEnable} disabled={permission === 'denied'} />
+          </div>
+
+          {/* Bucket toggles */}
+          <div className="space-y-1.5">
+            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">Alert times</p>
+            {BUCKET_CONFIG.map(({ key, label, time }) => (
+              <div key={key} className="flex items-center justify-between">
+                <span className="text-xs text-gray-600">{label} <span className="text-gray-400">{time}</span></span>
+                <Toggle
+                  on={bucketPrefs[key] !== false && enabled && permission === 'granted'}
+                  onChange={() => update({ ...prefs, buckets: { ...bucketPrefs, [key]: !bucketPrefs[key] } })}
+                  disabled={!enabled || permission !== 'granted'}
+                />
+              </div>
+            ))}
+          </div>
+
+          {/* 15-min reminders */}
+          <div className="flex items-center justify-between pt-1 border-t border-gray-100">
+            <div>
+              <p className="text-xs font-medium text-gray-700">⏰ 15-min reminders</p>
+              <p className="text-[11px] text-gray-400">Before tasks with a set time</p>
+            </div>
+            <Toggle
+              on={reminders15 && enabled && permission === 'granted'}
+              onChange={() => update({ ...prefs, reminders15: !reminders15 })}
+              disabled={!enabled || permission !== 'granted'}
+            />
+          </div>
+
+          {permission !== 'granted' && permission !== 'denied' && (
+            <button
+              onClick={handleEnable}
+              className="w-full py-1.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg"
+            >
+              Allow notifications
+            </button>
+          )}
+        </div>
+      )}
     </div>
   )
 }
@@ -218,7 +331,7 @@ export default function SettingsDropdown({ onOpenCollaborations, tasks, rollover
                 ))}
               </div>
             </div>
-            <NotificationRow tasks={tasks} />
+            <NotificationSection tasks={tasks} />
             <button
               onClick={() => { setOpen(false); onOpenCollaborations() }}
               className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 border-t border-gray-100"
