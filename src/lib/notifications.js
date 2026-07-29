@@ -52,16 +52,30 @@ async function getSwRegistration() {
 }
 
 export function updateAppBadge(tasks) {
-  if (!('setAppBadge' in navigator)) return
   const today = new Date()
   const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
   const count = tasks.filter(t =>
     t.scheduled_date && String(t.scheduled_date).slice(0, 10) === todayStr && t.status !== 'done'
   ).length
-  if (count > 0) {
-    navigator.setAppBadge(count).catch(() => {})
-  } else {
-    navigator.clearAppBadge().catch(() => {})
+
+  // Native Capacitor badge (requires @capacitor/badge)
+  const Badge = window.Capacitor?.Plugins?.Badge
+  if (Badge) {
+    if (count > 0) {
+      Badge.set({ count }).catch(() => {})
+    } else {
+      Badge.clear().catch(() => {})
+    }
+    return
+  }
+
+  // Web API fallback (PWA on supported browsers)
+  if ('setAppBadge' in navigator) {
+    if (count > 0) {
+      navigator.setAppBadge(count).catch(() => {})
+    } else {
+      navigator.clearAppBadge().catch(() => {})
+    }
   }
 }
 
