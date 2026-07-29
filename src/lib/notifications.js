@@ -28,6 +28,18 @@ async function getSwRegistration() {
   }
 }
 
+export function updateAppBadge(tasks) {
+  if (!('setAppBadge' in navigator)) return
+  const today = new Date()
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+  const count = tasks.filter(t => t.scheduled_date === todayStr && t.status !== 'done').length
+  if (count > 0) {
+    navigator.setAppBadge(count).catch(() => {})
+  } else {
+    navigator.clearAppBadge().catch(() => {})
+  }
+}
+
 export async function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) return null
   try {
