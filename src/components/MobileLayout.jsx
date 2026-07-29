@@ -1445,12 +1445,12 @@ export default function MobileLayout({
 
       <div style={{ background: 'white', borderTop: '1px solid #e5e7eb', paddingTop: '6px', paddingBottom: 'max(10px, env(safe-area-inset-bottom))', display: 'flex', flexShrink: 0 }}>
         {[
-          { id: 'day', label: 'Today' },
-          { id: 'goals', label: 'Goals' },
-          { id: 'inbox', label: 'Task List' },
-          { id: 'dashboard', label: 'Dashboard' },
-          { id: 'assistant', label: 'Assistant' },
-          { id: 'settings', label: 'Settings' }
+          { id: 'day', label: 'Today', emoji: null },
+          { id: 'goals', label: 'Goals', emoji: '🎯' },
+          { id: 'inbox', label: 'Task List', emoji: '📝' },
+          { id: 'dashboard', label: 'Dashboard', emoji: '📊' },
+          { id: 'assistant', label: 'Assistant', emoji: '🤖' },
+          { id: 'settings', label: 'Settings', emoji: '⚙️' }
         ].map(tab => (
           <button key={tab.id} onClick={() => { if (tab.id === 'dashboard') { setShowDashboard(true) } else { setActiveTab(tab.id); setMobileCalView('week') } }}
             style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0', position: 'relative' }}>
@@ -1464,59 +1464,8 @@ export default function MobileLayout({
                   <text x="17" y="24" textAnchor="middle" fill={activeTab === 'day' ? '#4338ca' : '#374151'} fontSize="13" fontWeight="600">{new Date().getDate()}</text>
                 </svg>
               )}
-              {tab.id === 'goals' && (
-                <svg width="22" height="22" viewBox="0 0 32 32">
-                  <circle cx="16" cy="16" r="15" fill={activeTab === 'goals' ? '#6366f1' : '#ef4444'} />
-                  <circle cx="16" cy="16" r="11" fill="white" />
-                  <circle cx="16" cy="16" r="7" fill={activeTab === 'goals' ? '#6366f1' : '#ef4444'} />
-                  <circle cx="16" cy="16" r="3" fill="white" />
-                  <line x1="16" y1="1" x2="16" y2="6" stroke={activeTab === 'goals' ? '#6366f1' : '#ef4444'} strokeWidth="2" strokeLinecap="round" />
-                  <line x1="20" y1="12" x2="31" y2="1" stroke={activeTab === 'goals' ? '#4338ca' : '#b91c1c'} strokeWidth="2" strokeLinecap="round" />
-                  <polygon points="28,1 31,1 31,4" fill={activeTab === 'goals' ? '#4338ca' : '#b91c1c'} />
-                </svg>
-              )}
-              {tab.id === 'inbox' && (
-                <svg width="22" height="22" viewBox="0 0 32 32">
-                  <rect x="4" y="2" width="20" height="26" rx="2" fill="#fef08a" stroke="#ca8a04" strokeWidth="1.5" />
-                  <rect x="4" y="2" width="20" height="6" rx="2" fill="#fbbf24" />
-                  <line x1="8" y1="14" x2="20" y2="14" stroke="#92400e" strokeWidth="1.5" strokeLinecap="round" />
-                  <line x1="8" y1="18" x2="20" y2="18" stroke="#92400e" strokeWidth="1.5" strokeLinecap="round" />
-                  <line x1="8" y1="22" x2="15" y2="22" stroke="#92400e" strokeWidth="1.5" strokeLinecap="round" />
-                  <rect x="20" y="18" width="10" height="12" rx="2" fill="#4ade80" stroke="#16a34a" strokeWidth="1" />
-                  <line x1="21" y1="22" x2="29" y2="22" stroke="white" strokeWidth="1.2" strokeLinecap="round" />
-                  <line x1="25" y1="19" x2="25" y2="29" stroke="white" strokeWidth="1.2" strokeLinecap="round" />
-                </svg>
-              )}
-              {tab.id === 'dashboard' && (
-                <svg width="22" height="22" viewBox="0 0 32 32">
-                  <rect x="1" y="1" width="30" height="26" rx="3" fill="#f0f9ff" stroke="#e0e7ef" strokeWidth="1" />
-                  <rect x="4" y="16" width="5" height="9" rx="1" fill={activeTab === 'dashboard' ? '#6366f1' : '#3b82f6'} />
-                  <rect x="11" y="10" width="5" height="15" rx="1" fill={activeTab === 'dashboard' ? '#818cf8' : '#22c55e'} />
-                  <rect x="18" y="13" width="5" height="12" rx="1" fill={activeTab === 'dashboard' ? '#a5b4fc' : '#f59e0b'} />
-                  <rect x="25" y="7" width="4" height="18" rx="1" fill={activeTab === 'dashboard' ? '#c7d2fe' : '#ef4444'} />
-                  <line x1="1" y1="27" x2="31" y2="27" stroke="#d1d5db" strokeWidth="1" />
-                </svg>
-              )}
-              {tab.id === 'assistant' && (
-                <svg width="22" height="22" viewBox="0 0 32 32">
-                  <rect x="5" y="8" width="22" height="18" rx="4" fill={activeTab === 'assistant' ? '#6366f1' : '#0d9488'} />
-                  <rect x="11" y="2" width="10" height="8" rx="3" fill={activeTab === 'assistant' ? '#818cf8' : '#14b8a6'} />
-                  <line x1="16" y1="2" x2="16" y2="8" stroke={activeTab === 'assistant' ? '#6366f1' : '#0d9488'} strokeWidth="1.5" />
-                  <circle cx="11" cy="15" r="2.5" fill="white" />
-                  <circle cx="21" cy="15" r="2.5" fill="white" />
-                  <circle cx="11" cy="15" r="1" fill={activeTab === 'assistant' ? '#4338ca' : '#0f766e'} />
-                  <circle cx="21" cy="15" r="1" fill={activeTab === 'assistant' ? '#4338ca' : '#0f766e'} />
-                  <rect x="10" y="20" width="12" height="3" rx="1.5" fill="white" opacity="0.8" />
-                  <rect x="2" y="14" width="3" height="5" rx="1.5" fill={activeTab === 'assistant' ? '#818cf8' : '#14b8a6'} />
-                  <rect x="27" y="14" width="3" height="5" rx="1.5" fill={activeTab === 'assistant' ? '#818cf8' : '#14b8a6'} />
-                </svg>
-              )}
-              {tab.id === 'settings' && (
-                <svg width="22" height="22" viewBox="0 0 32 32">
-                  <path d="M16 2 L18.5 5.5 L22.5 4.5 L23.5 8.5 L27.5 9.5 L26.5 13.5 L30 16 L26.5 18.5 L27.5 22.5 L23.5 23.5 L22.5 27.5 L18.5 26.5 L16 30 L13.5 26.5 L9.5 27.5 L8.5 23.5 L4.5 22.5 L5.5 18.5 L2 16 L5.5 13.5 L4.5 9.5 L8.5 8.5 L9.5 4.5 L13.5 5.5 Z" fill={activeTab === 'settings' ? '#6366f1' : '#6b7280'} />
-                  <circle cx="16" cy="16" r="5" fill="white" />
-                  <circle cx="16" cy="16" r="2.5" fill={activeTab === 'settings' ? '#4338ca' : '#9ca3af'} />
-                </svg>
+              {tab.emoji && (
+                <span style={{ fontSize: '20px', lineHeight: 1 }}>{tab.emoji}</span>
               )}
             </div>
             <span style={{ fontSize: '10px', color: activeTab === tab.id ? '#6366f1' : '#6b7280', fontWeight: activeTab === tab.id ? 600 : 500 }}>{tab.label}</span>
