@@ -185,7 +185,7 @@ export async function scheduleDailyNotifications(tasks) {
         title: n.title,
         body: n.body,
         schedule: { at: new Date(n.fireAt) },
-        sound: null,
+        sound: undefined,
         attachments: null,
         actionTypeId: '',
         extra: null,
