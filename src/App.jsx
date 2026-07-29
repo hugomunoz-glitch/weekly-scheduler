@@ -191,9 +191,11 @@ export default function App() {
 
   // Reschedule notifications and update home screen badge whenever tasks change
   useEffect(() => {
-    if (tasks.length > 0 && getNotificationPermission() === 'granted') {
-      scheduleDailyNotifications(tasks)
-    }
+    getNotificationPermission().then(perm => {
+      if (tasks.length > 0 && perm === 'granted') {
+        scheduleDailyNotifications(tasks)
+      }
+    })
     updateAppBadge(tasks)
   }, [tasks])
 

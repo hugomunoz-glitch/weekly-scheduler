@@ -51,18 +51,20 @@ async function getSwRegistration() {
   }
 }
 
-export function updateAppBadge(tasks) {
+export async function updateAppBadge(tasks) {
   const today = new Date()
   const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
   const count = tasks.filter(t =>
     t.scheduled_date && String(t.scheduled_date).slice(0, 10) === todayStr && t.status !== 'done'
   ).length
 
-  // Native Capacitor badge (@capawesome/capacitor-badge) — native only
-  const Badge = window.Capacitor?.Plugins?.Badge
-  if (Badge && window.Capacitor?.isNativePlatform?.()) {
-    Badge.requestPermissions().catch(() => {})
-    Badge.set({ count }).catch(() => {})
+  // Native Capacitor badge — import on demand so the web plugin never runs in a browser
+  if (window.Capacitor?.isNativePlatform?.()) {
+    try {
+      const { Badge } = await import('@capawesome/capacitor-badge')
+      await Badge.requestPermissions()
+      await Badge.set({ count })
+    } catch {}
     return
   }
 

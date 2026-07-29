@@ -3,12 +3,6 @@ import ReactDOM from 'react-dom/client'
 import App from './App'
 import { AuthProvider } from './contexts/AuthContext'
 import './index.css'
-// Only load the badge plugin inside the native Capacitor shell.
-// Its web implementation calls navigator.setAppBadge() unconditionally
-// in the constructor, which throws on browsers that don't support the Badging API.
-if (window.Capacitor?.isNativePlatform?.()) {
-  import('@capawesome/capacitor-badge')
-}
 
 class ErrorBoundary extends React.Component {
   constructor(props) { super(props); this.state = { error: null } }
