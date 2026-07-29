@@ -1197,10 +1197,10 @@ export default function MobileLayout({
 
       {mobileCalView === 'week' && activeTab === 'day' && (
         <>
-          <div style={{ padding: '10px 16px 6px', flexShrink: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
-              <span style={{ fontSize: '15px', fontWeight: 500, color: '#111827', flexShrink: 0 }}>{format(parseISO(selectedDay), 'EEEE, MMM d')}</span>
-              <span style={{ fontSize: '11px', color: '#9ca3af', flexShrink: 0 }}>· Tap, Drag &amp; Drop to move</span>
+          <div style={{ padding: '10px 16px 4px', flexShrink: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', minWidth: 0 }}>
+              <span style={{ fontSize: '15px', fontWeight: 500, color: '#111827' }}>{format(parseISO(selectedDay), 'EEEE, MMM d')}</span>
+              <span style={{ fontSize: '11px', color: '#9ca3af' }}>Tap, Drag &amp; Drop to move</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
               <button
