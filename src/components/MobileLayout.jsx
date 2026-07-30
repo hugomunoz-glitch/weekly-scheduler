@@ -1081,7 +1081,9 @@ export default function MobileLayout({
   const [settingsSection, setSettingsSection] = useState(null) // 'username' | 'email' | 'password' | null
   const [newUsername, setNewUsername] = useState('')
   const [newEmail, setNewEmail] = useState('')
+  const [currentPasswordForEmail, setCurrentPasswordForEmail] = useState('')
   const [newPassword, setNewPassword] = useState('')
+  const [currentPasswordForPw, setCurrentPasswordForPw] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [settingsMessage, setSettingsMessage] = useState(null)
   const [settingsError, setSettingsError] = useState(null)
@@ -1110,11 +1112,12 @@ export default function MobileLayout({
     setSettingsError(null)
     setSettingsMessage(null)
     setSettingsSubmitting(true)
-    const { error } = await updateEmail(newEmail.trim())
+    const { error } = await updateEmail(currentPasswordForEmail, newEmail.trim())
     setSettingsSubmitting(false)
     if (error) { setSettingsError(error.message); return }
     setSettingsMessage('Check your new email address to confirm the change.')
     setNewEmail('')
+    setCurrentPasswordForEmail('')
     setSettingsSection(null)
   }
 
@@ -1125,10 +1128,11 @@ export default function MobileLayout({
     if (newPassword.length < 6) { setSettingsError('Password must be at least 6 characters.'); return }
     if (newPassword !== confirmPassword) { setSettingsError('Passwords do not match.'); return }
     setSettingsSubmitting(true)
-    const { error } = await updatePassword(newPassword)
+    const { error } = await updatePassword(currentPasswordForPw, newPassword)
     setSettingsSubmitting(false)
     if (error) { setSettingsError(error.message); return }
     setSettingsMessage('Password updated.')
+    setCurrentPasswordForPw('')
     setNewPassword('')
     setConfirmPassword('')
     setSettingsSection(null)
@@ -1366,32 +1370,36 @@ export default function MobileLayout({
           <div style={{ border: '1px solid #e5e7eb', borderRadius: '10px', padding: '14px', marginBottom: '10px', background: 'white' }}>
             {settingsSection === 'email' ? (
               <form onSubmit={handleEmailSubmit}>
-                <input autoFocus type="email" required placeholder="New email address" value={newEmail} onChange={e => setNewEmail(e.target.value)}
-                  style={{ width: '100%', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '8px', fontSize: '14px', marginBottom: '8px' }} />
+                <input autoFocus type="password" required placeholder="Current password" value={currentPasswordForEmail} onChange={e => setCurrentPasswordForEmail(e.target.value)}
+                  style={{ width: '100%', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '8px', fontSize: '16px', marginBottom: '8px' }} />
+                <input type="email" required placeholder="New email address" value={newEmail} onChange={e => setNewEmail(e.target.value)}
+                  style={{ width: '100%', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '8px', fontSize: '16px', marginBottom: '8px' }} />
                 <div style={{ display: 'flex', gap: '8px' }}>
                   <button type="submit" disabled={settingsSubmitting} style={{ background: '#6366f1', color: 'white', border: 'none', borderRadius: '8px', padding: '8px 14px', fontSize: '13px' }}>{settingsSubmitting ? 'Saving...' : 'Save'}</button>
                   <button type="button" onClick={() => { setSettingsSection(null); setSettingsError(null) }} style={{ background: 'none', border: 'none', color: '#9ca3af', fontSize: '13px' }}>Cancel</button>
                 </div>
               </form>
             ) : (
-              <button onClick={() => { setSettingsSection('email'); setSettingsError(null); setSettingsMessage(null) }} style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none', fontSize: '14px', color: '#1f2937', fontWeight: 500 }}>Change email</button>
+              <button onClick={() => { setSettingsSection('email'); setCurrentPasswordForEmail(''); setSettingsError(null); setSettingsMessage(null) }} style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none', fontSize: '14px', color: '#1f2937', fontWeight: 500 }}>Change email</button>
             )}
           </div>
 
           <div style={{ border: '1px solid #e5e7eb', borderRadius: '10px', padding: '14px', marginBottom: '10px', background: 'white' }}>
             {settingsSection === 'password' ? (
               <form onSubmit={handlePasswordSubmit}>
+                <input autoFocus type="password" required placeholder="Current password" value={currentPasswordForPw} onChange={e => setCurrentPasswordForPw(e.target.value)}
+                  style={{ width: '100%', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '8px', fontSize: '16px', marginBottom: '8px' }} />
                 <input type="password" required placeholder="New password" value={newPassword} onChange={e => setNewPassword(e.target.value)}
-                  style={{ width: '100%', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '8px', fontSize: '14px', marginBottom: '8px' }} />
+                  style={{ width: '100%', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '8px', fontSize: '16px', marginBottom: '8px' }} />
                 <input type="password" required placeholder="Confirm new password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)}
-                  style={{ width: '100%', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '8px', fontSize: '14px', marginBottom: '8px' }} />
+                  style={{ width: '100%', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '8px', fontSize: '16px', marginBottom: '8px' }} />
                 <div style={{ display: 'flex', gap: '8px' }}>
                   <button type="submit" disabled={settingsSubmitting} style={{ background: '#6366f1', color: 'white', border: 'none', borderRadius: '8px', padding: '8px 14px', fontSize: '13px' }}>{settingsSubmitting ? 'Saving...' : 'Save'}</button>
                   <button type="button" onClick={() => { setSettingsSection(null); setSettingsError(null) }} style={{ background: 'none', border: 'none', color: '#9ca3af', fontSize: '13px' }}>Cancel</button>
                 </div>
               </form>
             ) : (
-              <button onClick={() => { setSettingsSection('password'); setSettingsError(null); setSettingsMessage(null) }} style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none', fontSize: '14px', color: '#1f2937', fontWeight: 500 }}>Change password</button>
+              <button onClick={() => { setSettingsSection('password'); setCurrentPasswordForPw(''); setSettingsError(null); setSettingsMessage(null) }} style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none', fontSize: '14px', color: '#1f2937', fontWeight: 500 }}>Change password</button>
             )}
           </div>
 
