@@ -42,12 +42,22 @@ export function AuthProvider({ children }) {
     await supabase.auth.signOut()
   }
 
-  async function updateEmail(newEmail) {
+  async function updateEmail(currentPassword, newEmail) {
+    const { error: authError } = await supabase.auth.signInWithPassword({
+      email: session?.user?.email,
+      password: currentPassword,
+    })
+    if (authError) return { error: { message: 'Current password is incorrect.' } }
     const { error } = await supabase.auth.updateUser({ email: newEmail })
     return { error }
   }
 
-  async function updatePassword(newPassword) {
+  async function updatePassword(currentPassword, newPassword) {
+    const { error: authError } = await supabase.auth.signInWithPassword({
+      email: session?.user?.email,
+      password: currentPassword,
+    })
+    if (authError) return { error: { message: 'Current password is incorrect.' } }
     const { error } = await supabase.auth.updateUser({ password: newPassword })
     return { error }
   }
