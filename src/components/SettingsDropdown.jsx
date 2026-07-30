@@ -155,7 +155,9 @@ export default function SettingsDropdown({ onOpenCollaborations, tasks, rollover
   const [open, setOpen] = useState(false)
   const [section, setSection] = useState(null) // 'email' | 'password' | 'username' | null
   const [newEmail, setNewEmail] = useState('')
+  const [currentPasswordForEmail, setCurrentPasswordForEmail] = useState('')
   const [newPassword, setNewPassword] = useState('')
+  const [currentPasswordForPw, setCurrentPasswordForPw] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [newUsername, setNewUsername] = useState('')
   const [message, setMessage] = useState(null)
@@ -174,11 +176,12 @@ export default function SettingsDropdown({ onOpenCollaborations, tasks, rollover
     setError(null)
     setMessage(null)
     setSubmitting(true)
-    const { error } = await updateEmail(newEmail.trim())
+    const { error } = await updateEmail(currentPasswordForEmail, newEmail.trim())
     setSubmitting(false)
     if (error) { setError(error.message); return }
     setMessage('Check your new email address to confirm the change.')
     setNewEmail('')
+    setCurrentPasswordForEmail('')
     setSection(null)
   }
 
@@ -189,10 +192,11 @@ export default function SettingsDropdown({ onOpenCollaborations, tasks, rollover
     if (newPassword.length < 6) { setError('Password must be at least 6 characters.'); return }
     if (newPassword !== confirmPassword) { setError('Passwords do not match.'); return }
     setSubmitting(true)
-    const { error } = await updatePassword(newPassword)
+    const { error } = await updatePassword(currentPasswordForPw, newPassword)
     setSubmitting(false)
     if (error) { setError(error.message); return }
     setMessage('Password updated.')
+    setCurrentPasswordForPw('')
     setNewPassword('')
     setConfirmPassword('')
     setSection(null)
@@ -269,6 +273,14 @@ export default function SettingsDropdown({ onOpenCollaborations, tasks, rollover
               <form onSubmit={handleEmailSubmit} className="px-3 py-2 space-y-2 border-b border-gray-100">
                 <input
                   autoFocus
+                  type="password"
+                  required
+                  placeholder="Current password"
+                  value={currentPasswordForEmail}
+                  onChange={e => setCurrentPasswordForEmail(e.target.value)}
+                  className="w-full text-sm border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-300"
+                />
+                <input
                   type="email"
                   required
                   placeholder="New email address"
@@ -285,7 +297,7 @@ export default function SettingsDropdown({ onOpenCollaborations, tasks, rollover
               </form>
             ) : (
               <button
-                onClick={() => { setSection('email'); setError(null); setMessage(null) }}
+                onClick={() => { setSection('email'); setCurrentPasswordForEmail(''); setError(null); setMessage(null) }}
                 className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
               >
                 Change email
@@ -294,6 +306,15 @@ export default function SettingsDropdown({ onOpenCollaborations, tasks, rollover
 
             {section === 'password' ? (
               <form onSubmit={handlePasswordSubmit} className="px-3 py-2 space-y-2 border-b border-gray-100">
+                <input
+                  autoFocus
+                  type="password"
+                  required
+                  placeholder="Current password"
+                  value={currentPasswordForPw}
+                  onChange={e => setCurrentPasswordForPw(e.target.value)}
+                  className="w-full text-sm border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-300"
+                />
                 <input
                   type="password"
                   required
@@ -319,7 +340,7 @@ export default function SettingsDropdown({ onOpenCollaborations, tasks, rollover
               </form>
             ) : (
               <button
-                onClick={() => { setSection('password'); setError(null); setMessage(null) }}
+                onClick={() => { setSection('password'); setCurrentPasswordForPw(''); setError(null); setMessage(null) }}
                 className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
               >
                 Change password
