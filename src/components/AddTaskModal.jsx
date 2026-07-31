@@ -61,12 +61,14 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
   // Track visible viewport height so the modal shrinks correctly when the
   // keyboard appears on native WKWebView (where dvh doesn't shrink with keyboard)
   const [vpHeight, setVpHeight] = useState(() => window.visualViewport?.height ?? window.innerHeight)
+  const [vpOffsetTop, setVpOffsetTop] = useState(() => window.visualViewport?.offsetTop ?? 0)
   useEffect(() => {
     const vv = window.visualViewport
     if (!vv) return
-    const update = () => setVpHeight(vv.height)
+    const update = () => { setVpHeight(vv.height); setVpOffsetTop(vv.offsetTop) }
     vv.addEventListener('resize', update)
-    return () => vv.removeEventListener('resize', update)
+    vv.addEventListener('scroll', update)
+    return () => { vv.removeEventListener('resize', update); vv.removeEventListener('scroll', update) }
   }, [])
 
   function closeModal() {
@@ -259,7 +261,7 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
   const bulkCount = bulkTitles.split('\n').map(l => l.trim()).filter(Boolean).length
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-end sm:items-center justify-center z-50 sm:py-8" onClick={(e) => e.target === e.currentTarget && closeModal()}>
+    <div className="bg-black/40 flex items-end sm:items-center justify-center z-50 sm:py-8" style={{ position: 'fixed', top: vpOffsetTop, left: 0, right: 0, height: vpHeight }} onClick={(e) => e.target === e.currentTarget && closeModal()}>
       <div className="add-task-modal bg-white rounded-t-2xl sm:rounded-2xl shadow-xl w-full max-w-md mx-0 sm:mx-4 flex flex-col" style={{ maxHeight: Math.floor(vpHeight * 0.92) + 'px', fontSize: 16, overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
         <div style={{ overflowY: 'scroll', overflowX: 'hidden', WebkitOverflowScrolling: 'touch', flex: 1, padding: '24px 24px 0' }}>
         <h2 className="text-base font-semibold text-gray-900 mb-4">{editingTask ? 'Edit task' : initialScheduledDate ? 'Add task for ' + initialScheduledDate : 'Add task'}</h2>
