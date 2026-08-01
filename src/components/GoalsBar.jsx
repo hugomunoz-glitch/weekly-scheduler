@@ -174,7 +174,7 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
 
   function handleEditTask(taskId) {
     const full = (allTasks || []).find(t => t.id === taskId)
-    if (full) { setViewingGoalId(null); onEditTask(full) }
+    if (full) { onEditTask(full) }
   }
 
   const [addTaskToGoalError, setAddTaskToGoalError] = useState('')
@@ -801,7 +801,7 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
               {viewingGoalId === goal.id && popupPos && (
                 <div
                   onClick={(e) => e.stopPropagation()}
-                  className="fixed z-50 bg-white border border-gray-200 rounded-lg shadow-2xl w-[580px] max-w-[92vw]"
+                  className="fixed z-40 bg-white border border-gray-200 rounded-lg shadow-2xl w-[580px] max-w-[92vw]"
                   style={{ top: popupPos.top, left: popupPos.left, borderLeft: goal.priority && PRIORITY_BORDER[goal.priority] ? '4px solid ' + PRIORITY_BORDER[goal.priority] : undefined }}
                   title={goal.priority ? PRIORITY_LABELS[goal.priority] + ' priority' : undefined}
                 >
