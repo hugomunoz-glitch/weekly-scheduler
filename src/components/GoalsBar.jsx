@@ -875,7 +875,7 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
                                       )}
                                       <button
                                         onClick={(e) => { e.stopPropagation(); handleEditTask(t.id) }}
-                                        className="text-[18px] text-gray-400 hover:text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 leading-none px-0.5"
+                                        className="text-[18px] text-gray-400 hover:text-indigo-600 transition-colors shrink-0 leading-none px-0.5"
                                         title="Edit task"
                                       >
                                         &#9998;
@@ -891,10 +891,10 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
                                       )}
                                       <button
                                         onClick={(e) => { e.stopPropagation(); onDelete(t.id, e) }}
-                                        className="text-base text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 px-0.5 leading-none"
+                                        className="text-base text-red-400 hover:text-red-600 transition-colors shrink-0 px-0.5 leading-none"
                                         title="Delete task"
                                       >
-                                        &#128465;
+                                        &#10005;
                                       </button>
                                     </li>
                                   )}
