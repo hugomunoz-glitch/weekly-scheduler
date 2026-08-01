@@ -1,5 +1,5 @@
 -- ============================================================
--- Coaching & Templates System
+-- Coaching & Templates System (idempotent — safe to re-run)
 -- ============================================================
 
 -- 1. Add role to profiles
@@ -8,8 +8,9 @@ ALTER TABLE profiles
   CHECK (role IN ('member', 'coach', 'admin'));
 
 -- ============================================================
--- 2. Coach invitations
+-- 2. Create all tables first (IF NOT EXISTS = safe to re-run)
 -- ============================================================
+
 CREATE TABLE IF NOT EXISTS coach_invitations (
   id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   coach_id      uuid NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
@@ -23,8 +24,98 @@ CREATE TABLE IF NOT EXISTS coach_invitations (
   CONSTRAINT invitee_required CHECK (invitee_id IS NOT NULL OR invitee_email IS NOT NULL)
 );
 
-ALTER TABLE coach_invitations ENABLE ROW LEVEL SECURITY;
+CREATE TABLE IF NOT EXISTS coach_assignments (
+  id         uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  coach_id   uuid NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  member_id  uuid NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (coach_id, member_id)
+);
 
+CREATE TABLE IF NOT EXISTS templates (
+  id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_by  uuid NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  title       text NOT NULL,
+  description text,
+  is_public   boolean NOT NULL DEFAULT false,
+  created_at  timestamptz NOT NULL DEFAULT now(),
+  updated_at  timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS template_goals (
+  id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  template_id uuid NOT NULL REFERENCES templates(id) ON DELETE CASCADE,
+  title       text NOT NULL,
+  category    text,
+  priority    text CHECK (priority IN ('high', 'medium', 'low')),
+  sort_order  int NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS template_tasks (
+  id                 uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  template_goal_id   uuid NOT NULL REFERENCES template_goals(id) ON DELETE CASCADE,
+  title              text NOT NULL,
+  notes              text,
+  priority           text CHECK (priority IN ('high', 'medium', 'low')),
+  unlock_days_offset int NOT NULL DEFAULT 0,
+  due_days_offset    int,
+  sort_order         int NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS user_templates (
+  id           uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  template_id  uuid NOT NULL REFERENCES templates(id) ON DELETE CASCADE,
+  member_id    uuid NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  coach_id     uuid NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  assigned_at  timestamptz NOT NULL DEFAULT now(),
+  activated_at timestamptz
+);
+
+-- ============================================================
+-- 3. Enable RLS on all tables
+-- ============================================================
+ALTER TABLE coach_invitations  ENABLE ROW LEVEL SECURITY;
+ALTER TABLE coach_assignments  ENABLE ROW LEVEL SECURITY;
+ALTER TABLE templates          ENABLE ROW LEVEL SECURITY;
+ALTER TABLE template_goals     ENABLE ROW LEVEL SECURITY;
+ALTER TABLE template_tasks     ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_templates     ENABLE ROW LEVEL SECURITY;
+
+-- ============================================================
+-- 4. Drop all policies before recreating (idempotent)
+-- ============================================================
+DROP POLICY IF EXISTS "coach_invitations_coach_select"   ON coach_invitations;
+DROP POLICY IF EXISTS "coach_invitations_coach_insert"   ON coach_invitations;
+DROP POLICY IF EXISTS "coach_invitations_coach_delete"   ON coach_invitations;
+DROP POLICY IF EXISTS "coach_invitations_invitee_select" ON coach_invitations;
+DROP POLICY IF EXISTS "coach_invitations_invitee_update" ON coach_invitations;
+
+DROP POLICY IF EXISTS "coach_assignments_select" ON coach_assignments;
+
+DROP POLICY IF EXISTS "templates_insert" ON templates;
+DROP POLICY IF EXISTS "templates_update" ON templates;
+DROP POLICY IF EXISTS "templates_delete" ON templates;
+DROP POLICY IF EXISTS "templates_select" ON templates;
+
+DROP POLICY IF EXISTS "template_goals_select" ON template_goals;
+DROP POLICY IF EXISTS "template_goals_insert" ON template_goals;
+DROP POLICY IF EXISTS "template_goals_update" ON template_goals;
+DROP POLICY IF EXISTS "template_goals_delete" ON template_goals;
+
+DROP POLICY IF EXISTS "template_tasks_select" ON template_tasks;
+DROP POLICY IF EXISTS "template_tasks_insert" ON template_tasks;
+DROP POLICY IF EXISTS "template_tasks_update" ON template_tasks;
+DROP POLICY IF EXISTS "template_tasks_delete" ON template_tasks;
+
+DROP POLICY IF EXISTS "user_templates_insert" ON user_templates;
+DROP POLICY IF EXISTS "user_templates_select" ON user_templates;
+DROP POLICY IF EXISTS "user_templates_delete" ON user_templates;
+
+-- ============================================================
+-- 5. Recreate all policies
+-- ============================================================
+
+-- coach_invitations
 CREATE POLICY "coach_invitations_coach_select" ON coach_invitations
   FOR SELECT USING (coach_id = auth.uid());
 
@@ -41,79 +132,11 @@ CREATE POLICY "coach_invitations_invitee_update" ON coach_invitations
   FOR UPDATE USING (invitee_id = auth.uid())
   WITH CHECK (invitee_id = auth.uid() AND status IN ('accepted', 'declined'));
 
--- ============================================================
--- 3. Coach assignments (established relationships)
--- ============================================================
-CREATE TABLE IF NOT EXISTS coach_assignments (
-  id         uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  coach_id   uuid NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-  member_id  uuid NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-  created_at timestamptz NOT NULL DEFAULT now(),
-  UNIQUE (coach_id, member_id)
-);
-
-ALTER TABLE coach_assignments ENABLE ROW LEVEL SECURITY;
-
+-- coach_assignments
 CREATE POLICY "coach_assignments_select" ON coach_assignments
   FOR SELECT USING (coach_id = auth.uid() OR member_id = auth.uid());
 
--- ============================================================
--- 4. Templates
--- ============================================================
-CREATE TABLE IF NOT EXISTS templates (
-  id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  created_by  uuid NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-  title       text NOT NULL,
-  description text,
-  is_public   boolean NOT NULL DEFAULT false,
-  created_at  timestamptz NOT NULL DEFAULT now(),
-  updated_at  timestamptz NOT NULL DEFAULT now()
-);
-
--- ============================================================
--- 5. Template goals
--- ============================================================
-CREATE TABLE IF NOT EXISTS template_goals (
-  id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  template_id uuid NOT NULL REFERENCES templates(id) ON DELETE CASCADE,
-  title       text NOT NULL,
-  category    text,
-  priority    text CHECK (priority IN ('high', 'medium', 'low')),
-  sort_order  int NOT NULL DEFAULT 0
-);
-
--- ============================================================
--- 6. Template tasks
--- ============================================================
-CREATE TABLE IF NOT EXISTS template_tasks (
-  id                 uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  template_goal_id   uuid NOT NULL REFERENCES template_goals(id) ON DELETE CASCADE,
-  title              text NOT NULL,
-  notes              text,
-  priority           text CHECK (priority IN ('high', 'medium', 'low')),
-  unlock_days_offset int NOT NULL DEFAULT 0,
-  due_days_offset    int,
-  sort_order         int NOT NULL DEFAULT 0
-);
-
--- ============================================================
--- 7. User templates (must exist before templates RLS policies
---    that reference it)
--- ============================================================
-CREATE TABLE IF NOT EXISTS user_templates (
-  id           uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  template_id  uuid NOT NULL REFERENCES templates(id) ON DELETE CASCADE,
-  member_id    uuid NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-  coach_id     uuid NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-  assigned_at  timestamptz NOT NULL DEFAULT now(),
-  activated_at timestamptz
-);
-
--- ============================================================
--- 8. RLS for templates (now that user_templates exists)
--- ============================================================
-ALTER TABLE templates ENABLE ROW LEVEL SECURITY;
-
+-- templates
 CREATE POLICY "templates_insert" ON templates
   FOR INSERT WITH CHECK (
     created_by = auth.uid() AND
@@ -137,11 +160,7 @@ CREATE POLICY "templates_select" ON templates
     )
   );
 
--- ============================================================
--- 9. RLS for template_goals
--- ============================================================
-ALTER TABLE template_goals ENABLE ROW LEVEL SECURITY;
-
+-- template_goals
 CREATE POLICY "template_goals_select" ON template_goals
   FOR SELECT USING (
     EXISTS (
@@ -171,11 +190,7 @@ CREATE POLICY "template_goals_delete" ON template_goals
     EXISTS (SELECT 1 FROM templates WHERE id = template_goals.template_id AND created_by = auth.uid())
   );
 
--- ============================================================
--- 10. RLS for template_tasks
--- ============================================================
-ALTER TABLE template_tasks ENABLE ROW LEVEL SECURITY;
-
+-- template_tasks
 CREATE POLICY "template_tasks_select" ON template_tasks
   FOR SELECT USING (
     EXISTS (
@@ -218,11 +233,7 @@ CREATE POLICY "template_tasks_delete" ON template_tasks
     )
   );
 
--- ============================================================
--- 11. RLS for user_templates
--- ============================================================
-ALTER TABLE user_templates ENABLE ROW LEVEL SECURITY;
-
+-- user_templates
 CREATE POLICY "user_templates_insert" ON user_templates
   FOR INSERT WITH CHECK (
     coach_id = auth.uid()
@@ -237,8 +248,9 @@ CREATE POLICY "user_templates_delete" ON user_templates
   FOR DELETE USING (coach_id = auth.uid());
 
 -- ============================================================
--- 12. Function: accept a coaching invitation
+-- 6. Functions (CREATE OR REPLACE = always safe to re-run)
 -- ============================================================
+
 CREATE OR REPLACE FUNCTION accept_coaching_invitation(invitation_id uuid)
 RETURNS void
 LANGUAGE plpgsql
@@ -274,9 +286,6 @@ BEGIN
 END;
 $$;
 
--- ============================================================
--- 13. Function: decline a coaching invitation
--- ============================================================
 CREATE OR REPLACE FUNCTION decline_coaching_invitation(invitation_id uuid)
 RETURNS void
 LANGUAGE plpgsql
@@ -296,9 +305,6 @@ BEGIN
 END;
 $$;
 
--- ============================================================
--- 14. Function: instantiate a template for a member
--- ============================================================
 CREATE OR REPLACE FUNCTION activate_user_template(user_template_id uuid)
 RETURNS void
 LANGUAGE plpgsql
