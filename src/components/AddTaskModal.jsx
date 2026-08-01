@@ -61,12 +61,43 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
   // Track visible viewport height so the modal shrinks correctly when the
   // keyboard appears on native WKWebView (where dvh doesn't shrink with keyboard)
   const [vpHeight, setVpHeight] = useState(() => window.visualViewport?.height ?? window.innerHeight)
+  const overlayRef = useRef(null)
   useEffect(() => {
     const vv = window.visualViewport
-    if (!vv) return
-    const update = () => setVpHeight(vv.height)
-    vv.addEventListener('resize', update)
-    return () => vv.removeEventListener('resize', update)
+    // Direct DOM update — no React re-render lag, so the overlay tracks the
+    // keyboard animation frame-by-frame instead of snapping after it finishes.
+    const reposition = () => {
+      const h = vv ? vv.height : window.innerHeight
+      const top = vv ? vv.offsetTop : 0
+      setVpHeight(h)
+      if (overlayRef.current) {
+        overlayRef.current.style.top = top + 'px'
+        overlayRef.current.style.height = h + 'px'
+      }
+    }
+    reposition()
+    if (vv) {
+      vv.addEventListener('resize', reposition)
+      vv.addEventListener('scroll', reposition)
+    }
+    // Lock body scroll so iOS doesn't shift the page when an input is focused,
+    // which would push fixed elements off-screen.
+    const savedTop = window.scrollY
+    document.body.style.position = 'fixed'
+    document.body.style.top = '-' + savedTop + 'px'
+    document.body.style.width = '100%'
+    document.body.style.overflowY = 'scroll'
+    return () => {
+      if (vv) {
+        vv.removeEventListener('resize', reposition)
+        vv.removeEventListener('scroll', reposition)
+      }
+      document.body.style.position = ''
+      document.body.style.top = ''
+      document.body.style.width = ''
+      document.body.style.overflowY = ''
+      window.scrollTo(0, savedTop)
+    }
   }, [])
 
   function closeModal() {
@@ -259,8 +290,8 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
   const bulkCount = bulkTitles.split('\n').map(l => l.trim()).filter(Boolean).length
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-end sm:items-center justify-center z-50 sm:py-8" onClick={(e) => e.target === e.currentTarget && closeModal()}>
-      <div className="add-task-modal bg-white rounded-t-2xl sm:rounded-2xl shadow-xl w-full max-w-md mx-0 sm:mx-4 flex flex-col" style={{ height: Math.floor(vpHeight * 0.92) + 'px', fontSize: 16, overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
+    <div ref={overlayRef} className="bg-black/40 flex items-end sm:items-center justify-center z-50 sm:py-8" style={{ position: 'fixed', top: 0, left: 0, right: 0, height: vpHeight }} onClick={(e) => e.target === e.currentTarget && closeModal()}>
+      <div className="add-task-modal bg-white rounded-t-2xl sm:rounded-2xl shadow-xl w-full max-w-md mx-0 sm:mx-4 flex flex-col" style={{ maxHeight: Math.floor(vpHeight * 0.92) + 'px', fontSize: 16, overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
         <div style={{ overflowY: 'scroll', overflowX: 'hidden', WebkitOverflowScrolling: 'touch', flex: 1, padding: '24px 24px 0' }}>
         <h2 className="text-base font-semibold text-gray-900 mb-4">{editingTask ? 'Edit task' : initialScheduledDate ? 'Add task for ' + initialScheduledDate : 'Add task'}</h2>
         <form id="task-form" onSubmit={bulkMode ? handleBulkSubmit : (e) => handleSubmitCore(e, false)} className="space-y-3">
