@@ -186,6 +186,13 @@ export default function App() {
 
   useEffect(() => { fetchTasks() }, [fetchTasks])
 
+  // Refresh tasks whenever the app returns to the foreground
+  useEffect(() => {
+    const onVisible = () => { if (document.visibilityState === 'visible') fetchTasks() }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
+  }, [fetchTasks])
+
   // Register service worker once on mount
   useEffect(() => { registerServiceWorker() }, [])
 
