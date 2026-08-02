@@ -982,7 +982,7 @@ export default function App() {
   return (
     <DragDropContext onDragEnd={onDragEnd} sensors={dndSensors}>
       {isMobile ? (
-        <MobileLayout {...sharedProps} />
+        <MobileLayout {...sharedProps} onRefresh={fetchTasks} />
       ) : (
         <div className="h-screen flex flex-col bg-gray-50 overflow-hidden">
           <header className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between shrink-0">

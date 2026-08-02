@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { usePullToRefresh } from '../hooks/usePullToRefresh'
 import { createPortal } from 'react-dom'
 import { useAssistantHistory } from '../hooks/useAssistantHistory'
 import { useAuth } from '../contexts/AuthContext'
@@ -1047,7 +1048,7 @@ export default function MobileLayout({
   onRescheduleToTomorrow, onMoveToInbox, onDelete, onEdit, onAddTask, onAddTaskForBucket, onCreateTask,
   onRollover, onAddGoal, onEditGoal, onDeleteGoal, onAssignTask,
   onDuplicateGoal, onDuplicateTask,
-  rolloverMode, onRolloverModeChange
+  rolloverMode, onRolloverModeChange, onRefresh
 }) {
   const [selectedDay, setSelectedDay] = useState(() => {
     const todayStr = format(new Date(), 'yyyy-MM-dd')
@@ -1056,6 +1057,8 @@ export default function MobileLayout({
   })
   const [activeTab, setActiveTab] = useState('day')
   const [mobileCalView, setMobileCalView] = useState('week')
+  const mobileScrollRef = useRef(null)
+  const { pullY, refreshing } = usePullToRefresh(onRefresh || (() => {}), mobileScrollRef)
 
   // Reset selectedDay when week navigation changes and selected day is no longer in view
   useEffect(() => {
@@ -1149,7 +1152,12 @@ export default function MobileLayout({
   const dayNames = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
 
   return (
-    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', flexDirection: 'column', background: '#f9fafb', overflow: 'hidden' }}>
+    <div ref={mobileScrollRef} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', flexDirection: 'column', background: '#f9fafb', overflow: 'hidden' }}>
+      {(pullY > 0 || refreshing) && (
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, display: 'flex', justifyContent: 'center', paddingTop: Math.min(pullY, 48) + 'px', zIndex: 100, pointerEvents: 'none' }}>
+          <div style={{ width: 28, height: 28, borderRadius: '50%', border: '2.5px solid #6366f1', borderTopColor: 'transparent', animation: refreshing ? 'spin 0.7s linear infinite' : 'none', transform: refreshing ? 'none' : `rotate(${pullY / 72 * 270}deg)`, opacity: Math.min(pullY / 36, 1) }} />
+        </div>
+      )}
 
       <div style={{ background: 'white', borderBottom: '1px solid #e5e7eb', padding: '10px 16px', paddingTop: 'max(10px, env(safe-area-inset-top))', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
         <button onClick={onPrevWeek} style={{ background: 'none', border: 'none', fontSize: '22px', color: '#6b7280', cursor: 'pointer', padding: '4px 8px' }}>&#8249;</button>
