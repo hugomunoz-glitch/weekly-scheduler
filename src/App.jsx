@@ -749,6 +749,11 @@ export default function App() {
       data = retry.data; error = retry.error
     }
     if (error) { console.error('editGoal failed:', error); throw error }
+    // Cascade collaboration change to all tasks linked to this goal
+    if (collaborationId !== undefined) {
+      await supabase.from('tasks').update({ collaboration_id: collaborationId || null }).eq('goal_id', goalId)
+      setTasks(prev => prev.map(t => t.goal_id === goalId ? { ...t, collaboration_id: collaborationId || null } : t))
+    }
     setGoals(prev => prev.map(g => g.id === goalId ? data : g))
   }
 
