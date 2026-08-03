@@ -34,7 +34,7 @@ export default function YearView({ tasks, onMonthClick, onDayClick }) {
       <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', padding: '16px', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))', gap: '14px' }}>
         {months.map(month => {
           const daysInMonth = getDaysInMonth(month)
-          const firstDow = (getDay(startOfMonth(month)) + 6) % 7
+          const firstDow = getDay(startOfMonth(month))
           const count = taskCountForMonth(month)
           const monthStr = format(month, 'yyyy-MM')
           const isCurrentMonth = getYear(currentYear) === todayYear && getMonth(month) === todayMonth
@@ -52,7 +52,7 @@ export default function YearView({ tasks, onMonthClick, onDayClick }) {
                 {count > 0 && <span style={{ fontSize: '10px', color: '#6366f1', fontWeight: 600, background: '#eef2ff', borderRadius: '8px', padding: '1px 6px' }}>{count}</span>}
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '1px' }}>
-                {['M','T','W','T','F','S','S'].map((h, i) => (
+                {['S','M','T','W','T','F','S'].map((h, i) => (
                   <div key={i} style={{ fontSize: '7px', color: '#d1d5db', textAlign: 'center', marginBottom: '2px' }}>{h}</div>
                 ))}
                 {Array.from({ length: firstDow }).map((_, i) => <div key={'pad'+i} />)}

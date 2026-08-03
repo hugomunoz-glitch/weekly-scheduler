@@ -6,8 +6,8 @@ export default function MonthView({ tasks, onDayClick }) {
 
   const monthStart = startOfMonth(currentMonth)
   const monthEnd = endOfMonth(currentMonth)
-  const calStart = startOfWeek(monthStart, { weekStartsOn: 1 })
-  const calEnd = endOfWeek(monthEnd, { weekStartsOn: 1 })
+  const calStart = startOfWeek(monthStart, { weekStartsOn: 0 })
+  const calEnd = endOfWeek(monthEnd, { weekStartsOn: 0 })
 
   const days = []
   let d = calStart
@@ -18,7 +18,7 @@ export default function MonthView({ tasks, onDayClick }) {
     return tasks.filter(t => (t.scheduled_date === str || t.due_date_card_date === str) && t.status !== 'done')
   }
 
-  const DAY_HEADERS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+  const DAY_HEADERS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
