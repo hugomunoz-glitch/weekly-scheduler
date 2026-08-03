@@ -1161,12 +1161,16 @@ export default function MobileLayout({
       <div style={{ background: 'white', borderBottom: '1px solid #e5e7eb', padding: '10px 16px', paddingTop: 'max(10px, env(safe-area-inset-top))', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
         <button onClick={onPrevWeek} style={{ background: 'none', border: 'none', fontSize: '22px', color: '#6b7280', cursor: 'pointer', padding: '4px 8px' }}>&#8249;</button>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
-          <p style={{ fontSize: '13px', fontWeight: 500, color: '#111827', margin: 0 }}>{format(weekStart, 'MMM d')} - {format(weekDays[6], 'MMM d, yyyy')}</p>
+          <p style={{ fontSize: '13px', fontWeight: 500, color: '#111827', margin: 0 }}>
+            {mobileCalView === 'workweek'
+              ? `${format(weekDays[1], 'MMM d')} - ${format(weekDays[5], 'MMM d, yyyy')}`
+              : `${format(weekStart, 'MMM d')} - ${format(weekDays[6], 'MMM d, yyyy')}`}
+          </p>
           <div style={{ display: 'flex', gap: '4px' }}>
-            {['week', 'month', 'year'].map(v => (
+            {[['week','Week'],['workweek','Work Wk'],['month','Month'],['year','Year']].map(([v, label]) => (
               <button key={v} onClick={() => setMobileCalView(v)}
                 style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: 500, background: mobileCalView === v ? '#6366f1' : '#f3f4f6', color: mobileCalView === v ? 'white' : '#6b7280' }}>
-                {v.charAt(0).toUpperCase() + v.slice(1)}
+                {label}
               </button>
             ))}
           </div>
@@ -1185,8 +1189,8 @@ export default function MobileLayout({
         </div>
       )}
 
-      {mobileCalView === 'week' && <div style={{ background: 'white', borderBottom: '1px solid #f3f4f6', padding: '8px 12px', display: 'flex', justifyContent: 'space-between', flexShrink: 0 }}>
-        {weekDays.map((day, i) => {
+      {(mobileCalView === 'week' || mobileCalView === 'workweek') && <div style={{ background: 'white', borderBottom: '1px solid #f3f4f6', padding: '8px 12px', display: 'flex', justifyContent: 'space-between', flexShrink: 0 }}>
+        {(mobileCalView === 'workweek' ? weekDays.slice(1, 6) : weekDays).map((day, i) => {
           const isSelected = format(day, 'yyyy-MM-dd') === selectedDay
           const today = isToday(day)
           const count = tasksForDay(day).filter(t => t.status !== 'done').length
@@ -1203,14 +1207,14 @@ export default function MobileLayout({
         })}
       </div>}
 
-      {mobileCalView === 'week' && overdueTasks.length > 0 && activeTab === 'day' && rolloverMode === 'manual' && (
+      {(mobileCalView === 'week' || mobileCalView === 'workweek') && overdueTasks.length > 0 && activeTab === 'day' && rolloverMode === 'manual' && (
         <div style={{ background: '#fffbeb', borderBottom: '1px solid #fde68a', padding: '8px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
           <span style={{ fontSize: '12px', color: '#92400e' }}>{overdueTasks.length} overdue</span>
           <button onClick={onRollover} style={{ fontSize: '12px', color: '#d97706', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 500 }}>Roll over</button>
         </div>
       )}
 
-      {mobileCalView === 'week' && activeTab === 'day' && (
+      {(mobileCalView === 'week' || mobileCalView === 'workweek') && activeTab === 'day' && (
         <>
           <div style={{ padding: '10px 16px 4px', flexShrink: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', minWidth: 0 }}>
@@ -1255,11 +1259,11 @@ export default function MobileLayout({
         </>
       )}
 
-      {mobileCalView === 'week' && activeTab === 'goals' && (
+      {(mobileCalView === 'week' || mobileCalView === 'workweek') && activeTab === 'goals' && (
         <MobileGoalsBar goals={goals} goalTasks={goalTasks} allTasks={tasks} collabMap={collabMap} collaborations={collaborations} defaultCollaborationId={defaultCollaborationId} onAddGoal={onAddGoal} onEditGoal={onEditGoal} onDeleteGoal={onDeleteGoal} onDuplicateGoal={onDuplicateGoal} onMarkDone={onMarkDone} onDelete={onDelete} onCreateTask={onCreateTask} onEditTask={onEdit} />
       )}
 
-      {mobileCalView === 'week' && activeTab === 'inbox' && (
+      {(mobileCalView === 'week' || mobileCalView === 'workweek') && activeTab === 'inbox' && (
         <>
           <div style={{ padding: '10px 16px 0', flexShrink: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: '15px', fontWeight: 500, color: '#111827' }}>&#128221; Task List <span style={{ fontSize: '13px', color: '#9ca3af', fontWeight: 400 }}>{inboxTasks.filter(t => t.status !== 'done').length}</span></span>
@@ -1318,7 +1322,7 @@ export default function MobileLayout({
         </>
       )}
 
-      {mobileCalView === 'week' && activeTab === 'assistant' && (
+      {(mobileCalView === 'week' || mobileCalView === 'workweek') && activeTab === 'assistant' && (
         <>
           <div style={{ padding: '10px 16px 6px', flexShrink: 0 }}>
             <span style={{ fontSize: '15px', fontWeight: 500, color: '#111827' }}>&#129302; Assistant</span>
@@ -1327,7 +1331,7 @@ export default function MobileLayout({
         </>
       )}
 
-      {mobileCalView === 'week' && activeTab === 'settings' && (
+      {(mobileCalView === 'week' || mobileCalView === 'workweek') && activeTab === 'settings' && (
         <div style={{ flex: 1, overflowY: 'auto', padding: '16px' }}>
           <div style={{ padding: '4px 0 12px' }}>
             <span style={{ fontSize: '15px', fontWeight: 500, color: '#111827' }}>&#9881; Settings</span>
