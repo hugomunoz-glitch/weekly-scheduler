@@ -143,6 +143,8 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
   const [editSmartRelevant, setEditSmartRelevant] = useState('')
   const [editSmartTimebound, setEditSmartTimebound] = useState('')
   const [editGoalError, setEditGoalError] = useState('')
+  const [newTerm, setNewTerm] = useState('')
+  const [editingTerm, setEditingTerm] = useState('')
   const allCategories = [...new Set([...GOAL_CATEGORIES, ...goals.map(g => g.category).filter(Boolean)])].sort()
   const [pressedGoalId, setPressedGoalId] = useState(null)
   const [longPressTaskId, setLongPressTaskId] = useState(null)
@@ -173,6 +175,7 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
     setEditSmartRelevant(goal.smart_relevant || '')
     setEditSmartTimebound(goal.smart_timebound || '')
     setEditShowSmart(!!(goal.smart_specific || goal.smart_measurable || goal.smart_achievable || goal.smart_relevant || goal.smart_timebound))
+    setEditingTerm(goal.term || '')
     setEditGoalError('')
     setEditOptionsOpen(!!(goal.category || goal.priority || goal.collaboration_id || goal.family_member || goal.smart_specific || goal.smart_measurable || goal.smart_achievable || goal.smart_relevant || goal.smart_timebound))
   }
@@ -190,7 +193,8 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
         smartMeasurable: editSmartMeasurable.trim() || null,
         smartAchievable: editSmartAchievable.trim() || null,
         smartRelevant: editSmartRelevant.trim() || null,
-        smartTimebound: editSmartTimebound.trim() || null
+        smartTimebound: editSmartTimebound.trim() || null,
+        term: editingTerm || null
       }, editingCollaborationId || null)
       closeEditingGoal()
     } catch {
@@ -249,6 +253,11 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
       const aRank = a.priority in PRIORITY_RANK ? PRIORITY_RANK[a.priority] : 3
       const bRank = b.priority in PRIORITY_RANK ? PRIORITY_RANK[b.priority] : 3
       result = aRank !== bRank ? aRank - bRank : a.title.localeCompare(b.title)
+    } else if (sortMode === 'term') {
+      const termRank = { long: 0, short: 1 }
+      const aR = a.term in termRank ? termRank[a.term] : 2
+      const bR = b.term in termRank ? termRank[b.term] : 2
+      result = aR !== bR ? aR - bR : a.title.localeCompare(b.title)
     } else {
       const aDate = nearestDueDate(a.id), bDate = nearestDueDate(b.id)
       if (!aDate && !bDate) result = a.title.localeCompare(b.title)
@@ -308,7 +317,8 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
         smartMeasurable: smartMeasurable.trim() || null,
         smartAchievable: smartAchievable.trim() || null,
         smartRelevant: smartRelevant.trim() || null,
-        smartTimebound: smartTimebound.trim() || null
+        smartTimebound: smartTimebound.trim() || null,
+        term: newTerm || null
       }, newGoalCollaborationId || null)
       setAddGoalError('')
       const taskTitles = newGoalTasks.map(t => t.trim()).filter(Boolean)
@@ -317,6 +327,7 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
       }
       setNewTitle(''); setNewCategory(''); setNewPriority(''); setCustomCategory(false); setNewCategoryCustom(''); setNewFamilyMember('')
       setSmartSpecific(''); setSmartMeasurable(''); setSmartAchievable(''); setSmartRelevant(''); setSmartTimebound('')
+      setNewTerm('')
       setNewGoalCollaborationId(defaultCollaborationId || '')
       setShowSmart(false)
       closeAdding()
@@ -391,6 +402,7 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
               <option value="created">Date Created</option>
               <option value="deadline">Deadline</option>
               <option value="priority">Priority</option>
+              <option value="term">Long/Short Term</option>
             </select>
             <button
               onClick={() => setSortDir(d => d * -1)}
@@ -454,6 +466,14 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
                   <option value="medium">Medium</option>
                   <option value="low">Low</option>
                 </select>
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  {[['', '—'], ['long', 'Long-term'], ['short', 'Short-term']].map(([val, label]) => (
+                    <button key={val} type="button" onClick={() => setNewTerm(val)}
+                      style={{ fontSize: '11px', padding: '5px 8px', borderRadius: '6px', border: '1px solid ' + (newTerm === val ? '#6366f1' : '#e5e7eb'), background: newTerm === val ? '#6366f1' : 'white', color: newTerm === val ? 'white' : '#6b7280', cursor: 'pointer' }}>
+                      {label}
+                    </button>
+                  ))}
+                </div>
                 {collaborations && collaborations.length > 0 && (
                   <select value={newGoalCollaborationId} onChange={e => setNewGoalCollaborationId(e.target.value)} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '8px', fontSize: '12px', outline: 'none' }}>
                     <option value="">Save to: Personal</option>
@@ -538,16 +558,21 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
               title="More actions"
             >&#8942;</button>
           </div>
-          {categoryBadge(goal.category) ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px', paddingLeft: '2px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px', paddingLeft: '2px', flexWrap: 'wrap' }}>
+            {categoryBadge(goal.category) ? (
               <span style={{ fontSize: '10px', fontWeight: 500, padding: '2px 6px', borderRadius: '4px', color: categoryBadge(goal.category).color, background: categoryBadge(goal.category).color + '1a' }}>{categoryBadge(goal.category).name}</span>
-            </div>
-          ) : (
-            <button
-              onClick={(e) => { e.stopPropagation(); startEditGoal(goal) }}
-              style={{ fontSize: '10px', fontWeight: 500, padding: '2px 6px', borderRadius: '4px', border: '1px dashed #d1d5db', color: '#9ca3af', background: 'none', cursor: 'pointer', marginBottom: '6px', display: 'block' }}
-            >+ Category</button>
-          )}
+            ) : (
+              <button
+                onClick={(e) => { e.stopPropagation(); startEditGoal(goal) }}
+                style={{ fontSize: '10px', fontWeight: 500, padding: '2px 6px', borderRadius: '4px', border: '1px dashed #d1d5db', color: '#9ca3af', background: 'none', cursor: 'pointer', display: 'block' }}
+              >+ Category</button>
+            )}
+            {goal.term && (
+              <span style={{ fontSize: '10px', fontWeight: 500, padding: '2px 6px', borderRadius: '4px', color: goal.term === 'long' ? '#7c3aed' : '#0284c7', background: goal.term === 'long' ? '#f5f3ff' : '#f0f9ff' }}>
+                {goal.term === 'long' ? 'Long-term' : 'Short-term'}
+              </span>
+            )}
+          </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingLeft: '2px' }}>
             <div style={{ flex: 1, height: '4px', background: '#f3f4f6', borderRadius: '2px', overflow: 'hidden' }}>
               <div style={{ height: '100%', width: pct + '%', background: goalDisplayColor, borderRadius: '2px' }} />
@@ -588,6 +613,14 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
                       <option value="medium">Medium</option>
                       <option value="low">Low</option>
                     </select>
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      {[['', '—'], ['long', 'Long-term'], ['short', 'Short-term']].map(([val, label]) => (
+                        <button key={val} type="button" onClick={() => setEditingTerm(val)}
+                          style={{ fontSize: '11px', padding: '5px 8px', borderRadius: '6px', border: '1px solid ' + (editingTerm === val ? '#6366f1' : '#e5e7eb'), background: editingTerm === val ? '#6366f1' : 'white', color: editingTerm === val ? 'white' : '#6b7280', cursor: 'pointer' }}>
+                          {label}
+                        </button>
+                      ))}
+                    </div>
                     {editingCategory === 'Family' && (
                       <input type="text" placeholder="Who's this about?" value={editFamilyMember} onChange={e => setEditFamilyMember(e.target.value)} style={{ border: '1px solid #e5e7eb', borderRadius: '8px', padding: '8px', fontSize: '12px', outline: 'none' }} />
                     )}
