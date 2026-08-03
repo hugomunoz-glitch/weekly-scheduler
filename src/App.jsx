@@ -174,9 +174,9 @@ export default function App() {
     if (!user) { setTasks([]); setGoals([]); setGoalTasks([]); setLoading(false); return }
     setLoading(true)
     const [tasksRes, goalsRes, goalTasksRes] = await Promise.all([
-      supabase.from('tasks').select('*').order('created_at', { ascending: false }),
+      supabase.from('tasks').select('*').order('created_at', { ascending: false }).limit(5000),
       supabase.from('goals').select('*').order('created_at'),
-      supabase.from('tasks').select('id, title, goal_id, status, due_date, start_time, priority, collaboration_id, assigned_to').not('goal_id', 'is', null)
+      supabase.from('tasks').select('id, title, goal_id, status, due_date, start_time, priority, collaboration_id, assigned_to').not('goal_id', 'is', null).limit(5000)
     ])
     setTasks(tasksRes.data || [])
     setGoals(goalsRes.data || [])
