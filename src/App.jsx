@@ -136,7 +136,7 @@ export default function App() {
   }, [])
 
   const [rolloverMode, setRolloverMode] = useState(() => localStorage.getItem('rolloverMode') || 'manual')
-  const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }))
+  const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 0 }))
   const [tasks, setTasks] = useState([])
   const [goals, setGoals] = useState([])
   const [goalTasks, setGoalTasks] = useState([])
@@ -975,7 +975,7 @@ export default function App() {
     onDuplicateTask: duplicateTask,
     onPrevWeek: () => setWeekStart(w => subWeeks(w, 1)),
     onNextWeek: () => setWeekStart(w => addWeeks(w, 1)),
-    onThisWeek: () => setWeekStart(startOfWeek(new Date(), { weekStartsOn: 1 }))
+    onThisWeek: () => setWeekStart(startOfWeek(new Date(), { weekStartsOn: 0 }))
   }
 
   const dndSensors = useMemo(() => [useWarmupSensor], [])
@@ -999,17 +999,21 @@ export default function App() {
               <h1 className="text-base font-semibold text-gray-900 tracking-tight">Schedulent</h1>
             </div>
             <div className="flex items-center gap-2">
-              {calView === 'week' && <>
+              {(calView === 'week' || calView === 'workweek') && <>
                 <button onClick={sharedProps.onPrevWeek} className="px-2 py-1 text-sm text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded">Prev</button>
-                <span className="text-sm font-medium text-gray-700 min-w-[200px] text-center">{format(weekStart, 'MMM d')} - {format(addDays(weekStart, 6), 'MMM d, yyyy')}</span>
+                <span className="text-sm font-medium text-gray-700 min-w-[200px] text-center">
+                  {calView === 'workweek'
+                    ? `${format(addDays(weekStart, 1), 'MMM d')} - ${format(addDays(weekStart, 5), 'MMM d, yyyy')}`
+                    : `${format(weekStart, 'MMM d')} - ${format(addDays(weekStart, 6), 'MMM d, yyyy')}`}
+                </span>
                 <button onClick={sharedProps.onNextWeek} className="px-2 py-1 text-sm text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded">Next</button>
                 <button onClick={sharedProps.onThisWeek} className="px-3 py-1 text-xs text-indigo-600 border border-indigo-200 hover:bg-indigo-50 rounded">This week</button>
               </>}
               <div className="flex border border-gray-200 rounded-lg overflow-hidden ml-1">
-                {['week','month','day','year'].map(v => (
+                {[['week','Week'],['workweek','Work Week'],['month','Month'],['day','Day'],['year','Year']].map(([v, label]) => (
                   <button key={v} onClick={() => setCalView(v)}
                     className={'px-2.5 py-1 text-xs font-medium transition-colors ' + (calView === v ? 'bg-indigo-600 text-white' : 'text-gray-500 hover:bg-gray-50')}>
-                    {v.charAt(0).toUpperCase() + v.slice(1)}
+                    {label}
                   </button>
                 ))}
               </div>
@@ -1050,9 +1054,10 @@ export default function App() {
               {loading ? <div className="flex items-center justify-center h-full text-sm text-gray-400">Loading</div> : (
                 <>
                   {calView === 'week' && <WeekGrid days={weekDays} tasksForDay={tasksForDay} dueCardsForDay={dueCardsForDay} goalMap={goalMap} collabMap={collabMap} profileMap={profileMap} onMarkDone={markDone} onRescheduleToTomorrow={rescheduleToTomorrow} onMoveToInbox={moveToInbox} onDelete={requestDeleteTask} onEdit={setEditingTask} onDuplicate={duplicateTask} onAddTaskForDay={openAddForDay} onAddTaskForBucket={openAddForBucket} />}
-                  {calView === 'month' && <MonthView tasks={visibleTasks} onDayClick={(day) => { setCalView('week'); setWeekStart(startOfWeek(day, { weekStartsOn: 1 })) }} />}
+                  {calView === 'workweek' && <WeekGrid days={weekDays.slice(1, 6)} tasksForDay={tasksForDay} dueCardsForDay={dueCardsForDay} goalMap={goalMap} collabMap={collabMap} profileMap={profileMap} onMarkDone={markDone} onRescheduleToTomorrow={rescheduleToTomorrow} onMoveToInbox={moveToInbox} onDelete={requestDeleteTask} onEdit={setEditingTask} onDuplicate={duplicateTask} onAddTaskForDay={openAddForDay} onAddTaskForBucket={openAddForBucket} />}
+                  {calView === 'month' && <MonthView tasks={visibleTasks} onDayClick={(day) => { setCalView('week'); setWeekStart(startOfWeek(day, { weekStartsOn: 0 })) }} />}
                   {calView === 'day' && <DayView tasks={visibleTasks} goalMap={goalMap} collabMap={collabMap} profileMap={profileMap} onMarkDone={markDone} onRescheduleToTomorrow={rescheduleToTomorrow} onMoveToInbox={moveToInbox} onDelete={requestDeleteTask} onEdit={setEditingTask} onDuplicate={duplicateTask} onAddTaskForBucket={openAddForBucket} />}
-                  {calView === 'year' && <YearView tasks={visibleTasks} onMonthClick={() => setCalView('month')} onDayClick={(day) => { setCalView('week'); setWeekStart(startOfWeek(day, { weekStartsOn: 1 })) }} />}
+                  {calView === 'year' && <YearView tasks={visibleTasks} onMonthClick={() => setCalView('month')} onDayClick={(day) => { setCalView('week'); setWeekStart(startOfWeek(day, { weekStartsOn: 0 })) }} />}
                 </>
               )}
             </main>
