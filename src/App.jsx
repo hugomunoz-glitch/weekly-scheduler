@@ -406,7 +406,7 @@ export default function App() {
 
     if (recurrenceRule && scheduledDate) {
       const groupId = data.id
-      const futureDates = generateOccurrenceDates(scheduledDate, recurrenceRule).slice(1) // first is already inserted
+      const futureDates = generateOccurrenceDates(scheduledDate, recurrenceRule).filter(d => d !== scheduledDate)
       if (futureDates.length > 0) {
         const moreRows = futureDates.map((d, i) => ({
           title, notes: notes || null, goal_id: goalId || null, start_time: startTime || null, end_time: endTime || null, due_date: null,
