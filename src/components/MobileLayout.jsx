@@ -1149,7 +1149,6 @@ export default function MobileLayout({
 
   const tasksForDay = (date) => tasks.filter(t => t.scheduled_date === format(date, 'yyyy-MM-dd'))
   const dueCardsForDay = (date) => tasks.filter(t => t.due_date_card_date === format(date, 'yyyy-MM-dd'))
-  const dayNames = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
 
   return (
     <div ref={mobileScrollRef} style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', flexDirection: 'column', background: '#f9fafb', overflow: 'hidden' }}>
@@ -1194,7 +1193,7 @@ export default function MobileLayout({
           return (
             <button key={i} onClick={() => { setSelectedDay(format(day, 'yyyy-MM-dd')); setActiveTab('day'); setMobileCalView('week') }}
               style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 2px' }}>
-              <span style={{ fontSize: '12px', color: isSelected ? '#6366f1' : '#374151', fontWeight: 600, textTransform: 'uppercase' }}>{dayNames[i]}</span>
+              <span style={{ fontSize: '12px', color: isSelected ? '#6366f1' : '#374151', fontWeight: 600, textTransform: 'uppercase' }}>{format(day, 'EEEEE')}</span>
               <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: isSelected ? '#6366f1' : today ? '#e0e7ff' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <span style={{ fontSize: '17px', fontWeight: isSelected || today ? 700 : 500, color: isSelected ? 'white' : today ? '#6366f1' : '#374151' }}>{format(day, 'd')}</span>
               </div>
