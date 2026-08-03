@@ -80,7 +80,7 @@ function sortBucketTasks(list) {
 const RECURRENCE_SAFETY_CAP = 400
 const RECURRENCE_NEVER_HORIZON_DAYS = 730
 
-const WEEKDAY_CODES = { SU: 0, MO: 1, TU: 2, WE: 3, TH: 4, FR: 5, SA: 6 }
+const WEEKDAY_CODES = { MO: 0, TU: 1, WE: 2, TH: 3, FR: 4, SA: 5, SU: 6 }
 
 // Returns an array of 'yyyy-MM-dd' date strings for every occurrence of
 // `rule`, starting from and including startDateStr. Order is always
@@ -98,11 +98,12 @@ function generateOccurrenceDates(startDateStr, rule) {
   }
 
   if (rule.freq === 'weekly') {
+    const toMondayBased = d => d === 0 ? 6 : d - 1
     const byDay = (rule.byDay && rule.byDay.length > 0
       ? rule.byDay.map(c => WEEKDAY_CODES[c]).filter(n => n !== undefined)
-      : [getDay(start)]
+      : [toMondayBased(getDay(start))]
     ).sort((a, b) => a - b)
-    const anchorWeekStart = addDays(start, -getDay(start))
+    const anchorWeekStart = addDays(start, -toMondayBased(getDay(start)))
     outer:
     for (let w = 0; w < 3000; w += interval) {
       const weekStart = addDays(anchorWeekStart, w * 7)
