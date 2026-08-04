@@ -77,6 +77,7 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
   const [postDupGoalTitle, setPostDupGoalTitle] = useState('')
   const [postDupSaving, setPostDupSaving] = useState(false)
   const [inlineCategoryGoalId, setInlineCategoryGoalId] = useState(null)
+  const [popupCategoryOpen, setPopupCategoryOpen] = useState(false)
   const [editingId, setEditingId] = useState(null)
   const [editingTitle, setEditingTitle] = useState('')
   const [confirmDeleteId, setConfirmDeleteId] = useState(null)
@@ -859,7 +860,7 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
                       <p className="text-3xl font-bold text-gray-800 truncate">{goal.title}</p>
                     </div>
                     <button
-                      onClick={() => setViewingGoalId(null)}
+                      onClick={() => { setViewingGoalId(null); setPopupCategoryOpen(false) }}
                       className="w-7 h-7 flex items-center justify-center rounded-full bg-gray-700 text-white text-sm hover:bg-gray-900 shrink-0"
                       title="Close"
                     >
@@ -867,15 +868,15 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
                     </button>
                   </div>
                   <div className="p-4 max-h-[70vh] overflow-y-auto">
-                    {inlineCategoryGoalId === goal.id ? (
+                    {popupCategoryOpen ? (
                       <select
                         autoFocus
                         value={goal.category || ''}
                         onChange={async e => {
                           await onEditGoal(goal.id, goal.title, { ...goal, category: e.target.value || null }, goal.collaboration_id || null)
-                          setInlineCategoryGoalId(null)
+                          setPopupCategoryOpen(false)
                         }}
-                        onBlur={() => setInlineCategoryGoalId(null)}
+                        onBlur={() => setPopupCategoryOpen(false)}
                         className="text-sm border border-indigo-400 rounded-lg px-2 py-1 mb-3 focus:outline-none block"
                       >
                         <option value="">No category</option>
@@ -885,14 +886,14 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
                       <span
                         className="inline-block text-sm font-medium px-2 py-1 rounded mb-3 cursor-pointer hover:opacity-75"
                         style={{ color: categoryBadge(goal.category).color, background: categoryBadge(goal.category).color + '1a' }}
-                        onClick={() => setInlineCategoryGoalId(goal.id)}
+                        onClick={() => setPopupCategoryOpen(true)}
                         title="Click to change category"
                       >
                         {categoryBadge(goal.category).name}
                       </span>
                     ) : (
                       <button
-                        onClick={() => setInlineCategoryGoalId(goal.id)}
+                        onClick={() => setPopupCategoryOpen(true)}
                         className="text-sm font-medium px-2 py-1 rounded mb-3 border border-dashed border-gray-300 text-gray-400 hover:border-indigo-400 hover:text-indigo-500 transition-colors block"
                       >+ Category</button>
                     )}
