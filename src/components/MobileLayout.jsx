@@ -724,7 +724,32 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
                     <p style={{ fontSize: '30px', fontWeight: 700, color: '#1f2937', margin: 0 }}>{goal.title}</p>
                   </div>
-                  {categoryBadge(goal.category) && <span style={{ display: 'inline-block', fontSize: '12px', fontWeight: 500, padding: '3px 8px', borderRadius: '6px', marginTop: '2px', marginBottom: '8px', color: categoryBadge(goal.category).color, background: categoryBadge(goal.category).color + '1a' }}>{categoryBadge(goal.category).name}</span>}
+                  {inlineCategoryGoalId === goal.id ? (
+                    <select
+                      autoFocus
+                      value={goal.category || ''}
+                      onChange={async e => {
+                        await onEditGoal(goal.id, goal.title, { ...goal, category: e.target.value || null }, goal.collaboration_id || null)
+                        setInlineCategoryGoalId(null)
+                      }}
+                      onBlur={() => setInlineCategoryGoalId(null)}
+                      style={{ fontSize: '12px', border: '1px solid #6366f1', borderRadius: '6px', padding: '3px 8px', outline: 'none', marginBottom: '8px', display: 'block' }}
+                    >
+                      <option value="">No category</option>
+                      {allCategories.map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                  ) : categoryBadge(goal.category) ? (
+                    <span
+                      onClick={() => setInlineCategoryGoalId(goal.id)}
+                      style={{ display: 'inline-block', fontSize: '12px', fontWeight: 500, padding: '3px 8px', borderRadius: '6px', marginTop: '2px', marginBottom: '8px', color: categoryBadge(goal.category).color, background: categoryBadge(goal.category).color + '1a', cursor: 'pointer' }}
+                      title="Tap to change category"
+                    >{categoryBadge(goal.category).name}</span>
+                  ) : (
+                    <button
+                      onClick={() => setInlineCategoryGoalId(goal.id)}
+                      style={{ fontSize: '12px', fontWeight: 500, padding: '3px 8px', borderRadius: '6px', marginTop: '2px', marginBottom: '8px', border: '1px dashed #d1d5db', color: '#9ca3af', background: 'none', cursor: 'pointer', display: 'inline-block' }}
+                    >+ Category</button>
+                  )}
                   {(goal.smart_specific || goal.smart_measurable || goal.smart_achievable || goal.smart_relevant || goal.smart_timebound) && (
                     <div style={{ background: '#f9fafb', borderRadius: '8px', padding: '8px', marginBottom: '10px', display: 'flex', flexDirection: 'column', gap: '3px' }}>
                       {goal.smart_specific && <p style={{ fontSize: '11px', color: '#4b5563', margin: 0 }}><b>Specific:</b> {goal.smart_specific}</p>}

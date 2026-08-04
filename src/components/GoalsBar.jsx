@@ -867,13 +867,34 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
                     </button>
                   </div>
                   <div className="p-4 max-h-[70vh] overflow-y-auto">
-                    {categoryBadge(goal.category) && (
+                    {inlineCategoryGoalId === goal.id ? (
+                      <select
+                        autoFocus
+                        value={goal.category || ''}
+                        onChange={async e => {
+                          await onEditGoal(goal.id, goal.title, { ...goal, category: e.target.value || null }, goal.collaboration_id || null)
+                          setInlineCategoryGoalId(null)
+                        }}
+                        onBlur={() => setInlineCategoryGoalId(null)}
+                        className="text-sm border border-indigo-400 rounded-lg px-2 py-1 mb-3 focus:outline-none block"
+                      >
+                        <option value="">No category</option>
+                        {allCategories.map(c => <option key={c} value={c}>{c}</option>)}
+                      </select>
+                    ) : categoryBadge(goal.category) ? (
                       <span
-                        className="inline-block text-sm font-medium px-2 py-1 rounded mb-3"
+                        className="inline-block text-sm font-medium px-2 py-1 rounded mb-3 cursor-pointer hover:opacity-75"
                         style={{ color: categoryBadge(goal.category).color, background: categoryBadge(goal.category).color + '1a' }}
+                        onClick={() => setInlineCategoryGoalId(goal.id)}
+                        title="Click to change category"
                       >
                         {categoryBadge(goal.category).name}
                       </span>
+                    ) : (
+                      <button
+                        onClick={() => setInlineCategoryGoalId(goal.id)}
+                        className="text-sm font-medium px-2 py-1 rounded mb-3 border border-dashed border-gray-300 text-gray-400 hover:border-indigo-400 hover:text-indigo-500 transition-colors block"
+                      >+ Category</button>
                     )}
                     {(goal.smart_specific || goal.smart_measurable || goal.smart_achievable || goal.smart_relevant || goal.smart_timebound) && (
                       <div className="mb-4 p-3 bg-gray-50 rounded-lg space-y-1">
