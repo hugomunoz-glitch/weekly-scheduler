@@ -603,9 +603,9 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
               {onDuplicateGoal && <button onClick={(e) => { e.stopPropagation(); setPressedGoalId(null); onDuplicateGoal(goal.id) }} style={{ fontSize: '20px', color: '#6b7280', background: 'none', border: 'none', padding: 0, cursor: 'pointer', lineHeight: 1 }} title="Duplicate goal">&#10697;</button>}
               {!isFullyCompleted && onPauseGoal && (
                 mobileStatus === 'paused' ? (
-                  <button onClick={(e) => { e.stopPropagation(); setPressedGoalId(null); onPauseGoal(goal.id, false) }} style={{ fontSize: '11px', fontWeight: 600, padding: '3px 8px', borderRadius: '5px', border: '1px solid #c7d2fe', color: '#4338ca', background: '#eef2ff', cursor: 'pointer' }}>▶ Resume</button>
+                  <button onClick={(e) => { e.stopPropagation(); setPressedGoalId(null); onPauseGoal(goal.id, false) }} style={{ fontSize: '14px', fontWeight: 600, padding: '3px 8px', borderRadius: '5px', border: '1px solid #c7d2fe', color: '#4338ca', background: '#eef2ff', cursor: 'pointer' }} title="Resume goal">▶</button>
                 ) : (
-                  <button onClick={(e) => { e.stopPropagation(); setPressedGoalId(null); onPauseGoal(goal.id, true) }} style={{ fontSize: '11px', fontWeight: 600, padding: '3px 8px', borderRadius: '5px', border: '1px solid #fde68a', color: '#b45309', background: '#fffbeb', cursor: 'pointer' }}>⏸ Pause</button>
+                  <button onClick={(e) => { e.stopPropagation(); setPressedGoalId(null); onPauseGoal(goal.id, true) }} style={{ fontSize: '14px', fontWeight: 600, padding: '3px 8px', borderRadius: '5px', border: '1px solid #fde68a', color: '#b45309', background: '#fffbeb', cursor: 'pointer' }} title="Pause goal">⏸</button>
                 )
               )}
               <button onClick={(e) => { e.stopPropagation(); setPressedGoalId(null); onDeleteGoal(goal.id) }} style={{ fontSize: '18px', color: '#ef4444', background: 'none', border: 'none', padding: 0, cursor: 'pointer', lineHeight: 1, marginLeft: 'auto' }} title="Delete goal">&#128465;</button>

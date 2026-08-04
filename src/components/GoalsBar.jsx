@@ -816,14 +816,14 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
                         className="text-[10px] font-semibold px-1.5 py-0.5 rounded border transition-colors"
                         style={{ color: '#4338ca', background: '#eef2ff', borderColor: '#c7d2fe' }}
                         title="Resume goal"
-                      >▶ Resume</button>
+                      >▶</button>
                     ) : (
                       <button
                         onClick={(e) => { e.stopPropagation(); onPauseGoal(goal.id, true) }}
                         className="text-[10px] font-semibold px-1.5 py-0.5 rounded border transition-colors"
                         style={{ color: '#b45309', background: '#fffbeb', borderColor: '#fde68a' }}
                         title="Pause goal"
-                      >⏸ Pause</button>
+                      >⏸</button>
                     )
                   )}
                   {isFullyCompleted && (
