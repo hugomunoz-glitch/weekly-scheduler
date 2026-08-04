@@ -267,6 +267,13 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
     }
     return result * sortDir
   })
+  // Partition: fully completed goals go to bottom
+  const [mobileActiveGoals, mobileCompletedGoals] = visibleGoals.reduce(([a, c], g) => {
+    const linked = goalTasks.filter(t => t.goal_id === g.id)
+    const isFullyDone = linked.length > 0 && linked.every(t => t.status === 'done')
+    return isFullyDone ? [a, [...c, g]] : [[...a, g], c]
+  }, [[], []])
+  visibleGoals = [...mobileActiveGoals, ...mobileCompletedGoals]
 
   function handleEditTask(taskId) {
     const full = (allTasks || []).find(t => t.id === taskId)
