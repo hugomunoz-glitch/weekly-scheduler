@@ -1186,7 +1186,8 @@ export default function MobileLayout({
     return inWeek ? todayStr : format(weekDays[0], 'yyyy-MM-dd')
   })
   const [activeTab, setActiveTab] = useState(() => localStorage.getItem('mobileDefaultTab') || 'day')
-  const [mobileCalView, setMobileCalView] = useState(() => localStorage.getItem('mobileCalView') || 'week')
+  const [mobileCalView, setMobileCalView] = useState(() => localStorage.getItem('mobileCalView') || localStorage.getItem('mobileDefaultCalView') || 'week')
+  const [mobileDefaultCalView, setMobileDefaultCalView] = useState(() => localStorage.getItem('mobileDefaultCalView') || localStorage.getItem('mobileCalView') || 'week')
   const mobileScrollRef = useRef(null)
   const { pullY, refreshing } = usePullToRefresh(onRefresh || (() => {}), mobileScrollRef)
 
@@ -1461,7 +1462,7 @@ export default function MobileLayout({
         </>
       )}
 
-      {(mobileCalView === 'week' || mobileCalView === 'workweek') && activeTab === 'settings' && (
+      {activeTab === 'settings' && (
         <div style={{ flex: 1, overflowY: 'auto', padding: '16px' }}>
           <div style={{ padding: '4px 0 12px' }}>
             <span style={{ fontSize: '15px', fontWeight: 500, color: '#111827' }}>&#9881; Settings</span>
@@ -1469,8 +1470,8 @@ export default function MobileLayout({
           <div style={{ border: '1px solid #e5e7eb', borderRadius: '10px', padding: '14px', marginBottom: '10px', background: 'white' }}>
             <p style={{ margin: '0 0 10px', fontSize: '13px', fontWeight: 600, color: '#374151' }}>Default view</p>
             <select
-              value={mobileCalView}
-              onChange={e => { setMobileCalView(e.target.value); localStorage.setItem('mobileCalView', e.target.value) }}
+              value={mobileDefaultCalView}
+              onChange={e => { setMobileDefaultCalView(e.target.value); localStorage.setItem('mobileDefaultCalView', e.target.value) }}
               style={{ width: '100%', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '8px', fontSize: '13px', marginBottom: '12px', outline: 'none' }}
             >
               <option value="week">Week</option>
