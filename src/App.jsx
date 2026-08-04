@@ -154,9 +154,9 @@ export default function App() {
   const [collaborations, setCollaborations] = useState([])
   const [collabMembersMap, setCollabMembersMap] = useState({})
   const [activeView, setActiveView] = useState('personal')
-  const [calView, setCalView] = useState('week')
-  const [showGoals, setShowGoals] = useState(() => localStorage.getItem('showGoals') !== 'false')
-  const [showSidebar, setShowSidebar] = useState(() => localStorage.getItem('showSidebar') !== 'false')
+  const [calView, setCalView] = useState(() => localStorage.getItem('calView') || 'day')
+  const [showGoals, setShowGoals] = useState(() => localStorage.getItem('showGoals') === 'true')
+  const [showSidebar, setShowSidebar] = useState(() => localStorage.getItem('showSidebar') === 'true')
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i))
 
   useEffect(() => {
@@ -1022,7 +1022,7 @@ export default function App() {
               </>}
               <div className="flex border border-gray-200 rounded-lg overflow-hidden ml-1">
                 {[['week','Week'],['workweek','Work Week'],['month','Month'],['day','Day'],['year','Year']].map(([v, label]) => (
-                  <button key={v} onClick={() => setCalView(v)}
+                  <button key={v} onClick={() => { setCalView(v); localStorage.setItem('calView', v) }}
                     className={'px-2.5 py-1 text-xs font-medium transition-colors ' + (calView === v ? 'bg-indigo-600 text-white' : 'text-gray-500 hover:bg-gray-50')}>
                     {label}
                   </button>
@@ -1064,9 +1064,9 @@ export default function App() {
                 <>
                   {calView === 'week' && <WeekGrid days={weekDays} tasksForDay={tasksForDay} dueCardsForDay={dueCardsForDay} goalMap={goalMap} collabMap={collabMap} profileMap={profileMap} onMarkDone={markDone} onRescheduleToTomorrow={rescheduleToTomorrow} onMoveToInbox={moveToInbox} onDelete={requestDeleteTask} onEdit={setEditingTask} onDuplicate={duplicateTask} onAddTaskForDay={openAddForDay} onAddTaskForBucket={openAddForBucket} />}
                   {calView === 'workweek' && <WeekGrid days={weekDays.slice(1, 6)} tasksForDay={tasksForDay} dueCardsForDay={dueCardsForDay} goalMap={goalMap} collabMap={collabMap} profileMap={profileMap} onMarkDone={markDone} onRescheduleToTomorrow={rescheduleToTomorrow} onMoveToInbox={moveToInbox} onDelete={requestDeleteTask} onEdit={setEditingTask} onDuplicate={duplicateTask} onAddTaskForDay={openAddForDay} onAddTaskForBucket={openAddForBucket} />}
-                  {calView === 'month' && <MonthView tasks={visibleTasks} onDayClick={(day) => { setCalView('week'); setWeekStart(startOfWeek(day, { weekStartsOn: 0 })) }} />}
+                  {calView === 'month' && <MonthView tasks={visibleTasks} onDayClick={(day) => { setCalView('week'); localStorage.setItem('calView', 'week'); setWeekStart(startOfWeek(day, { weekStartsOn: 0 })) }} />}
                   {calView === 'day' && <DayView tasks={visibleTasks} goalMap={goalMap} collabMap={collabMap} profileMap={profileMap} onMarkDone={markDone} onRescheduleToTomorrow={rescheduleToTomorrow} onMoveToInbox={moveToInbox} onDelete={requestDeleteTask} onEdit={setEditingTask} onDuplicate={duplicateTask} onAddTaskForBucket={openAddForBucket} />}
-                  {calView === 'year' && <YearView tasks={visibleTasks} onMonthClick={() => setCalView('month')} onDayClick={(day) => { setCalView('week'); setWeekStart(startOfWeek(day, { weekStartsOn: 0 })) }} />}
+                  {calView === 'year' && <YearView tasks={visibleTasks} onMonthClick={() => { setCalView('month'); localStorage.setItem('calView', 'month') }} onDayClick={(day) => { setCalView('week'); localStorage.setItem('calView', 'week'); setWeekStart(startOfWeek(day, { weekStartsOn: 0 })) }} />}
                 </>
               )}
             </main>
