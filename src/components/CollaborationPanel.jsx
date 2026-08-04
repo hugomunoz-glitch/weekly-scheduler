@@ -370,10 +370,9 @@ export default function CollaborationPanel({ onClose }) {
   }
 
   async function deleteArtifact(artifactId) {
-    await supabase.from('artifacts')
-      .update({ deleted_at: new Date().toISOString(), deleted_by: user.id })
-      .eq('id', artifactId)
-    fetchArtifacts()
+    const { error } = await supabase.from('artifacts').delete().eq('id', artifactId)
+    if (error) { setError(error.message); return }
+    setArtifacts(prev => prev.filter(a => a.id !== artifactId))
   }
 
   async function markNotificationsRead(artifactId) {
