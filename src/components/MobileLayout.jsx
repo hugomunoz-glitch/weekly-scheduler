@@ -124,6 +124,7 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
   const [viewingGoalId, setViewingGoalId] = useState(null)
   const [newTaskTitle, setNewTaskTitle] = useState('')
   const [goalSearch, setGoalSearch] = useState('')
+  const [inlineCategoryGoalId, setInlineCategoryGoalId] = useState(null)
   const [showGoalSearch, setShowGoalSearch] = useState(false)
   const [sortMode, setSortMode] = useState('deadline')
   const [sortDir, setSortDir] = useState(1)
@@ -577,11 +578,31 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
             >&#8942;</button>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px', paddingLeft: '2px', flexWrap: 'wrap' }}>
-            {categoryBadge(goal.category) ? (
-              <span style={{ fontSize: '10px', fontWeight: 500, padding: '2px 6px', borderRadius: '4px', color: categoryBadge(goal.category).color, background: categoryBadge(goal.category).color + '1a' }}>{categoryBadge(goal.category).name}</span>
+            {inlineCategoryGoalId === goal.id ? (
+              <select
+                autoFocus
+                value={goal.category || ''}
+                onClick={e => e.stopPropagation()}
+                onChange={async e => {
+                  e.stopPropagation()
+                  await onEditGoal(goal.id, goal.title, { ...goal, category: e.target.value || null }, goal.collaboration_id || null)
+                  setInlineCategoryGoalId(null)
+                }}
+                onBlur={() => setInlineCategoryGoalId(null)}
+                style={{ fontSize: '11px', border: '1px solid #6366f1', borderRadius: '6px', padding: '2px 6px', outline: 'none' }}
+              >
+                <option value="">No category</option>
+                {allCategories.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            ) : categoryBadge(goal.category) ? (
+              <span
+                onClick={e => { e.stopPropagation(); setInlineCategoryGoalId(goal.id) }}
+                style={{ fontSize: '10px', fontWeight: 500, padding: '2px 6px', borderRadius: '4px', color: categoryBadge(goal.category).color, background: categoryBadge(goal.category).color + '1a', cursor: 'pointer' }}
+                title="Tap to change category"
+              >{categoryBadge(goal.category).name}</span>
             ) : (
               <button
-                onClick={(e) => { e.stopPropagation(); startEditGoal(goal) }}
+                onClick={(e) => { e.stopPropagation(); setInlineCategoryGoalId(goal.id) }}
                 style={{ fontSize: '10px', fontWeight: 500, padding: '2px 6px', borderRadius: '4px', border: '1px dashed #d1d5db', color: '#9ca3af', background: 'none', cursor: 'pointer', display: 'block' }}
               >+ Category</button>
             )}
