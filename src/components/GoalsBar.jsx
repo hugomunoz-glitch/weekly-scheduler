@@ -813,15 +813,19 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
                     status === 'paused' ? (
                       <button
                         onClick={(e) => { e.stopPropagation(); onPauseGoal(goal.id, false) }}
-                        className="text-[18px] text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 px-1.5 py-0.5 rounded transition-colors leading-none"
+                        className="text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 px-1.5 py-0.5 rounded transition-colors leading-none flex items-center"
                         title="Resume goal"
-                      >▶</button>
+                      >
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
+                      </button>
                     ) : (
                       <button
                         onClick={(e) => { e.stopPropagation(); onPauseGoal(goal.id, true) }}
-                        className="text-[18px] text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 px-1.5 py-0.5 rounded transition-colors leading-none"
+                        className="text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 px-1.5 py-0.5 rounded transition-colors leading-none flex items-center"
                         title="Pause goal"
-                      >⏸</button>
+                      >
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+                      </button>
                     )
                   )}
                   {isFullyCompleted && (
