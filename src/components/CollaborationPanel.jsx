@@ -19,6 +19,9 @@ export default function CollaborationPanel({ onClose }) {
   const [creating, setCreating] = useState(false)
   const [inviteCodes, setInviteCodes] = useState({})
   const [generating, setGenerating] = useState(null)
+  const [inviteEmailTarget, setInviteEmailTarget] = useState(null) // collab.id currently showing email input
+  const [inviteEmailValue, setInviteEmailValue] = useState('')
+  const [sendingInviteEmail, setSendingInviteEmail] = useState(false)
   const [copiedCode, setCopiedCode] = useState(null)
   const [error, setError] = useState(null)
   const [redeemCode, setRedeemCode] = useState('')
@@ -155,7 +158,7 @@ export default function CollaborationPanel({ onClose }) {
     fetchCollaborations()
   }
 
-  async function generateInvite(collaborationId) {
+  async function generateInvite(collaborationId, email) {
     setGenerating(collaborationId)
     setError(null)
     const code = randomCode()
@@ -166,6 +169,16 @@ export default function CollaborationPanel({ onClose }) {
       ...prev,
       [collaborationId]: [{ code, collaboration_id: collaborationId, used_by: null, created_at: new Date().toISOString() }, ...(prev[collaborationId] || [])]
     }))
+    if (email) {
+      setSendingInviteEmail(true)
+      const collab = collaborations.find(c => c.id === collaborationId)
+      await supabase.functions.invoke('notify-collaboration-invite', {
+        body: { email, code, collaborationName: collab?.name || 'a collaboration' }
+      })
+      setSendingInviteEmail(false)
+      setInviteEmailTarget(null)
+      setInviteEmailValue('')
+    }
   }
 
   function copyCode(code) {
@@ -432,14 +445,40 @@ export default function CollaborationPanel({ onClose }) {
               <div key={collab.id} className="border border-gray-200 rounded-lg p-3">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-sm font-semibold text-gray-900">{collab.name}</h3>
-                  <button
-                    onClick={() => generateInvite(collab.id)}
-                    disabled={generating === collab.id}
-                    className="text-xs text-indigo-600 hover:text-indigo-700 font-medium disabled:opacity-50"
-                  >
-                    {generating === collab.id ? 'Generating...' : '+ Generate invite'}
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => { setInviteEmailTarget(inviteEmailTarget === collab.id ? null : collab.id); setInviteEmailValue('') }}
+                      className="text-xs text-indigo-600 hover:text-indigo-700 font-medium"
+                    >
+                      ✉ Email invite
+                    </button>
+                    <button
+                      onClick={() => generateInvite(collab.id)}
+                      disabled={generating === collab.id}
+                      className="text-xs text-indigo-600 hover:text-indigo-700 font-medium disabled:opacity-50"
+                    >
+                      {generating === collab.id ? 'Generating...' : '+ Invite code'}
+                    </button>
+                  </div>
                 </div>
+                {inviteEmailTarget === collab.id && (
+                  <div className="flex gap-2 mb-2">
+                    <input
+                      type="email"
+                      placeholder="their@email.com"
+                      value={inviteEmailValue}
+                      onChange={e => setInviteEmailValue(e.target.value)}
+                      className="flex-1 text-xs border border-gray-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-indigo-400"
+                    />
+                    <button
+                      onClick={() => generateInvite(collab.id, inviteEmailValue.trim())}
+                      disabled={!inviteEmailValue.trim() || generating === collab.id || sendingInviteEmail}
+                      className="text-xs px-3 py-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 font-medium"
+                    >
+                      {sendingInviteEmail ? 'Sending...' : 'Send'}
+                    </button>
+                  </div>
+                )}
                 <div className="text-xs text-gray-500 mb-2">
                   Members: {collab.collaboration_members?.map(m => m.profiles?.username || 'unknown').join(', ') || '—'}
                 </div>
