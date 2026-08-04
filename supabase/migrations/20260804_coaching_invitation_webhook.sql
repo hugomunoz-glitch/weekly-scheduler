@@ -17,8 +17,8 @@ BEGIN
   -- These are set as Supabase Vault secrets / project env vars.
   -- The Edge Function reads them from Deno.env, not from here.
   -- We just need to fire the webhook; auth is handled by the function.
-  SELECT value INTO _project_ref  FROM vault.decrypted_secrets WHERE name = 'project_ref'  LIMIT 1;
-  SELECT value INTO _service_role_key FROM vault.decrypted_secrets WHERE name = 'service_role_key' LIMIT 1;
+  SELECT decrypted_secret INTO _project_ref  FROM vault.decrypted_secrets WHERE name = 'project_ref'  LIMIT 1;
+  SELECT decrypted_secret INTO _service_role_key FROM vault.decrypted_secrets WHERE name = 'service_role_key' LIMIT 1;
 
   PERFORM net.http_post(
     url     => 'https://' || _project_ref || '.supabase.co/functions/v1/notify-coaching-invitation',
