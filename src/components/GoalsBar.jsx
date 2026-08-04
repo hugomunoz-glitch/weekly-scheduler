@@ -167,7 +167,7 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
       const bRank = b.priority in PRIORITY_RANK ? PRIORITY_RANK[b.priority] : 3
       result = aRank !== bRank ? aRank - bRank : a.title.localeCompare(b.title)
     } else if (sortMode === 'progress') {
-      const statusRank = { in_progress: 0, paused: 1, not_started: 2, completed: 3 }
+      const statusRank = { completed: 0, in_progress: 1, paused: 2, not_started: 3 }
       const aR = statusRank[goalStatus(a, goalTasks)] ?? 2
       const bR = statusRank[goalStatus(b, goalTasks)] ?? 2
       result = aR !== bR ? aR - bR : a.title.localeCompare(b.title)

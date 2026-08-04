@@ -255,7 +255,7 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
       const bRank = b.priority in PRIORITY_RANK ? PRIORITY_RANK[b.priority] : 3
       result = aRank !== bRank ? aRank - bRank : a.title.localeCompare(b.title)
     } else if (sortMode === 'progress') {
-      const statusRank = { in_progress: 0, paused: 1, not_started: 2, completed: 3 }
+      const statusRank = { completed: 0, in_progress: 1, paused: 2, not_started: 3 }
       function mobileGoalStatus(g) {
         if (g.status === 'paused') return 'paused'
         const lnk = goalTasks.filter(t => t.goal_id === g.id)
