@@ -525,8 +525,11 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
                   <form onSubmit={(e) => handleAddTaskToGoal(e, goal.id)} className="mt-3 pt-3 border-t border-gray-100 space-y-2">
                     <div className="flex items-center justify-between">
                       <p className="text-xs font-medium text-gray-500">Add task</p>
-                      <button type="button" onClick={() => { setBulkPopupMode(m => !m); setNewTaskTitle(''); setBulkPopupText('') }}
-                        className="text-xs text-indigo-500 hover:text-indigo-700">
+                      <button type="button" onClick={() => {
+                        if (bulkPopupMode) { setNewTaskTitle(bulkPopupText.split('\n')[0].trim()); setBulkPopupText('') }
+                        else { setBulkPopupText(newTaskTitle); setNewTaskTitle('') }
+                        setBulkPopupMode(m => !m)
+                      }} className="text-xs text-indigo-500 hover:text-indigo-700">
                         {bulkPopupMode ? 'Single task' : 'Add multiple at once'}
                       </button>
                     </div>
