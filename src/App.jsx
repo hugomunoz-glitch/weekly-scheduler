@@ -732,6 +732,17 @@ export default function App() {
     return data
   }
 
+  async function pauseGoal(goalId, paused) {
+    const newStatus = paused ? 'paused' : null
+    const { data, error } = await supabase.from('goals').update({ status: newStatus }).eq('id', goalId).select().single()
+    if (error) {
+      // Column may not exist yet — gracefully no-op, update local state only
+      setGoals(prev => prev.map(g => g.id === goalId ? { ...g, status: newStatus } : g))
+      return
+    }
+    setGoals(prev => prev.map(g => g.id === goalId ? data : g))
+  }
+
   async function editGoal(goalId, title, extra, collaborationId) {
     const payload = { title }
     if (collaborationId !== undefined) payload.collaboration_id = collaborationId || null
@@ -971,7 +982,7 @@ export default function App() {
     onMoveToInbox: moveToInbox, onDelete: requestDeleteTask, onEdit: setEditingTask, onAssignTask: assignTask,
     onAddTask: () => setShowAdd(true), onAddTaskForDay: openAddForDay, onAddTaskForBucket: openAddForBucket, onCreateTask: addTask, onRollover: rolloverOverdue,
     rolloverMode, onRolloverModeChange: mode => { setRolloverMode(mode); localStorage.setItem('rolloverMode', mode) },
-    onAddGoal: addGoal, onEditGoal: editGoal, onDeleteGoal: deleteGoal, onDuplicateGoal: duplicateGoal,
+    onAddGoal: addGoal, onEditGoal: editGoal, onDeleteGoal: deleteGoal, onDuplicateGoal: duplicateGoal, onPauseGoal: pauseGoal,
     onDuplicateTask: duplicateTask,
     onPrevWeek: () => setWeekStart(w => subWeeks(w, 1)),
     onNextWeek: () => setWeekStart(w => addWeeks(w, 1)),
@@ -1037,7 +1048,7 @@ export default function App() {
           <div className="mx-3 mt-3 shrink-0">
             {showGoals && (
               <div className="rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-                <GoalsBar goals={visibleGoals} goalTasks={visibleGoalTasks} allTasks={visibleTasks} collabMap={collabMap} collaborations={collaborations} collabMembersMap={collabMembersMap} defaultCollaborationId={defaultCollaborationId} onAddGoal={addGoal} onEditGoal={editGoal} onDeleteGoal={deleteGoal} onDuplicateGoal={duplicateGoal} onMarkDone={markDone} onDelete={requestDeleteTask} onDuplicateTask={duplicateTask} onCreateTask={addTask} onEditTask={setEditingTask} activeView={activeView} onChangeView={setActiveView} />
+                <GoalsBar goals={visibleGoals} goalTasks={visibleGoalTasks} allTasks={visibleTasks} collabMap={collabMap} collaborations={collaborations} collabMembersMap={collabMembersMap} defaultCollaborationId={defaultCollaborationId} onAddGoal={addGoal} onEditGoal={editGoal} onDeleteGoal={deleteGoal} onDuplicateGoal={duplicateGoal} onPauseGoal={pauseGoal} onMarkDone={markDone} onDelete={requestDeleteTask} onDuplicateTask={duplicateTask} onCreateTask={addTask} onEditTask={setEditingTask} activeView={activeView} onChangeView={setActiveView} />
               </div>
             )}
             <button

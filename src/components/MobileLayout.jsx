@@ -108,7 +108,7 @@ function longPressHandlers(timerRef, firedRef, onLongPress, ms = 550) {
 }
 
 
-function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations, defaultCollaborationId, onAddGoal, onEditGoal, onDeleteGoal, onDuplicateGoal, onMarkDone, onDelete, onCreateTask, onEditTask }) {
+function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations, defaultCollaborationId, onAddGoal, onEditGoal, onDeleteGoal, onDuplicateGoal, onPauseGoal, onMarkDone, onDelete, onCreateTask, onEditTask }) {
   const [adding, setAdding] = useState(false)
   const [newTitle, setNewTitle] = useState('')
   const [newCategory, setNewCategory] = useState('')
@@ -545,8 +545,19 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
         const done = linked.filter(t => t.status === 'done')
         const pct = linked.length > 0 ? Math.round((done.length / linked.length) * 100) : 0
         const goalDisplayColor = (goal.category ? categoryBadge(goal.category)?.color : null) || goal.color
+        const isFullyCompleted = linked.length > 0 && linked.every(t => t.status === 'done')
+        const mobileStatus = goal.status === 'paused' ? 'paused' : isFullyCompleted ? 'completed' : linked.some(t => t.status === 'done') ? 'in_progress' : 'not_started'
+        const MOBILE_STATUS_BADGE = {
+          in_progress: { label: 'In Progress', color: '#4338ca', bg: '#eef2ff', dot: '#6366f1' },
+          paused:      { label: 'Paused',      color: '#b45309', bg: '#fffbeb', dot: '#f59e0b' },
+          completed:   { label: 'Completed',   color: '#059669', bg: '#d1fae5', dot: '#10b981' },
+          not_started: null,
+        }
+        const mobileStatusBadge = MOBILE_STATUS_BADGE[mobileStatus]
+        const cardBg = mobileStatus === 'paused' ? '#fffbeb' : 'white'
+        const cardBorder = mobileStatus === 'paused' ? '1px solid #fde68a' : '1px solid #e5e7eb'
       return (
-        <div key={goal.id} onClick={() => { if (pressedGoalId !== goal.id) setViewingGoalId(goal.id) }} style={{ border: '1px solid #e5e7eb', borderLeft: goal.priority && PRIORITY_BORDER[goal.priority] ? '4px solid ' + PRIORITY_BORDER[goal.priority] : '1px solid #e5e7eb', borderRadius: '10px', padding: '10px 12px', marginBottom: '8px', background: 'white', position: 'relative', cursor: 'pointer' }}>
+        <div key={goal.id} onClick={() => { if (pressedGoalId !== goal.id) setViewingGoalId(goal.id) }} style={{ border: cardBorder, borderLeft: goal.priority && PRIORITY_BORDER[goal.priority] ? '4px solid ' + PRIORITY_BORDER[goal.priority] : cardBorder, borderRadius: '10px', padding: '10px 12px', marginBottom: '8px', background: cardBg, position: 'relative', cursor: 'pointer' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
             <span style={{ fontSize: "15px", fontWeight: 600, color: "#1f2937", flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{goal.title}</span>
             {goal.collaboration_id && collabMap && collabMap[goal.collaboration_id] && (
@@ -572,6 +583,12 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
                 {goal.term === 'long' ? 'Long-term' : 'Short-term'}
               </span>
             )}
+            {mobileStatusBadge && (
+              <span style={{ fontSize: '10px', fontWeight: 600, padding: '2px 6px', borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '3px', color: mobileStatusBadge.color, background: mobileStatusBadge.bg }}>
+                <span style={{ width: 5, height: 5, borderRadius: '50%', background: mobileStatusBadge.dot, display: 'inline-block', flexShrink: 0 }} />
+                {mobileStatusBadge.label}
+              </span>
+            )}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingLeft: '2px' }}>
             <div style={{ flex: 1, height: '4px', background: '#f3f4f6', borderRadius: '2px', overflow: 'hidden' }}>
@@ -584,6 +601,13 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
             <div onClick={e => e.stopPropagation()} style={{ display: 'flex', alignItems: 'center', gap: '14px', marginTop: '8px', paddingTop: '8px', borderTop: '1px solid #f3f4f6' }}>
               <button onClick={(e) => { e.stopPropagation(); setPressedGoalId(null); startEditGoal(goal) }} style={{ fontSize: '24px', color: '#6b7280', background: 'none', border: 'none', padding: 0, cursor: 'pointer', lineHeight: 1 }} title="Edit goal">&#9998;</button>
               {onDuplicateGoal && <button onClick={(e) => { e.stopPropagation(); setPressedGoalId(null); onDuplicateGoal(goal.id) }} style={{ fontSize: '20px', color: '#6b7280', background: 'none', border: 'none', padding: 0, cursor: 'pointer', lineHeight: 1 }} title="Duplicate goal">&#10697;</button>}
+              {!isFullyCompleted && onPauseGoal && (
+                mobileStatus === 'paused' ? (
+                  <button onClick={(e) => { e.stopPropagation(); setPressedGoalId(null); onPauseGoal(goal.id, false) }} style={{ fontSize: '11px', fontWeight: 600, padding: '3px 8px', borderRadius: '5px', border: '1px solid #c7d2fe', color: '#4338ca', background: '#eef2ff', cursor: 'pointer' }}>▶ Resume</button>
+                ) : (
+                  <button onClick={(e) => { e.stopPropagation(); setPressedGoalId(null); onPauseGoal(goal.id, true) }} style={{ fontSize: '11px', fontWeight: 600, padding: '3px 8px', borderRadius: '5px', border: '1px solid #fde68a', color: '#b45309', background: '#fffbeb', cursor: 'pointer' }}>⏸ Pause</button>
+                )
+              )}
               <button onClick={(e) => { e.stopPropagation(); setPressedGoalId(null); onDeleteGoal(goal.id) }} style={{ fontSize: '18px', color: '#ef4444', background: 'none', border: 'none', padding: 0, cursor: 'pointer', lineHeight: 1, marginLeft: 'auto' }} title="Delete goal">&#128465;</button>
             </div>
           )}
@@ -1293,7 +1317,7 @@ export default function MobileLayout({
       )}
 
       {(mobileCalView === 'week' || mobileCalView === 'workweek') && activeTab === 'goals' && (
-        <MobileGoalsBar goals={goals} goalTasks={goalTasks} allTasks={tasks} collabMap={collabMap} collaborations={collaborations} defaultCollaborationId={defaultCollaborationId} onAddGoal={onAddGoal} onEditGoal={onEditGoal} onDeleteGoal={onDeleteGoal} onDuplicateGoal={onDuplicateGoal} onMarkDone={onMarkDone} onDelete={onDelete} onCreateTask={onCreateTask} onEditTask={onEdit} />
+        <MobileGoalsBar goals={goals} goalTasks={goalTasks} allTasks={tasks} collabMap={collabMap} collaborations={collaborations} defaultCollaborationId={defaultCollaborationId} onAddGoal={onAddGoal} onEditGoal={onEditGoal} onDeleteGoal={onDeleteGoal} onDuplicateGoal={onDuplicateGoal} onPauseGoal={onPauseGoal} onMarkDone={onMarkDone} onDelete={onDelete} onCreateTask={onCreateTask} onEditTask={onEdit} />
       )}
 
       {(mobileCalView === 'week' || mobileCalView === 'workweek') && activeTab === 'inbox' && (

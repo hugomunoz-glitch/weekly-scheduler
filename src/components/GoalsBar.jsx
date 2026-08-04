@@ -33,7 +33,22 @@ function PriorityBadge({ priority }) {
   )
 }
 
-export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations, collabMembersMap, defaultCollaborationId, onAddGoal, onEditGoal, onDeleteGoal, onDuplicateGoal, onMarkDone, onDelete, onDuplicateTask, onCreateTask, onEditTask, activeView, onChangeView }) {
+function goalStatus(goal, goalTasks) {
+  if (goal.status === 'paused') return 'paused'
+  const linked = goalTasks.filter(t => t.goal_id === goal.id)
+  if (linked.length > 0 && linked.every(t => t.status === 'done')) return 'completed'
+  if (linked.some(t => t.status === 'done')) return 'in_progress'
+  return 'not_started'
+}
+
+const STATUS_BADGE = {
+  in_progress: { label: 'In Progress', color: '#4338ca', bg: '#eef2ff', dot: '#6366f1' },
+  paused:      { label: 'Paused',      color: '#b45309', bg: '#fffbeb', dot: '#f59e0b' },
+  completed:   { label: 'Completed',   color: '#059669', bg: '#d1fae5', dot: '#10b981' },
+  not_started: null,
+}
+
+export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations, collabMembersMap, defaultCollaborationId, onAddGoal, onEditGoal, onDeleteGoal, onDuplicateGoal, onPauseGoal, onMarkDone, onDelete, onDuplicateTask, onCreateTask, onEditTask, activeView, onChangeView }) {
   const [adding, setAdding] = useState(false)
   const [newTitle, setNewTitle] = useState('')
   const [newGoalTasks, setNewGoalTasks] = useState([''])
@@ -574,11 +589,13 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
         const done = linked.filter(t => t.status === 'done')
         const pct = linked.length > 0 ? Math.round((done.length / linked.length) * 100) : 0
         const isFullyCompleted = linked.length > 0 && linked.every(t => t.status === 'done')
+        const status = goalStatus(goal, goalTasks)
+        const statusBadge = STATUS_BADGE[status]
         const goalDisplayColor = (goal.category ? categoryBadge(goal.category)?.color : null) || goal.color
         return (
           <div
             key={goal.id}
-            className={'flex items-start gap-2 border rounded-lg px-3 py-1.5 shrink-0 min-w-[160px] group cursor-pointer relative ' + (isFullyCompleted ? 'border-emerald-100 bg-white' : 'border-gray-200')}
+            className={'flex items-start gap-2 border rounded-lg px-3 py-1.5 shrink-0 min-w-[160px] group cursor-pointer relative ' + (isFullyCompleted ? 'border-emerald-100 bg-white' : status === 'paused' ? 'border-amber-200 bg-amber-50' : 'border-gray-200 bg-white')}
             style={goal.priority && PRIORITY_BORDER[goal.priority] ? { borderLeft: '4px solid ' + PRIORITY_BORDER[goal.priority] } : undefined}
             title={goal.priority ? PRIORITY_LABELS[goal.priority] + ' priority' : undefined}
             onClick={(e) => openPopup(goal.id, e)}
@@ -737,6 +754,14 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
                   {goal.term === 'long' ? 'Long-term' : 'Short-term'}
                 </span>
               )}
+              {statusBadge && (
+                <div>
+                  <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded mt-0.5 inline-flex items-center gap-1" style={{ color: statusBadge.color, background: statusBadge.bg }}>
+                    <span style={{ width: 5, height: 5, borderRadius: '50%', background: statusBadge.dot, display: 'inline-block', flexShrink: 0 }} />
+                    {statusBadge.label}
+                  </span>
+                </div>
+              )}
               {isFullyCompleted ? (
                 <div className="mt-1">
                   <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-600">✓ Complete — All tasks done</span>
@@ -783,6 +808,23 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
                       className="text-[20px] text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 px-1.5 py-0.5 rounded transition-colors leading-none"
                       title="Duplicate goal"
                     >&#10697;</button>
+                  )}
+                  {!isFullyCompleted && onPauseGoal && (
+                    status === 'paused' ? (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); onPauseGoal(goal.id, false) }}
+                        className="text-[10px] font-semibold px-1.5 py-0.5 rounded border transition-colors"
+                        style={{ color: '#4338ca', background: '#eef2ff', borderColor: '#c7d2fe' }}
+                        title="Resume goal"
+                      >▶ Resume</button>
+                    ) : (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); onPauseGoal(goal.id, true) }}
+                        className="text-[10px] font-semibold px-1.5 py-0.5 rounded border transition-colors"
+                        style={{ color: '#b45309', background: '#fffbeb', borderColor: '#fde68a' }}
+                        title="Pause goal"
+                      >⏸ Pause</button>
+                    )
                   )}
                   {isFullyCompleted && (
                     <button
