@@ -1186,7 +1186,7 @@ export default function MobileLayout({
     return inWeek ? todayStr : format(weekDays[0], 'yyyy-MM-dd')
   })
   const [activeTab, setActiveTab] = useState(() => localStorage.getItem('mobileDefaultTab') || 'day')
-  const [mobileCalView, setMobileCalView] = useState(() => localStorage.getItem('mobileCalView') || localStorage.getItem('mobileDefaultCalView') || 'week')
+  const [mobileCalView, setMobileCalView] = useState(() => localStorage.getItem('mobileDefaultCalView') || 'week')
   const [mobileDefaultCalView, setMobileDefaultCalView] = useState(() => localStorage.getItem('mobileDefaultCalView') || localStorage.getItem('mobileCalView') || 'week')
   const mobileScrollRef = useRef(null)
   const { pullY, refreshing } = usePullToRefresh(onRefresh || (() => {}), mobileScrollRef)
@@ -1299,7 +1299,7 @@ export default function MobileLayout({
           </p>
           <div style={{ display: 'flex', gap: '4px' }}>
             {[['week','Week'],['workweek','Work Wk'],['month','Month'],['year','Year']].map(([v, label]) => (
-              <button key={v} onClick={() => { setMobileCalView(v); localStorage.setItem('mobileCalView', v) }}
+              <button key={v} onClick={() => { setMobileCalView(v) }}
                 style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: 500, background: mobileCalView === v ? '#6366f1' : '#f3f4f6', color: mobileCalView === v ? 'white' : '#6b7280' }}>
                 {label}
               </button>
