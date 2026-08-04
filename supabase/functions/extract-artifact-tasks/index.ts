@@ -11,23 +11,28 @@ serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
   try {
-    const { url, title, notes } = await req.json()
-    if (!url) return new Response(JSON.stringify({ error: 'missing url' }), { status: 400, headers: corsHeaders })
+    const { url, title, notes, content } = await req.json()
+    if (!title) return new Response(JSON.stringify({ error: 'missing title' }), { status: 400, headers: corsHeaders })
 
-    // Fetch the artifact page
+    // Use pasted content if available, otherwise try fetching the URL
     let pageText = ''
-    try {
-      const pageRes = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } })
-      const html = await pageRes.text()
-      // Strip HTML tags and collapse whitespace
-      pageText = html
-        .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
-        .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
-        .replace(/<[^>]+>/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim()
-        .slice(0, 12000) // cap to avoid token overuse
-    } catch {
+    if (content && content.trim()) {
+      pageText = content.trim().slice(0, 12000)
+    } else if (url) {
+      try {
+        const pageRes = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } })
+        const html = await pageRes.text()
+        pageText = html
+          .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+          .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+          .replace(/<[^>]+>/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim()
+          .slice(0, 12000)
+      } catch {
+        pageText = `Title: ${title}\nNotes: ${notes || 'none'}`
+      }
+    } else {
       pageText = `Title: ${title}\nNotes: ${notes || 'none'}`
     }
 

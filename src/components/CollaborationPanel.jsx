@@ -10,7 +10,8 @@ function randomCode() {
   return code
 }
 
-function ArtifactForm({ url, setUrl, title, setTitle, notes, setNotes, saving, error, onSubmit, onCancel, label = 'Push artifact' }) {
+function ArtifactForm({ url, setUrl, title, setTitle, notes, setNotes, content, setContent, saving, error, onSubmit, onCancel, label = 'Push artifact' }) {
+  const [showContent, setShowContent] = useState(false)
   return (
     <div className="bg-gray-50 rounded-lg p-3 space-y-2 mt-2">
       {error && <p className="text-xs text-red-600">{error}</p>}
@@ -33,6 +34,21 @@ function ArtifactForm({ url, setUrl, title, setTitle, notes, setNotes, saving, e
         className="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:border-indigo-400 resize-none"
         style={{ fontSize: 16 }}
       />
+      <div>
+        <button type="button" onClick={() => setShowContent(v => !v)}
+          className="text-xs text-indigo-600 hover:underline">
+          {showContent ? '▲ Hide content' : '▼ Paste artifact content (for Extract)'}
+        </button>
+        {showContent && (
+          <textarea
+            placeholder="Copy the artifact text from Claude.ai and paste it here so Extract can read it."
+            value={content} onChange={e => setContent(e.target.value)}
+            rows={6}
+            className="w-full mt-1.5 px-2.5 py-1.5 border border-indigo-200 rounded-lg text-sm outline-none focus:border-indigo-400 resize-none"
+            style={{ fontSize: 14 }}
+          />
+        )}
+      </div>
       <div className="flex gap-2">
         <button
           onClick={onSubmit}
@@ -123,6 +139,7 @@ function ArtifactCard({ artifact, versions, unreadCount, onDelete, onToggleMain,
               url={artifactUrl} setUrl={setArtifactUrl}
               title={artifactTitle} setTitle={setArtifactTitle}
               notes={artifactNotes} setNotes={setArtifactNotes}
+              content={artifactContent} setContent={setArtifactContent}
               saving={savingArtifact} error={artifactError}
               onSubmit={() => pushNewVersion(artifact.id)}
               onCancel={() => setPushingArtifact(null)}
@@ -175,6 +192,7 @@ export default function CollaborationPanel({ onClose }) {
   const [artifactUrl, setArtifactUrl] = useState('')
   const [artifactTitle, setArtifactTitle] = useState('')
   const [artifactNotes, setArtifactNotes] = useState('')
+  const [artifactContent, setArtifactContent] = useState('')
   const [savingArtifact, setSavingArtifact] = useState(false)
   const [artifactError, setArtifactError] = useState('')
   const [expandedArtifact, setExpandedArtifact] = useState(null)
@@ -296,7 +314,7 @@ export default function CollaborationPanel({ onClose }) {
     if (!arts?.length) return
     const { data: versions } = await supabase
       .from('artifact_versions')
-      .select('id, artifact_id, version_number, url, title, notes, pushed_by, created_at, profiles!artifact_versions_pushed_by_fkey(username)')
+      .select('id, artifact_id, version_number, url, title, notes, content, pushed_by, created_at, profiles!artifact_versions_pushed_by_fkey(username)')
       .in('artifact_id', arts.map(a => a.id))
       .order('version_number', { ascending: false })
     const grouped = {}
@@ -337,6 +355,7 @@ export default function CollaborationPanel({ onClose }) {
       url: artifactUrl.trim(),
       title: artifactTitle.trim(),
       notes: artifactNotes.trim() || null,
+      content: artifactContent.trim() || null,
       pushed_by: user.id,
     })
     if (verErr) { setArtifactError(verErr.message); setSavingArtifact(false); return }
@@ -345,6 +364,7 @@ export default function CollaborationPanel({ onClose }) {
     setArtifactUrl('')
     setArtifactTitle('')
     setArtifactNotes('')
+    setArtifactContent('')
     setPushingArtifact(null)
     fetchArtifacts()
   }
@@ -358,6 +378,7 @@ export default function CollaborationPanel({ onClose }) {
       url: artifactUrl.trim(),
       title: artifactTitle.trim(),
       notes: artifactNotes.trim() || null,
+      content: artifactContent.trim() || null,
       pushed_by: user.id,
     })
     if (error) { setArtifactError(error.message); setSavingArtifact(false); return }
@@ -365,6 +386,7 @@ export default function CollaborationPanel({ onClose }) {
     setArtifactUrl('')
     setArtifactTitle('')
     setArtifactNotes('')
+    setArtifactContent('')
     setPushingArtifact(null)
     fetchArtifacts()
   }
@@ -545,6 +567,7 @@ export default function CollaborationPanel({ onClose }) {
                   url={artifactUrl} setUrl={setArtifactUrl}
                   title={artifactTitle} setTitle={setArtifactTitle}
                   notes={artifactNotes} setNotes={setArtifactNotes}
+                  content={artifactContent} setContent={setArtifactContent}
                   saving={savingArtifact} error={artifactError}
                   onSubmit={() => pushArtifact({ scope: 'personal', recipientId: user.id })}
                   onCancel={() => setPushingArtifact(null)}
@@ -695,6 +718,7 @@ export default function CollaborationPanel({ onClose }) {
                                 url={artifactUrl} setUrl={setArtifactUrl}
                                 title={artifactTitle} setTitle={setArtifactTitle}
                                 notes={artifactNotes} setNotes={setArtifactNotes}
+                                content={artifactContent} setContent={setArtifactContent}
                                 saving={savingArtifact} error={artifactError}
                                 onSubmit={() => pushArtifact({ scope: 'personal', recipientId: isCoach ? partnerId : user.id })}
                                 onCancel={() => setPushingArtifact(null)}
@@ -867,6 +891,7 @@ export default function CollaborationPanel({ onClose }) {
                       url={artifactUrl} setUrl={setArtifactUrl}
                       title={artifactTitle} setTitle={setArtifactTitle}
                       notes={artifactNotes} setNotes={setArtifactNotes}
+                      content={artifactContent} setContent={setArtifactContent}
                       saving={savingArtifact} error={artifactError}
                       onSubmit={() => pushArtifact({ scope: 'collaboration', collaborationId: collab.id })}
                       onCancel={() => setPushingArtifact(null)}

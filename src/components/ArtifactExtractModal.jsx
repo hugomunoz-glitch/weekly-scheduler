@@ -14,7 +14,7 @@ export default function ArtifactExtractModal({ artifact, version, onClose, onDon
     setStep('loading')
     setError('')
     const { data, error: fnErr } = await supabase.functions.invoke('extract-artifact-tasks', {
-      body: { url: version.url, title: version.title, notes: version.notes }
+      body: { url: version.url, title: version.title, notes: version.notes, content: version.content || null }
     })
     if (fnErr || data?.error) {
       setError(fnErr?.message || data?.error || 'Extraction failed')
