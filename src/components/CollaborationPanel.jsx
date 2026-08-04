@@ -520,11 +520,65 @@ export default function CollaborationPanel({ onClose }) {
     <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-[3000] p-4" onClick={onClose}>
       <div className="bg-white rounded-xl shadow-xl w-full max-w-md max-h-[85vh] overflow-y-auto p-5" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-base font-semibold text-gray-900">Collaborations</h2>
+          <h2 className="text-base font-semibold text-gray-900">Collaborations & Artifacts</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-700 text-sm">Close</button>
         </div>
 
         {error && <div className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</div>}
+
+        {/* ── My Artifacts ── */}
+        {(() => {
+          const myArtifacts = artifacts.filter(a => a.scope === 'personal' && a.recipient_id === user.id && a.created_by === user.id)
+          const isPushingPersonal = pushingArtifact === 'personal'
+          return (
+            <div className="mb-5 pb-5 border-b border-gray-100">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">My Artifacts</h3>
+                <button
+                  onClick={() => { setPushingArtifact(isPushingPersonal ? null : 'personal'); setArtifactUrl(''); setArtifactTitle(''); setArtifactNotes('') }}
+                  className="text-xs text-indigo-600 hover:text-indigo-700 font-medium"
+                >
+                  {isPushingPersonal ? 'Cancel' : '+ Add artifact'}
+                </button>
+              </div>
+              {isPushingPersonal && (
+                <ArtifactForm
+                  url={artifactUrl} setUrl={setArtifactUrl}
+                  title={artifactTitle} setTitle={setArtifactTitle}
+                  notes={artifactNotes} setNotes={setArtifactNotes}
+                  saving={savingArtifact} error={artifactError}
+                  onSubmit={() => pushArtifact({ scope: 'personal', recipientId: user.id })}
+                  onCancel={() => setPushingArtifact(null)}
+                  label="Save artifact"
+                />
+              )}
+              {myArtifacts.length === 0 && !isPushingPersonal && (
+                <p className="text-xs text-gray-400">No personal artifacts yet. Add a Claude.ai link to extract tasks & goals.</p>
+              )}
+              {myArtifacts.length > 0 && (
+                <div className="space-y-2 mt-1">
+                  {myArtifacts.map(art => (
+                    <ArtifactCard
+                      key={art.id} artifact={art}
+                      versions={artifactVersions[art.id]}
+                      unreadCount={artifactNotifications.filter(n => n.artifact_id === art.id).length}
+                      onDelete={deleteArtifact} onToggleMain={toggleDisplayInMain}
+                      onMarkRead={markNotificationsRead} userId={user.id}
+                      pushingArtifact={pushingArtifact} setPushingArtifact={setPushingArtifact}
+                      artifactUrl={artifactUrl} setArtifactUrl={setArtifactUrl}
+                      artifactTitle={artifactTitle} setArtifactTitle={setArtifactTitle}
+                      artifactNotes={artifactNotes} setArtifactNotes={setArtifactNotes}
+                      savingArtifact={savingArtifact} artifactError={artifactError}
+                      pushNewVersion={pushNewVersion}
+                      expandedArtifact={expandedArtifact} setExpandedArtifact={setExpandedArtifact}
+                      onExtract={setExtractingArtifact}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          )
+        })()}
 
         {/* ── Create collaboration ── */}
         <form onSubmit={createCollaboration} className="flex gap-2 mb-5">
