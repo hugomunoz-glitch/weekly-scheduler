@@ -80,7 +80,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'Schedulent <notifications@schedulent.app>',
+        from: 'Schedulent <onboarding@resend.dev>',
         to: [recipientEmail],
         subject: `${coachName} wants to coach you on Schedulent`,
         html,
