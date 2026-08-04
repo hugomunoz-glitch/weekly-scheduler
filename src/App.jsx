@@ -153,7 +153,7 @@ export default function App() {
   const [showVisionMission, setShowVisionMission] = useState(false)
   const [collaborations, setCollaborations] = useState([])
   const [collabMembersMap, setCollabMembersMap] = useState({})
-  const [activeView, setActiveView] = useState('all')
+  const [activeView, setActiveView] = useState('personal')
   const [calView, setCalView] = useState('week')
   const [showGoals, setShowGoals] = useState(() => localStorage.getItem('showGoals') !== 'false')
   const [showSidebar, setShowSidebar] = useState(() => localStorage.getItem('showSidebar') !== 'false')
@@ -1046,11 +1046,9 @@ export default function App() {
             </div>
           </header>
           <div className="mx-3 mt-3 shrink-0">
-            {showGoals && (
-              <div className="rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-                <GoalsBar goals={visibleGoals} goalTasks={visibleGoalTasks} allTasks={visibleTasks} collabMap={collabMap} collaborations={collaborations} collabMembersMap={collabMembersMap} defaultCollaborationId={defaultCollaborationId} onAddGoal={addGoal} onEditGoal={editGoal} onDeleteGoal={deleteGoal} onDuplicateGoal={duplicateGoal} onPauseGoal={pauseGoal} onMarkDone={markDone} onDelete={requestDeleteTask} onDuplicateTask={duplicateTask} onCreateTask={addTask} onEditTask={setEditingTask} activeView={activeView} onChangeView={setActiveView} />
-              </div>
-            )}
+            <div className={showGoals ? 'rounded-xl border border-gray-200 shadow-sm overflow-hidden' : ''}>
+              <GoalsBar goals={visibleGoals} goalTasks={visibleGoalTasks} allTasks={visibleTasks} collabMap={collabMap} collaborations={collaborations} collabMembersMap={collabMembersMap} defaultCollaborationId={defaultCollaborationId} onAddGoal={addGoal} onEditGoal={editGoal} onDeleteGoal={deleteGoal} onDuplicateGoal={duplicateGoal} onPauseGoal={pauseGoal} onMarkDone={markDone} onDelete={requestDeleteTask} onDuplicateTask={duplicateTask} onCreateTask={addTask} onEditTask={setEditingTask} activeView={activeView} onChangeView={setActiveView} hidden={!showGoals} />
+            </div>
             <button
               onClick={() => { setShowGoals(v => { localStorage.setItem('showGoals', !v); return !v }) }}
               title={showGoals ? 'Collapse Goals' : 'Expand Goals'}

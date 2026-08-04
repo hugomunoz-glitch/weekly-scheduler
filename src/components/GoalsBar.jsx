@@ -48,7 +48,7 @@ const STATUS_BADGE = {
   not_started: null,
 }
 
-export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations, collabMembersMap, defaultCollaborationId, onAddGoal, onEditGoal, onDeleteGoal, onDuplicateGoal, onPauseGoal, onMarkDone, onDelete, onDuplicateTask, onCreateTask, onEditTask, activeView, onChangeView }) {
+export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations, collabMembersMap, defaultCollaborationId, onAddGoal, onEditGoal, onDeleteGoal, onDuplicateGoal, onPauseGoal, onMarkDone, onDelete, onDuplicateTask, onCreateTask, onEditTask, activeView, onChangeView, hidden }) {
   const [adding, setAdding] = useState(false)
   const [newTitle, setNewTitle] = useState('')
   const [newGoalTasks, setNewGoalTasks] = useState([''])
@@ -369,7 +369,257 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
     }
   }
 
+  // Find the goal being viewed (needed for popup rendered outside bar)
+  const viewingGoal = viewingGoalId ? goals.find(g => g.id === viewingGoalId) : null
+
+  // Popups rendered outside the bar so they survive when bar is hidden
+  const popups = (
+    <>
+      {viewingGoal && popupPos && (
+        <div
+          onClick={(e) => e.stopPropagation()}
+          className="fixed z-40 bg-white border border-gray-200 rounded-lg shadow-2xl w-[580px] max-w-[92vw]"
+          style={{ top: popupPos.top, left: popupPos.left, borderLeft: viewingGoal.priority && PRIORITY_BORDER[viewingGoal.priority] ? '4px solid ' + PRIORITY_BORDER[viewingGoal.priority] : undefined }}
+          title={viewingGoal.priority ? PRIORITY_LABELS[viewingGoal.priority] + ' priority' : undefined}
+        >
+          <div
+            onMouseDown={startPopupDrag}
+            className="flex items-center justify-between gap-2 px-4 py-2 border-b border-gray-100 rounded-t-lg bg-gray-50 cursor-move select-none"
+            title="Drag to move"
+          >
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-gray-400 text-sm">&#10021;</span>
+              <p className="text-3xl font-bold text-gray-800 truncate">{viewingGoal.title}</p>
+            </div>
+            <button
+              onClick={() => { setViewingGoalId(null); setPopupCategoryOpen(false) }}
+              className="w-7 h-7 flex items-center justify-center rounded-full bg-gray-700 text-white text-sm hover:bg-gray-900 shrink-0"
+              title="Close"
+            >
+              &#10005;
+            </button>
+          </div>
+          <div className="p-4 max-h-[70vh] overflow-y-auto">
+            {(() => {
+              const goal = viewingGoal
+              const linked = goalTasks.filter(t => t.goal_id === goal.id)
+              const sortedLinked = [...linked].sort((a, b) => {
+                const aDone = a.status === 'done', bDone = b.status === 'done'
+                if (aDone !== bDone) return aDone ? 1 : -1
+                if (!a.due_date && !b.due_date) return 0
+                if (!a.due_date) return 1
+                if (!b.due_date) return -1
+                return new Date(a.due_date) - new Date(b.due_date)
+              })
+              return (
+                <>
+                  {popupCategoryOpen ? (
+                    <select
+                      autoFocus
+                      value={goal.category || ''}
+                      onChange={async e => {
+                        await onEditGoal(goal.id, goal.title, { ...goal, category: e.target.value || null }, goal.collaboration_id || null)
+                        setPopupCategoryOpen(false)
+                      }}
+                      onBlur={() => setPopupCategoryOpen(false)}
+                      className="text-sm border border-indigo-400 rounded-lg px-2 py-1 mb-3 focus:outline-none block"
+                    >
+                      <option value="">No category</option>
+                      {allCategories.map(c => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                  ) : categoryBadge(goal.category) ? (
+                    <span
+                      className="inline-block text-sm font-medium px-2 py-1 rounded mb-3 cursor-pointer hover:opacity-75"
+                      style={{ color: categoryBadge(goal.category).color, background: categoryBadge(goal.category).color + '1a' }}
+                      onClick={() => setPopupCategoryOpen(true)}
+                      title="Click to change category"
+                    >
+                      {categoryBadge(goal.category).name}
+                    </span>
+                  ) : (
+                    <button
+                      onClick={() => setPopupCategoryOpen(true)}
+                      className="text-sm font-medium px-2 py-1 rounded mb-3 border border-dashed border-gray-300 text-gray-400 hover:border-indigo-400 hover:text-indigo-500 transition-colors block"
+                    >+ Category</button>
+                  )}
+                  {(goal.smart_specific || goal.smart_measurable || goal.smart_achievable || goal.smart_relevant || goal.smart_timebound) && (
+                    <div className="mb-4 p-3 bg-gray-50 rounded-lg space-y-1">
+                      {goal.smart_specific && <p className="text-base text-gray-600"><span className="font-semibold text-gray-700">Specific:</span> {goal.smart_specific}</p>}
+                      {goal.smart_measurable && <p className="text-base text-gray-600"><span className="font-semibold text-gray-700">Measurable:</span> {goal.smart_measurable}</p>}
+                      {goal.smart_achievable && <p className="text-base text-gray-600"><span className="font-semibold text-gray-700">Achievable:</span> {goal.smart_achievable}</p>}
+                      {goal.smart_relevant && <p className="text-base text-gray-600"><span className="font-semibold text-gray-700">Relevant:</span> {goal.smart_relevant}</p>}
+                      {goal.smart_timebound && <p className="text-base text-gray-600"><span className="font-semibold text-gray-700">Time-bound:</span> {goal.smart_timebound}</p>}
+                    </div>
+                  )}
+                  <p className="text-xs text-gray-400 mb-2">Drag a task onto any day on the calendar to schedule it.</p>
+                  {linked.length === 0 ? (
+                    <p className="text-base text-gray-300">No tasks yet.</p>
+                  ) : (
+                    <Droppable droppableId={'goalpopup-' + goal.id}>
+                      {(provided) => (
+                        <ul ref={provided.innerRef} {...provided.droppableProps} className="space-y-1.5 max-h-[50vh] overflow-y-auto">
+                          {sortedLinked.map((t, idx) => {
+                            return (
+                              <Draggable key={t.id} draggableId={t.id} index={idx}>
+                                {(dragProvided, dragSnapshot) => (
+                                  <li
+                                    ref={dragProvided.innerRef}
+                                    {...dragProvided.draggableProps}
+                                    {...dragProvided.dragHandleProps}
+                                    className={'text-xl text-gray-600 flex items-center gap-2 group rounded px-2 py-1.5 -mx-2 ' + (dragSnapshot.isDragging ? 'bg-indigo-50 shadow-md' : 'hover:bg-gray-50')}
+                                    style={{ ...dragProvided.draggableProps.style, ...(t.priority && PRIORITY_BORDER[t.priority] ? { borderLeft: '4px solid ' + PRIORITY_BORDER[t.priority] } : {}) }}
+                                    title={t.priority ? PRIORITY_LABELS[t.priority] + ' priority' : undefined}
+                                  >
+                                    <span className="cursor-pointer shrink-0" onClick={() => onMarkDone(t.id)}>
+                                      <span className={t.status === 'done' ? 'text-green-500' : 'text-gray-300'}>{t.status === 'done' ? '✓' : '○'}</span>
+                                    </span>
+                                    <span className={'flex-1 truncate cursor-pointer ' + (t.status === 'done' ? 'line-through text-gray-400' : '')} onClick={() => handleEditTask(t.id)}>{t.title}</span>
+                                    {t.collaboration_id && collabMap && collabMap[t.collaboration_id] && (
+                                      <span
+                                        className="inline-block w-2 h-2 rounded-full shrink-0"
+                                        style={{ background: collabMap[t.collaboration_id].color }}
+                                        title={'Shared with: ' + collabMap[t.collaboration_id].name}
+                                      />
+                                    )}
+                                    {t.start_time && (
+                                      <span className="text-sm text-indigo-400 shrink-0 whitespace-nowrap">{formatTime(t.start_time)}</span>
+                                    )}
+                                    <button
+                                      onClick={(e) => { e.stopPropagation(); handleEditTask(t.id) }}
+                                      className="text-[18px] text-gray-400 hover:text-indigo-600 transition-colors shrink-0 leading-none px-0.5"
+                                      title="Edit task"
+                                    >
+                                      &#9998;
+                                    </button>
+                                    {onDuplicateTask && (
+                                      <button
+                                        onClick={(e) => { e.stopPropagation(); onDuplicateTask(t.id) }}
+                                        className="text-[14px] text-gray-400 hover:text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 leading-none px-0.5"
+                                        title="Duplicate task"
+                                      >
+                                        &#10697;
+                                      </button>
+                                    )}
+                                    <button
+                                      onClick={(e) => { e.stopPropagation(); onDelete(t.id, e) }}
+                                      className="text-base text-red-400 hover:text-red-600 transition-colors shrink-0 px-0.5 leading-none"
+                                      title="Delete task"
+                                    >
+                                      &#10005;
+                                    </button>
+                                  </li>
+                                )}
+                              </Draggable>
+                            )
+                          })}
+                          {provided.placeholder}
+                        </ul>
+                      )}
+                    </Droppable>
+                  )}
+                  <form onSubmit={(e) => handleAddTaskToGoal(e, goal.id)} className="mt-3 pt-3 border-t border-gray-100 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-medium text-gray-500">Add task</p>
+                      <button type="button" onClick={() => { setBulkPopupMode(m => !m); setNewTaskTitle(''); setBulkPopupText('') }}
+                        className="text-xs text-indigo-500 hover:text-indigo-700">
+                        {bulkPopupMode ? 'Single task' : 'Add multiple at once'}
+                      </button>
+                    </div>
+                    {bulkPopupMode ? (
+                      <textarea
+                        autoFocus
+                        placeholder={'One task per line, e.g.\nDraft outline\nReview notes\nSend follow-up'}
+                        value={bulkPopupText}
+                        onChange={e => setBulkPopupText(e.target.value)}
+                        rows={3}
+                        disabled={addingTaskToGoal}
+                        className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-indigo-300 resize-none disabled:opacity-50"
+                      />
+                    ) : (
+                      <input
+                        autoFocus
+                        value={newTaskTitle}
+                        onChange={e => setNewTaskTitle(e.target.value)}
+                        placeholder="Task title…"
+                        disabled={addingTaskToGoal}
+                        className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-indigo-300 focus:border-indigo-400 disabled:opacity-50"
+                      />
+                    )}
+                    <button type="submit"
+                      disabled={addingTaskToGoal || (bulkPopupMode ? !bulkPopupText.trim() : !newTaskTitle.trim())}
+                      className="w-full text-sm text-white bg-indigo-600 hover:bg-indigo-700 py-1.5 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed font-medium">
+                      {addingTaskToGoal ? 'Adding…' : bulkPopupMode ? 'Add tasks' : 'Add task'}
+                    </button>
+                  </form>
+                  {addTaskToGoalError && <p className="text-xs text-red-500 mt-1.5">{addTaskToGoalError}</p>}
+                </>
+              )
+            })()}
+          </div>
+        </div>
+      )}
+      {postDuplicateGoalId && postDupPopupPos && (
+        <div
+          className="fixed z-50 bg-white border border-gray-200 rounded-lg shadow-2xl w-[380px] max-w-[92vw] p-4"
+          style={{ top: postDupPopupPos.top, left: postDupPopupPos.left }}
+          onClick={e => e.stopPropagation()}
+        >
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-sm font-semibold text-gray-800">Add tasks to &ldquo;{postDupGoalTitle}&rdquo;</p>
+            <button onClick={() => { setPostDuplicateGoalId(null); setPostDupPopupPos(null) }} className="text-gray-400 hover:text-gray-600 text-sm">✕</button>
+          </div>
+          <div className="space-y-1.5">
+            {postDupTasks.map((t, i) => (
+              <div key={i} className="flex gap-1.5 items-center">
+                <input
+                  type="text"
+                  placeholder={i === 0 ? 'First task…' : 'Another task…'}
+                  value={t}
+                  onChange={e => setPostDupTasks(prev => prev.map((v, j) => j === i ? e.target.value : v))}
+                  className="flex-1 border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-300"
+                  autoFocus={i === 0}
+                />
+                {postDupTasks.length > 1 && (
+                  <button type="button" onClick={() => setPostDupTasks(prev => prev.filter((_, j) => j !== i))} className="text-gray-300 hover:text-red-400 text-sm leading-none">×</button>
+                )}
+              </div>
+            ))}
+            <button type="button" onClick={() => setPostDupTasks(prev => [...prev, ''])} className="text-xs text-indigo-500 hover:text-indigo-700">+ Add another</button>
+          </div>
+          <div className="flex gap-2 mt-3">
+            <button
+              type="button"
+              disabled={postDupSaving}
+              onClick={async () => {
+                const titles = postDupTasks.map(t => t.trim()).filter(Boolean)
+                if (titles.length === 0) { setPostDuplicateGoalId(null); setPostDupPopupPos(null); return }
+                setPostDupSaving(true)
+                const goal = goals.find(g => g.id === postDuplicateGoalId)
+                try {
+                  for (const title of titles) {
+                    await onCreateTask(title, '', postDuplicateGoalId, null, null, null, null, null, goal?.collaboration_id || null)
+                  }
+                } catch {}
+                setPostDupSaving(false)
+                setPostDuplicateGoalId(null)
+                setPostDupPopupPos(null)
+              }}
+              className="flex-1 text-sm text-white bg-indigo-600 hover:bg-indigo-700 px-3 py-1.5 rounded-lg disabled:opacity-40"
+            >
+              {postDupSaving ? 'Saving…' : 'Save tasks'}
+            </button>
+            <button type="button" onClick={() => { setPostDuplicateGoalId(null); setPostDupPopupPos(null) }} className="text-sm text-gray-400 hover:text-gray-600 px-2">Skip</button>
+          </div>
+        </div>
+      )}
+    </>
+  )
+
+  if (hidden) return popups
+
   return (
+    <>
+    {popups}
     <div className="bg-white px-6 pt-4 pb-2 shrink-0">
       <div className="flex items-start gap-3 overflow-x-auto">
       <div className="sticky left-0 z-10 bg-white self-stretch flex items-center gap-3 pr-3 shrink-0">
@@ -843,173 +1093,6 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
                   >&#128465;</button>
                 </div>
               )}
-              {viewingGoalId === goal.id && popupPos && (
-                <div
-                  onClick={(e) => e.stopPropagation()}
-                  className="fixed z-40 bg-white border border-gray-200 rounded-lg shadow-2xl w-[580px] max-w-[92vw]"
-                  style={{ top: popupPos.top, left: popupPos.left, borderLeft: goal.priority && PRIORITY_BORDER[goal.priority] ? '4px solid ' + PRIORITY_BORDER[goal.priority] : undefined }}
-                  title={goal.priority ? PRIORITY_LABELS[goal.priority] + ' priority' : undefined}
-                >
-                  <div
-                    onMouseDown={startPopupDrag}
-                    className="flex items-center justify-between gap-2 px-4 py-2 border-b border-gray-100 rounded-t-lg bg-gray-50 cursor-move select-none"
-                    title="Drag to move"
-                  >
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span className="text-gray-400 text-sm">&#10021;</span>
-                      <p className="text-3xl font-bold text-gray-800 truncate">{goal.title}</p>
-                    </div>
-                    <button
-                      onClick={() => { setViewingGoalId(null); setPopupCategoryOpen(false) }}
-                      className="w-7 h-7 flex items-center justify-center rounded-full bg-gray-700 text-white text-sm hover:bg-gray-900 shrink-0"
-                      title="Close"
-                    >
-                      &#10005;
-                    </button>
-                  </div>
-                  <div className="p-4 max-h-[70vh] overflow-y-auto">
-                    {popupCategoryOpen ? (
-                      <select
-                        autoFocus
-                        value={goal.category || ''}
-                        onChange={async e => {
-                          await onEditGoal(goal.id, goal.title, { ...goal, category: e.target.value || null }, goal.collaboration_id || null)
-                          setPopupCategoryOpen(false)
-                        }}
-                        onBlur={() => setPopupCategoryOpen(false)}
-                        className="text-sm border border-indigo-400 rounded-lg px-2 py-1 mb-3 focus:outline-none block"
-                      >
-                        <option value="">No category</option>
-                        {allCategories.map(c => <option key={c} value={c}>{c}</option>)}
-                      </select>
-                    ) : categoryBadge(goal.category) ? (
-                      <span
-                        className="inline-block text-sm font-medium px-2 py-1 rounded mb-3 cursor-pointer hover:opacity-75"
-                        style={{ color: categoryBadge(goal.category).color, background: categoryBadge(goal.category).color + '1a' }}
-                        onClick={() => setPopupCategoryOpen(true)}
-                        title="Click to change category"
-                      >
-                        {categoryBadge(goal.category).name}
-                      </span>
-                    ) : (
-                      <button
-                        onClick={() => setPopupCategoryOpen(true)}
-                        className="text-sm font-medium px-2 py-1 rounded mb-3 border border-dashed border-gray-300 text-gray-400 hover:border-indigo-400 hover:text-indigo-500 transition-colors block"
-                      >+ Category</button>
-                    )}
-                    {(goal.smart_specific || goal.smart_measurable || goal.smart_achievable || goal.smart_relevant || goal.smart_timebound) && (
-                      <div className="mb-4 p-3 bg-gray-50 rounded-lg space-y-1">
-                        {goal.smart_specific && <p className="text-base text-gray-600"><span className="font-semibold text-gray-700">Specific:</span> {goal.smart_specific}</p>}
-                        {goal.smart_measurable && <p className="text-base text-gray-600"><span className="font-semibold text-gray-700">Measurable:</span> {goal.smart_measurable}</p>}
-                        {goal.smart_achievable && <p className="text-base text-gray-600"><span className="font-semibold text-gray-700">Achievable:</span> {goal.smart_achievable}</p>}
-                        {goal.smart_relevant && <p className="text-base text-gray-600"><span className="font-semibold text-gray-700">Relevant:</span> {goal.smart_relevant}</p>}
-                        {goal.smart_timebound && <p className="text-base text-gray-600"><span className="font-semibold text-gray-700">Time-bound:</span> {goal.smart_timebound}</p>}
-                      </div>
-                    )}
-                    <p className="text-xs text-gray-400 mb-2">Drag a task onto any day on the calendar to schedule it.</p>
-                    {linked.length === 0 ? (
-                      <p className="text-base text-gray-300">No tasks yet.</p>
-                    ) : (
-                      <Droppable droppableId={'goalpopup-' + goal.id}>
-                        {(provided) => (
-                          <ul ref={provided.innerRef} {...provided.droppableProps} className="space-y-1.5 max-h-[50vh] overflow-y-auto">
-                            {sortedLinked.map((t, idx) => {
-                              return (
-                                <Draggable key={t.id} draggableId={t.id} index={idx}>
-                                  {(dragProvided, dragSnapshot) => (
-                                    <li
-                                      ref={dragProvided.innerRef}
-                                      {...dragProvided.draggableProps}
-                                      {...dragProvided.dragHandleProps}
-                                      className={'text-xl text-gray-600 flex items-center gap-2 group rounded px-2 py-1.5 -mx-2 ' + (dragSnapshot.isDragging ? 'bg-indigo-50 shadow-md' : 'hover:bg-gray-50')}
-                                      style={{ ...dragProvided.draggableProps.style, ...(t.priority && PRIORITY_BORDER[t.priority] ? { borderLeft: '4px solid ' + PRIORITY_BORDER[t.priority] } : {}) }}
-                                      title={t.priority ? PRIORITY_LABELS[t.priority] + ' priority' : undefined}
-                                    >
-                                      <span className="cursor-pointer shrink-0" onClick={() => onMarkDone(t.id)}>
-                                        <span className={t.status === 'done' ? 'text-green-500' : 'text-gray-300'}>{t.status === 'done' ? '✓' : '○'}</span>
-                                      </span>
-                                      <span className={'flex-1 truncate cursor-pointer ' + (t.status === 'done' ? 'line-through text-gray-400' : '')} onClick={() => handleEditTask(t.id)}>{t.title}</span>
-                                      {t.collaboration_id && collabMap && collabMap[t.collaboration_id] && (
-                                        <span
-                                          className="inline-block w-2 h-2 rounded-full shrink-0"
-                                          style={{ background: collabMap[t.collaboration_id].color }}
-                                          title={'Shared with: ' + collabMap[t.collaboration_id].name}
-                                        />
-                                      )}
-                                      {t.start_time && (
-                                        <span className="text-sm text-indigo-400 shrink-0 whitespace-nowrap">{formatTime(t.start_time)}</span>
-                                      )}
-                                      <button
-                                        onClick={(e) => { e.stopPropagation(); handleEditTask(t.id) }}
-                                        className="text-[18px] text-gray-400 hover:text-indigo-600 transition-colors shrink-0 leading-none px-0.5"
-                                        title="Edit task"
-                                      >
-                                        &#9998;
-                                      </button>
-                                      {onDuplicateTask && (
-                                        <button
-                                          onClick={(e) => { e.stopPropagation(); onDuplicateTask(t.id) }}
-                                          className="text-[14px] text-gray-400 hover:text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 leading-none px-0.5"
-                                          title="Duplicate task"
-                                        >
-                                          &#10697;
-                                        </button>
-                                      )}
-                                      <button
-                                        onClick={(e) => { e.stopPropagation(); onDelete(t.id, e) }}
-                                        className="text-base text-red-400 hover:text-red-600 transition-colors shrink-0 px-0.5 leading-none"
-                                        title="Delete task"
-                                      >
-                                        &#10005;
-                                      </button>
-                                    </li>
-                                  )}
-                                </Draggable>
-                              )
-                            })}
-                            {provided.placeholder}
-                          </ul>
-                        )}
-                      </Droppable>
-                    )}
-                    <form onSubmit={(e) => handleAddTaskToGoal(e, goal.id)} className="mt-3 pt-3 border-t border-gray-100 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <p className="text-xs font-medium text-gray-500">Add task</p>
-                        <button type="button" onClick={() => { setBulkPopupMode(m => !m); setNewTaskTitle(''); setBulkPopupText('') }}
-                          className="text-xs text-indigo-500 hover:text-indigo-700">
-                          {bulkPopupMode ? 'Single task' : 'Add multiple at once'}
-                        </button>
-                      </div>
-                      {bulkPopupMode ? (
-                        <textarea
-                          autoFocus
-                          placeholder={'One task per line, e.g.\nDraft outline\nReview notes\nSend follow-up'}
-                          value={bulkPopupText}
-                          onChange={e => setBulkPopupText(e.target.value)}
-                          rows={3}
-                          disabled={addingTaskToGoal}
-                          className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-indigo-300 resize-none disabled:opacity-50"
-                        />
-                      ) : (
-                        <input
-                          autoFocus
-                          value={newTaskTitle}
-                          onChange={e => setNewTaskTitle(e.target.value)}
-                          placeholder="Task title…"
-                          disabled={addingTaskToGoal}
-                          className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-indigo-300 focus:border-indigo-400 disabled:opacity-50"
-                        />
-                      )}
-                      <button type="submit"
-                        disabled={addingTaskToGoal || (bulkPopupMode ? !bulkPopupText.trim() : !newTaskTitle.trim())}
-                        className="w-full text-sm text-white bg-indigo-600 hover:bg-indigo-700 py-1.5 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed font-medium">
-                        {addingTaskToGoal ? 'Adding…' : bulkPopupMode ? 'Add tasks' : 'Add task'}
-                      </button>
-                    </form>
-                    {addTaskToGoalError && <p className="text-xs text-red-500 mt-1.5">{addTaskToGoalError}</p>}
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         )
@@ -1044,61 +1127,7 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
           {allCategories.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
       </div>
-      {/* Post-duplicate add-tasks popup */}
-      {postDuplicateGoalId && postDupPopupPos && (
-        <div
-          className="fixed z-50 bg-white border border-gray-200 rounded-lg shadow-2xl w-[380px] max-w-[92vw] p-4"
-          style={{ top: postDupPopupPos.top, left: postDupPopupPos.left }}
-          onClick={e => e.stopPropagation()}
-        >
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-sm font-semibold text-gray-800">Add tasks to &ldquo;{postDupGoalTitle}&rdquo;</p>
-            <button onClick={() => { setPostDuplicateGoalId(null); setPostDupPopupPos(null) }} className="text-gray-400 hover:text-gray-600 text-sm">✕</button>
-          </div>
-          <div className="space-y-1.5">
-            {postDupTasks.map((t, i) => (
-              <div key={i} className="flex gap-1.5 items-center">
-                <input
-                  type="text"
-                  placeholder={i === 0 ? 'First task…' : 'Another task…'}
-                  value={t}
-                  onChange={e => setPostDupTasks(prev => prev.map((v, j) => j === i ? e.target.value : v))}
-                  className="flex-1 border border-gray-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-300"
-                  autoFocus={i === 0}
-                />
-                {postDupTasks.length > 1 && (
-                  <button type="button" onClick={() => setPostDupTasks(prev => prev.filter((_, j) => j !== i))} className="text-gray-300 hover:text-red-400 text-sm leading-none">×</button>
-                )}
-              </div>
-            ))}
-            <button type="button" onClick={() => setPostDupTasks(prev => [...prev, ''])} className="text-xs text-indigo-500 hover:text-indigo-700">+ Add another</button>
-          </div>
-          <div className="flex gap-2 mt-3">
-            <button
-              type="button"
-              disabled={postDupSaving}
-              onClick={async () => {
-                const titles = postDupTasks.map(t => t.trim()).filter(Boolean)
-                if (titles.length === 0) { setPostDuplicateGoalId(null); setPostDupPopupPos(null); return }
-                setPostDupSaving(true)
-                const goal = goals.find(g => g.id === postDuplicateGoalId)
-                try {
-                  for (const title of titles) {
-                    await onCreateTask(title, '', postDuplicateGoalId, null, null, null, null, null, goal?.collaboration_id || null)
-                  }
-                } catch {}
-                setPostDupSaving(false)
-                setPostDuplicateGoalId(null)
-                setPostDupPopupPos(null)
-              }}
-              className="flex-1 text-sm text-white bg-indigo-600 hover:bg-indigo-700 px-3 py-1.5 rounded-lg disabled:opacity-40"
-            >
-              {postDupSaving ? 'Saving…' : 'Save tasks'}
-            </button>
-            <button type="button" onClick={() => { setPostDuplicateGoalId(null); setPostDupPopupPos(null) }} className="text-sm text-gray-400 hover:text-gray-600 px-2">Skip</button>
-          </div>
-        </div>
-      )}
     </div>
+    </>
   )
 }
