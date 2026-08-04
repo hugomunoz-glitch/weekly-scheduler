@@ -634,9 +634,13 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
               )}
               {!isFullyCompleted && onPauseGoal && (
                 mobileStatus === 'paused' ? (
-                  <button onClick={(e) => { e.stopPropagation(); setPressedGoalId(null); onPauseGoal(goal.id, false) }} style={{ fontSize: '20px', color: '#6b7280', background: 'none', border: 'none', padding: 0, cursor: 'pointer', lineHeight: 1 }} title="Resume goal">▶</button>
+                  <button onClick={(e) => { e.stopPropagation(); setPressedGoalId(null); onPauseGoal(goal.id, false) }} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', lineHeight: 1, display: 'flex', alignItems: 'center' }} title="Resume goal">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="#6b7280"><polygon points="5,3 19,12 5,21"/></svg>
+                  </button>
                 ) : (
-                  <button onClick={(e) => { e.stopPropagation(); setPressedGoalId(null); onPauseGoal(goal.id, true) }} style={{ fontSize: '20px', color: '#6b7280', background: 'none', border: 'none', padding: 0, cursor: 'pointer', lineHeight: 1 }} title="Pause goal">⏸</button>
+                  <button onClick={(e) => { e.stopPropagation(); setPressedGoalId(null); onPauseGoal(goal.id, true) }} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', lineHeight: 1, display: 'flex', alignItems: 'center' }} title="Pause goal">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="#6b7280"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+                  </button>
                 )
               )}
               <button onClick={(e) => { e.stopPropagation(); setPressedGoalId(null); onDeleteGoal(goal.id) }} style={{ fontSize: '18px', color: '#ef4444', background: 'none', border: 'none', padding: 0, cursor: 'pointer', lineHeight: 1, marginLeft: 'auto' }} title="Delete goal">&#128465;</button>
