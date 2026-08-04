@@ -357,14 +357,6 @@ export default function SettingsDropdown({ onOpenCollaborations, tasks, rollover
                 <option value="month">Month</option>
                 <option value="year">Year</option>
               </select>
-              <div className="flex items-center justify-between pt-1">
-                <span className="text-xs text-gray-500 font-medium">Show Goals by default</span>
-                <Toggle on={showGoals} onChange={() => onShowGoalsChange(!showGoals)} />
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-gray-500 font-medium">Show Task List by default</span>
-                <Toggle on={showSidebar} onChange={() => onShowSidebarChange(!showSidebar)} />
-              </div>
               <p className="text-xs text-gray-500 font-medium pt-1">Default calendar</p>
               <select
                 value={activeView}
@@ -377,6 +369,14 @@ export default function SettingsDropdown({ onOpenCollaborations, tasks, rollover
                   <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
               </select>
+              <div className="flex items-center justify-between pt-1">
+                <span className="text-xs text-gray-500 font-medium">Show Goals by default</span>
+                <Toggle on={showGoals} onChange={() => onShowGoalsChange(!showGoals)} />
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-gray-500 font-medium">Show Task List by default</span>
+                <Toggle on={showSidebar} onChange={() => onShowSidebarChange(!showSidebar)} />
+              </div>
             </div>
             <div className="px-3 py-2 border-t border-gray-100">
               <p className="text-xs text-gray-500 font-medium mb-1.5">Overdue tasks</p>
