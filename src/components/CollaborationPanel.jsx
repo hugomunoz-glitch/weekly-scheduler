@@ -87,16 +87,24 @@ export default function CollaborationPanel({ onClose }) {
       .single()
     setCoachingUserEnabled(profile?.coaching_enabled ?? false)
 
-    if (!flag?.enabled) return
-
-    // Invitations received (pending)
-    const { data: received } = await supabase
+    // Invitations received (pending) — by user id OR by email, regardless of coaching flag
+    const { data: receivedById } = await supabase
       .from('coach_invitations')
       .select('id, message, created_at, coach_id, profiles!coach_invitations_coach_id_fkey(username)')
       .eq('invitee_id', user.id)
       .eq('status', 'pending')
       .order('created_at', { ascending: false })
-    setReceivedInvites(received || [])
+    const { data: receivedByEmail } = await supabase
+      .from('coach_invitations')
+      .select('id, message, created_at, coach_id, profiles!coach_invitations_coach_id_fkey(username)')
+      .eq('invitee_email', user.email)
+      .eq('status', 'pending')
+      .order('created_at', { ascending: false })
+    const allReceived = [...(receivedById || []), ...(receivedByEmail || [])]
+    const uniqueReceived = allReceived.filter((inv, i, arr) => arr.findIndex(x => x.id === inv.id) === i)
+    setReceivedInvites(uniqueReceived)
+
+    if (!flag?.enabled) return
 
     // Invitations sent (pending)
     const { data: sent } = await supabase
