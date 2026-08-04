@@ -11,21 +11,21 @@ function randomCode() {
 }
 
 function ArtifactForm({ url, setUrl, title, setTitle, notes, setNotes, content, setContent, saving, error, onSubmit, onCancel, label = 'Push artifact' }) {
-  const [showContent, setShowContent] = useState(false)
   return (
     <div className="bg-gray-50 rounded-lg p-3 space-y-2 mt-2">
       {error && <p className="text-xs text-red-600">{error}</p>}
-      <input
-        type="url" placeholder="Artifact URL (optional, for opening)"
-        value={url} onChange={e => setUrl(e.target.value)}
-        className="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:border-indigo-400"
-        style={{ fontSize: 16 }}
-      />
       <input
         type="text" placeholder="Title (e.g. 12-Week Strength Plan)"
         value={title} onChange={e => setTitle(e.target.value)}
         className="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:border-indigo-400"
         style={{ fontSize: 16 }}
+      />
+      <textarea
+        placeholder="Paste artifact content here (copy it from Claude.ai using the Copy button)"
+        value={content} onChange={e => setContent(e.target.value)}
+        rows={5}
+        className="w-full px-2.5 py-1.5 border border-indigo-200 rounded-lg text-sm outline-none focus:border-indigo-400 resize-none"
+        style={{ fontSize: 14 }}
       />
       <textarea
         placeholder="Notes (optional)"
@@ -34,19 +34,18 @@ function ArtifactForm({ url, setUrl, title, setTitle, notes, setNotes, content, 
         className="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:border-indigo-400 resize-none"
         style={{ fontSize: 16 }}
       />
-      <div>
-        <button type="button" onClick={() => setShowContent(v => !v)}
-          className="text-xs text-indigo-600 hover:underline">
-          {showContent ? '▲ Hide content' : '▼ Paste artifact content (for Extract)'}
-        </button>
-        {showContent && (
-          <textarea
-            placeholder="Copy the artifact text from Claude.ai and paste it here so Extract can read it."
-            value={content} onChange={e => setContent(e.target.value)}
-            rows={6}
-            className="w-full mt-1.5 px-2.5 py-1.5 border border-indigo-200 rounded-lg text-sm outline-none focus:border-indigo-400 resize-none"
-            style={{ fontSize: 14 }}
-          />
+      <div className="flex items-center gap-2">
+        <input
+          type="url" placeholder="Link URL (optional)"
+          value={url} onChange={e => setUrl(e.target.value)}
+          className="flex-1 px-2.5 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:border-indigo-400"
+          style={{ fontSize: 16 }}
+        />
+        {url.trim() && (
+          <a href={url.trim()} target="_blank" rel="noopener noreferrer"
+            className="text-xs text-indigo-600 hover:text-indigo-700 font-medium shrink-0">
+            Open ↗
+          </a>
         )}
       </div>
       <div className="flex gap-2">
