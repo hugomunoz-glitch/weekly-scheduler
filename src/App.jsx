@@ -1042,7 +1042,7 @@ export default function App() {
               <button onClick={() => setShowVisionMission(true)} className="px-3 py-1.5 text-sm font-medium text-indigo-600 border border-indigo-200 rounded-lg hover:bg-indigo-50">Vision and Mission</button>
               <button onClick={() => setShowAdd(true)} className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700">+ Add task</button>
               <NotificationBell tasks={tasks} />
-              <SettingsDropdown onOpenCollaborations={() => setShowCollab(true)} tasks={tasks} rolloverMode={rolloverMode} onRolloverModeChange={mode => { setRolloverMode(mode); localStorage.setItem('rolloverMode', mode) }} calView={calView} onCalViewChange={(v) => { setCalView(v); localStorage.setItem('calView', v) }} activeView={activeView} onActiveViewChange={(v) => { setActiveView(v); localStorage.setItem('activeView', v) }} collaborations={collaborations} />
+              <SettingsDropdown onOpenCollaborations={() => setShowCollab(true)} tasks={tasks} rolloverMode={rolloverMode} onRolloverModeChange={mode => { setRolloverMode(mode); localStorage.setItem('rolloverMode', mode) }} calView={calView} onCalViewChange={(v) => { setCalView(v); localStorage.setItem('calView', v) }} activeView={activeView} onActiveViewChange={(v) => { setActiveView(v); localStorage.setItem('activeView', v) }} collaborations={collaborations} showGoals={showGoals} onShowGoalsChange={v => { setShowGoals(v); localStorage.setItem('showGoals', v) }} showSidebar={showSidebar} onShowSidebarChange={v => { setShowSidebar(v); localStorage.setItem('showSidebar', v) }} />
             </div>
           </header>
           <div className="mx-3 mt-3 shrink-0">

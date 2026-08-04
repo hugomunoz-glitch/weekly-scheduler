@@ -150,7 +150,7 @@ function NotificationSection({ tasks }) {
   )
 }
 
-export default function SettingsDropdown({ onOpenCollaborations, tasks, rolloverMode, onRolloverModeChange, calView, onCalViewChange, activeView, onActiveViewChange, collaborations }) {
+export default function SettingsDropdown({ onOpenCollaborations, tasks, rolloverMode, onRolloverModeChange, calView, onCalViewChange, activeView, onActiveViewChange, collaborations, showGoals, onShowGoalsChange, showSidebar, onShowSidebarChange }) {
   const { user, profile, signOut, updateEmail, updatePassword, updateUsername } = useAuth()
   const [open, setOpen] = useState(false)
   const [section, setSection] = useState(null) // 'email' | 'password' | 'username' | null
@@ -357,6 +357,14 @@ export default function SettingsDropdown({ onOpenCollaborations, tasks, rollover
                 <option value="month">Month</option>
                 <option value="year">Year</option>
               </select>
+              <div className="flex items-center justify-between pt-1">
+                <span className="text-xs text-gray-500 font-medium">Show Goals by default</span>
+                <Toggle on={showGoals} onChange={() => onShowGoalsChange(!showGoals)} />
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-gray-500 font-medium">Show Task List by default</span>
+                <Toggle on={showSidebar} onChange={() => onShowSidebarChange(!showSidebar)} />
+              </div>
               <p className="text-xs text-gray-500 font-medium pt-1">Default calendar</p>
               <select
                 value={activeView}
