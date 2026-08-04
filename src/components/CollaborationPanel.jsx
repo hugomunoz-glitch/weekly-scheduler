@@ -336,7 +336,7 @@ export default function CollaborationPanel({ onClose }) {
 
   // ── Artifact actions ───────────────────────────────────────
   async function pushArtifact({ scope, recipientId, collaborationId }) {
-    if (!artifactUrl.trim() || !artifactTitle.trim()) return
+    if (!artifactTitle.trim()) return
     setSavingArtifact(true)
     setArtifactError('')
 
@@ -352,7 +352,7 @@ export default function CollaborationPanel({ onClose }) {
     // Create first version
     const { error: verErr } = await supabase.from('artifact_versions').insert({
       artifact_id: art.id,
-      url: artifactUrl.trim(),
+      url: artifactUrl.trim() || null,
       title: artifactTitle.trim(),
       notes: artifactNotes.trim() || null,
       content: artifactContent.trim() || null,
@@ -370,12 +370,12 @@ export default function CollaborationPanel({ onClose }) {
   }
 
   async function pushNewVersion(artifactId) {
-    if (!artifactUrl.trim() || !artifactTitle.trim()) return
+    if (!artifactTitle.trim()) return
     setSavingArtifact(true)
     setArtifactError('')
     const { error } = await supabase.from('artifact_versions').insert({
       artifact_id: artifactId,
-      url: artifactUrl.trim(),
+      url: artifactUrl.trim() || null,
       title: artifactTitle.trim(),
       notes: artifactNotes.trim() || null,
       content: artifactContent.trim() || null,
