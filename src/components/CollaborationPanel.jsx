@@ -16,7 +16,7 @@ function ArtifactForm({ url, setUrl, title, setTitle, notes, setNotes, content, 
     <div className="bg-gray-50 rounded-lg p-3 space-y-2 mt-2">
       {error && <p className="text-xs text-red-600">{error}</p>}
       <input
-        type="url" placeholder="Claude.ai artifact URL"
+        type="url" placeholder="Artifact URL (optional, for opening)"
         value={url} onChange={e => setUrl(e.target.value)}
         className="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:border-indigo-400"
         style={{ fontSize: 16 }}
@@ -52,7 +52,7 @@ function ArtifactForm({ url, setUrl, title, setTitle, notes, setNotes, content, 
       <div className="flex gap-2">
         <button
           onClick={onSubmit}
-          disabled={saving || !url.trim() || !title.trim()}
+          disabled={saving || !title.trim()}
           className="flex-1 py-1.5 text-xs font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-50"
         >
           {saving ? 'Saving...' : label}
