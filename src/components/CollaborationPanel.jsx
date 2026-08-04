@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
+import ArtifactExtractModal from './ArtifactExtractModal'
 
 function randomCode() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
@@ -51,7 +52,7 @@ function ArtifactForm({ url, setUrl, title, setTitle, notes, setNotes, saving, e
 function ArtifactCard({ artifact, versions, unreadCount, onDelete, onToggleMain, onMarkRead, userId,
   pushingArtifact, setPushingArtifact, artifactUrl, setArtifactUrl, artifactTitle, setArtifactTitle,
   artifactNotes, setArtifactNotes, savingArtifact, artifactError, pushNewVersion,
-  expandedArtifact, setExpandedArtifact }) {
+  expandedArtifact, setExpandedArtifact, onExtract }) {
   const latest = versions?.[0]
   const isOwner = artifact.created_by === userId
   const hasUnread = unreadCount > 0
@@ -74,6 +75,8 @@ function ArtifactCard({ artifact, versions, unreadCount, onDelete, onToggleMain,
           <a href={latest?.url} target="_blank" rel="noopener noreferrer"
             onClick={() => hasUnread && onMarkRead(artifact.id)}
             className="text-xs text-indigo-600 hover:text-indigo-700 font-medium">Open</a>
+          <button onClick={() => onExtract({ artifact, version: latest })}
+            className="text-xs text-emerald-600 hover:text-emerald-700 font-medium">Extract</button>
           <button onClick={() => setExpandedArtifact(isExpanded ? null : artifact.id)}
             className="text-xs text-gray-400 hover:text-gray-600">{isExpanded ? '▲' : '▼'}</button>
         </div>
@@ -175,6 +178,7 @@ export default function CollaborationPanel({ onClose }) {
   const [savingArtifact, setSavingArtifact] = useState(false)
   const [artifactError, setArtifactError] = useState('')
   const [expandedArtifact, setExpandedArtifact] = useState(null)
+  const [extractingArtifact, setExtractingArtifact] = useState(null) // { artifact, version }
 
   // ── Fetch collaborations ───────────────────────────────────
   const fetchCollaborations = useCallback(async () => {
@@ -504,6 +508,15 @@ export default function CollaborationPanel({ onClose }) {
   const coachingVisible = coachingGlobalEnabled && coachingUserEnabled
 
   return (
+    <>
+    {extractingArtifact && (
+      <ArtifactExtractModal
+        artifact={extractingArtifact.artifact}
+        version={extractingArtifact.version}
+        onClose={() => setExtractingArtifact(null)}
+        onDone={fetchArtifacts}
+      />
+    )}
     <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-[3000] p-4" onClick={onClose}>
       <div className="bg-white rounded-xl shadow-xl w-full max-w-md max-h-[85vh] overflow-y-auto p-5" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
@@ -650,6 +663,7 @@ export default function CollaborationPanel({ onClose }) {
                                     savingArtifact={savingArtifact} artifactError={artifactError}
                                     pushNewVersion={pushNewVersion}
                                     expandedArtifact={expandedArtifact} setExpandedArtifact={setExpandedArtifact}
+                                    onExtract={setExtractingArtifact}
                                   />
                                 ))}
                               </div>
@@ -837,5 +851,6 @@ export default function CollaborationPanel({ onClose }) {
         </p>
       </div>
     </div>
+    </>
   )
 }
