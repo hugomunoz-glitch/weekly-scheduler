@@ -1186,7 +1186,7 @@ export default function MobileLayout({
     return inWeek ? todayStr : format(weekDays[0], 'yyyy-MM-dd')
   })
   const [activeTab, setActiveTab] = useState(() => localStorage.getItem('mobileDefaultTab') || 'day')
-  const [mobileCalView, setMobileCalView] = useState('week')
+  const [mobileCalView, setMobileCalView] = useState(() => localStorage.getItem('mobileCalView') || 'week')
   const mobileScrollRef = useRef(null)
   const { pullY, refreshing } = usePullToRefresh(onRefresh || (() => {}), mobileScrollRef)
 
@@ -1298,7 +1298,7 @@ export default function MobileLayout({
           </p>
           <div style={{ display: 'flex', gap: '4px' }}>
             {[['week','Week'],['workweek','Work Wk'],['month','Month'],['year','Year']].map(([v, label]) => (
-              <button key={v} onClick={() => setMobileCalView(v)}
+              <button key={v} onClick={() => { setMobileCalView(v); localStorage.setItem('mobileCalView', v) }}
                 style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: 500, background: mobileCalView === v ? '#6366f1' : '#f3f4f6', color: mobileCalView === v ? 'white' : '#6b7280' }}>
                 {label}
               </button>
@@ -1469,13 +1469,14 @@ export default function MobileLayout({
           <div style={{ border: '1px solid #e5e7eb', borderRadius: '10px', padding: '14px', marginBottom: '10px', background: 'white' }}>
             <p style={{ margin: '0 0 10px', fontSize: '13px', fontWeight: 600, color: '#374151' }}>Default view</p>
             <select
-              value={activeTab}
-              onChange={e => { setActiveTab(e.target.value); localStorage.setItem('mobileDefaultTab', e.target.value) }}
+              value={mobileCalView}
+              onChange={e => { setMobileCalView(e.target.value); localStorage.setItem('mobileCalView', e.target.value) }}
               style={{ width: '100%', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '8px', fontSize: '13px', marginBottom: '12px', outline: 'none' }}
             >
-              <option value="day">Today</option>
-              <option value="goals">Goals</option>
-              <option value="inbox">Task List</option>
+              <option value="week">Week</option>
+              <option value="workweek">Work Week</option>
+              <option value="month">Month</option>
+              <option value="year">Year</option>
             </select>
             <p style={{ margin: '0 0 8px', fontSize: '13px', fontWeight: 600, color: '#374151' }}>Default calendar</p>
             <select
