@@ -1103,7 +1103,7 @@ export default function MobileLayout({
   collaborations, activeView, onChangeView, defaultCollaborationId,
   overdueTasks, onPrevWeek, onNextWeek, onMarkDone,
   onRescheduleToTomorrow, onMoveToInbox, onDelete, onEdit, onAddTask, onAddTaskForBucket, onCreateTask,
-  onRollover, onAddGoal, onEditGoal, onDeleteGoal, onAssignTask,
+  onRollover, onAddGoal, onEditGoal, onDeleteGoal, onPauseGoal, onAssignTask,
   onDuplicateGoal, onDuplicateTask,
   rolloverMode, onRolloverModeChange, onRefresh
 }) {
