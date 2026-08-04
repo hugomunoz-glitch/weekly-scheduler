@@ -90,19 +90,31 @@ export default function CollaborationPanel({ onClose }) {
     // Invitations received (pending) — by user id OR by email, regardless of coaching flag
     const { data: receivedById } = await supabase
       .from('coach_invitations')
-      .select('id, message, created_at, coach_id, profiles!coach_invitations_coach_id_fkey(username)')
+      .select('id, message, created_at, coach_id, profiles!coach_invitations_coach_id_fkey(username, id)')
       .eq('invitee_id', user.id)
       .eq('status', 'pending')
       .order('created_at', { ascending: false })
     const { data: receivedByEmail } = await supabase
       .from('coach_invitations')
-      .select('id, message, created_at, coach_id, profiles!coach_invitations_coach_id_fkey(username)')
+      .select('id, message, created_at, coach_id, profiles!coach_invitations_coach_id_fkey(username, id)')
       .eq('invitee_email', user.email)
       .eq('status', 'pending')
       .order('created_at', { ascending: false })
     const allReceived = [...(receivedById || []), ...(receivedByEmail || [])]
     const uniqueReceived = allReceived.filter((inv, i, arr) => arr.findIndex(x => x.id === inv.id) === i)
-    setReceivedInvites(uniqueReceived)
+
+    // Resolve coach usernames for any invitations where the join didn't return a profile
+    const missingCoachIds = uniqueReceived.filter(inv => !inv.profiles?.username && inv.coach_id).map(inv => inv.coach_id)
+    let coachMap = {}
+    if (missingCoachIds.length > 0) {
+      const { data: coaches } = await supabase.from('profiles').select('id, username').in('id', missingCoachIds)
+      for (const c of coaches || []) coachMap[c.id] = c.username
+    }
+    const withCoachNames = uniqueReceived.map(inv => ({
+      ...inv,
+      coachUsername: inv.profiles?.username || coachMap[inv.coach_id] || 'Someone'
+    }))
+    setReceivedInvites(withCoachNames)
 
     if (!flag?.enabled) return
 
@@ -289,7 +301,7 @@ export default function CollaborationPanel({ onClose }) {
               {receivedInvites.map(inv => (
                 <div key={inv.id} className="border border-indigo-100 bg-indigo-50 rounded-lg px-3 py-2.5">
                   <p className="text-sm font-medium text-gray-800 mb-0.5">
-                    {inv.profiles?.username || 'Someone'} wants to coach you
+                    {inv.coachUsername} wants to coach you
                   </p>
                   {inv.message && <p className="text-xs text-gray-500 mb-2">"{inv.message}"</p>}
                   <div className="flex gap-2">
@@ -316,12 +328,14 @@ export default function CollaborationPanel({ onClose }) {
 
         {coachingGlobalEnabled && (
           <div className="mb-5 pb-5 border-b border-gray-100">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Coaching</h3>
-              {!coachingUserEnabled && (
-                <span className="text-xs text-gray-400 italic">Not enabled on your account</span>
-              )}
-            </div>
+            {receivedInvites.length === 0 && (
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Coaching</h3>
+                {!coachingUserEnabled && (
+                  <span className="text-xs text-gray-400 italic">Not enabled on your account</span>
+                )}
+              </div>
+            )}
 
             {coachingVisible && (
               <>
