@@ -282,40 +282,41 @@ export default function CollaborationPanel({ onClose }) {
               )}
             </div>
 
+            {/* Pending invitations received — always visible regardless of coaching_enabled */}
+            {receivedInvites.length > 0 && (
+              <div className="mb-4">
+                <p className="text-xs font-medium text-gray-500 mb-2">Coaching invitations for you</p>
+                <div className="space-y-2">
+                  {receivedInvites.map(inv => (
+                    <div key={inv.id} className="border border-indigo-100 bg-indigo-50 rounded-lg px-3 py-2.5">
+                      <p className="text-sm font-medium text-gray-800 mb-0.5">
+                        {inv.profiles?.username || 'Someone'} wants to coach you
+                      </p>
+                      {inv.message && <p className="text-xs text-gray-500 mb-2">"{inv.message}"</p>}
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => respondToInvite(inv.id, true)}
+                          disabled={respondingId === inv.id}
+                          className="flex-1 py-1.5 text-xs font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-50"
+                        >
+                          {respondingId === inv.id ? '...' : 'Accept'}
+                        </button>
+                        <button
+                          onClick={() => respondToInvite(inv.id, false)}
+                          disabled={respondingId === inv.id}
+                          className="flex-1 py-1.5 text-xs font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+                        >
+                          Decline
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {coachingVisible && (
               <>
-                {/* Pending invitations received */}
-                {receivedInvites.length > 0 && (
-                  <div className="mb-4">
-                    <p className="text-xs font-medium text-gray-500 mb-2">Coaching invitations for you</p>
-                    <div className="space-y-2">
-                      {receivedInvites.map(inv => (
-                        <div key={inv.id} className="border border-indigo-100 bg-indigo-50 rounded-lg px-3 py-2.5">
-                          <p className="text-sm font-medium text-gray-800 mb-0.5">
-                            {inv.profiles?.username || 'Someone'} wants to coach you
-                          </p>
-                          {inv.message && <p className="text-xs text-gray-500 mb-2">"{inv.message}"</p>}
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => respondToInvite(inv.id, true)}
-                              disabled={respondingId === inv.id}
-                              className="flex-1 py-1.5 text-xs font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-50"
-                            >
-                              {respondingId === inv.id ? '...' : 'Accept'}
-                            </button>
-                            <button
-                              onClick={() => respondToInvite(inv.id, false)}
-                              disabled={respondingId === inv.id}
-                              className="flex-1 py-1.5 text-xs font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50"
-                            >
-                              Decline
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
 
                 {/* Established coaching relationships */}
                 {coachRelationships.length > 0 && (
