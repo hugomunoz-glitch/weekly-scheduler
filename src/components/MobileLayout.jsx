@@ -629,6 +629,9 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
             <div onClick={e => e.stopPropagation()} style={{ display: 'flex', alignItems: 'center', gap: '14px', marginTop: '8px', paddingTop: '8px', borderTop: '1px solid #f3f4f6' }}>
               <button onClick={(e) => { e.stopPropagation(); setPressedGoalId(null); startEditGoal(goal) }} style={{ fontSize: '24px', color: '#6b7280', background: 'none', border: 'none', padding: 0, cursor: 'pointer', lineHeight: 1 }} title="Edit goal">&#9998;</button>
               {onDuplicateGoal && <button onClick={(e) => { e.stopPropagation(); setPressedGoalId(null); onDuplicateGoal(goal.id) }} style={{ fontSize: '20px', color: '#6b7280', background: 'none', border: 'none', padding: 0, cursor: 'pointer', lineHeight: 1 }} title="Duplicate goal">&#10697;</button>}
+              {isFullyCompleted && (
+                <button onClick={(e) => { e.stopPropagation(); setPressedGoalId(null); setViewingGoalId(goal.id) }} style={{ fontSize: '12px', fontWeight: 600, color: '#6366f1', background: 'none', border: 'none', padding: 0, cursor: 'pointer', lineHeight: 1 }} title="Add tasks to revive goal">+ Tasks</button>
+              )}
               {!isFullyCompleted && onPauseGoal && (
                 mobileStatus === 'paused' ? (
                   <button onClick={(e) => { e.stopPropagation(); setPressedGoalId(null); onPauseGoal(goal.id, false) }} style={{ fontSize: '20px', color: '#6b7280', background: 'none', border: 'none', padding: 0, cursor: 'pointer', lineHeight: 1 }} title="Resume goal">▶</button>
