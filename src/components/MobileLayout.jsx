@@ -557,13 +557,13 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
         const mobileStatus = goal.status === 'paused' ? 'paused' : isFullyCompleted ? 'completed' : linked.some(t => t.status === 'done') ? 'in_progress' : 'not_started'
         const MOBILE_STATUS_BADGE = {
           in_progress: { label: 'In Progress', color: '#4338ca', bg: '#eef2ff', dot: '#6366f1' },
-          paused:      { label: 'Paused',      color: '#b45309', bg: '#fffbeb', dot: '#f59e0b' },
+          paused:      { label: 'Paused',      color: '#6b7280', bg: '#f3f4f6', dot: '#9ca3af' },
           completed:   { label: 'Completed',   color: '#059669', bg: '#d1fae5', dot: '#10b981' },
           not_started: null,
         }
         const mobileStatusBadge = MOBILE_STATUS_BADGE[mobileStatus]
-        const cardBg = mobileStatus === 'paused' ? '#fffbeb' : 'white'
-        const cardBorder = mobileStatus === 'paused' ? '1px solid #fde68a' : '1px solid #e5e7eb'
+        const cardBg = 'white'
+        const cardBorder = '1px solid #e5e7eb'
       return (
         <div key={goal.id} onClick={() => { if (pressedGoalId !== goal.id) setViewingGoalId(goal.id) }} style={{ border: cardBorder, borderLeft: goal.priority && PRIORITY_BORDER[goal.priority] ? '4px solid ' + PRIORITY_BORDER[goal.priority] : cardBorder, borderRadius: '10px', padding: '10px 12px', marginBottom: '8px', background: cardBg, position: 'relative', cursor: 'pointer' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>

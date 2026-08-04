@@ -43,7 +43,7 @@ function goalStatus(goal, goalTasks) {
 
 const STATUS_BADGE = {
   in_progress: { label: 'In Progress', color: '#4338ca', bg: '#eef2ff', dot: '#6366f1' },
-  paused:      { label: 'Paused',      color: '#b45309', bg: '#fffbeb', dot: '#f59e0b' },
+  paused:      { label: 'Paused',      color: '#6b7280', bg: '#f3f4f6', dot: '#9ca3af' },
   completed:   { label: 'Completed',   color: '#059669', bg: '#d1fae5', dot: '#10b981' },
   not_started: null,
 }
@@ -595,7 +595,7 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
         return (
           <div
             key={goal.id}
-            className={'flex items-start gap-2 border rounded-lg px-3 py-1.5 shrink-0 min-w-[160px] group cursor-pointer relative ' + (isFullyCompleted ? 'border-emerald-100 bg-white' : status === 'paused' ? 'border-amber-200 bg-amber-50' : 'border-gray-200 bg-white')}
+            className={'flex items-start gap-2 border rounded-lg px-3 py-1.5 shrink-0 min-w-[160px] group cursor-pointer relative ' + (isFullyCompleted ? 'border-emerald-100 bg-white' : 'border-gray-200 bg-white')}
             style={goal.priority && PRIORITY_BORDER[goal.priority] ? { borderLeft: '4px solid ' + PRIORITY_BORDER[goal.priority] } : undefined}
             title={goal.priority ? PRIORITY_LABELS[goal.priority] + ' priority' : undefined}
             onClick={(e) => openPopup(goal.id, e)}
