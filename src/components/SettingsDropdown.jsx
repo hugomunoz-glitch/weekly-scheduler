@@ -150,7 +150,7 @@ function NotificationSection({ tasks }) {
   )
 }
 
-export default function SettingsDropdown({ onOpenCollaborations, tasks, rolloverMode, onRolloverModeChange }) {
+export default function SettingsDropdown({ onOpenCollaborations, tasks, rolloverMode, onRolloverModeChange, calView, onCalViewChange, activeView, onActiveViewChange, collaborations }) {
   const { user, profile, signOut, updateEmail, updatePassword, updateUsername } = useAuth()
   const [open, setOpen] = useState(false)
   const [section, setSection] = useState(null) // 'email' | 'password' | 'username' | null
@@ -344,6 +344,32 @@ export default function SettingsDropdown({ onOpenCollaborations, tasks, rollover
               </button>
             )}
 
+            <div className="px-3 py-2 border-t border-gray-100 space-y-2">
+              <p className="text-xs text-gray-500 font-medium">Default view</p>
+              <select
+                value={calView}
+                onChange={e => onCalViewChange(e.target.value)}
+                className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-300"
+              >
+                <option value="day">Day</option>
+                <option value="week">Week</option>
+                <option value="workweek">Work Week</option>
+                <option value="month">Month</option>
+                <option value="year">Year</option>
+              </select>
+              <p className="text-xs text-gray-500 font-medium pt-1">Default calendar</p>
+              <select
+                value={activeView}
+                onChange={e => onActiveViewChange(e.target.value)}
+                className="w-full text-xs border border-gray-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-300"
+              >
+                <option value="personal">Personal</option>
+                <option value="all">All</option>
+                {(collaborations || []).map(c => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            </div>
             <div className="px-3 py-2 border-t border-gray-100">
               <p className="text-xs text-gray-500 font-medium mb-1.5">Overdue tasks</p>
               <div className="flex flex-col gap-1">

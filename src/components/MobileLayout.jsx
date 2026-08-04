@@ -1185,7 +1185,7 @@ export default function MobileLayout({
     const inWeek = weekDays.some(d => format(d, 'yyyy-MM-dd') === todayStr)
     return inWeek ? todayStr : format(weekDays[0], 'yyyy-MM-dd')
   })
-  const [activeTab, setActiveTab] = useState('day')
+  const [activeTab, setActiveTab] = useState(() => localStorage.getItem('mobileDefaultTab') || 'day')
   const [mobileCalView, setMobileCalView] = useState('week')
   const mobileScrollRef = useRef(null)
   const { pullY, refreshing } = usePullToRefresh(onRefresh || (() => {}), mobileScrollRef)
@@ -1465,6 +1465,30 @@ export default function MobileLayout({
         <div style={{ flex: 1, overflowY: 'auto', padding: '16px' }}>
           <div style={{ padding: '4px 0 12px' }}>
             <span style={{ fontSize: '15px', fontWeight: 500, color: '#111827' }}>&#9881; Settings</span>
+          </div>
+          <div style={{ border: '1px solid #e5e7eb', borderRadius: '10px', padding: '14px', marginBottom: '10px', background: 'white' }}>
+            <p style={{ margin: '0 0 10px', fontSize: '13px', fontWeight: 600, color: '#374151' }}>Default view</p>
+            <select
+              value={activeTab}
+              onChange={e => { setActiveTab(e.target.value); localStorage.setItem('mobileDefaultTab', e.target.value) }}
+              style={{ width: '100%', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '8px', fontSize: '13px', marginBottom: '12px', outline: 'none' }}
+            >
+              <option value="day">Today</option>
+              <option value="goals">Goals</option>
+              <option value="inbox">Task List</option>
+            </select>
+            <p style={{ margin: '0 0 8px', fontSize: '13px', fontWeight: 600, color: '#374151' }}>Default calendar</p>
+            <select
+              value={activeView}
+              onChange={e => onChangeView(e.target.value)}
+              style={{ width: '100%', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '8px', fontSize: '13px', outline: 'none' }}
+            >
+              <option value="personal">Personal</option>
+              <option value="all">All</option>
+              {(collaborations || []).map(c => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
           </div>
           <div style={{ border: '1px solid #e5e7eb', borderRadius: '10px', padding: '14px', marginBottom: '10px', background: 'white' }}>
             <p style={{ margin: '0 0 8px', fontSize: '13px', fontWeight: 600, color: '#374151' }}>Overdue tasks</p>

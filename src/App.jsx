@@ -153,7 +153,7 @@ export default function App() {
   const [showVisionMission, setShowVisionMission] = useState(false)
   const [collaborations, setCollaborations] = useState([])
   const [collabMembersMap, setCollabMembersMap] = useState({})
-  const [activeView, setActiveView] = useState('personal')
+  const [activeView, setActiveView] = useState(() => localStorage.getItem('activeView') || 'personal')
   const [calView, setCalView] = useState(() => localStorage.getItem('calView') || 'day')
   const [showGoals, setShowGoals] = useState(() => localStorage.getItem('showGoals') === 'true')
   const [showSidebar, setShowSidebar] = useState(() => localStorage.getItem('showSidebar') === 'true')
@@ -977,7 +977,7 @@ export default function App() {
 
   const sharedProps = {
     weekStart, weekDays, tasks: visibleTasks, goals: visibleGoals, goalMap, collabMap, collabMembersMap, profileMap, goalTasks: visibleGoalTasks, inboxTasks, loading,
-    collaborations, activeView, onChangeView: setActiveView, defaultCollaborationId,
+    collaborations, activeView, onChangeView: (v) => { setActiveView(v); localStorage.setItem('activeView', v) }, defaultCollaborationId,
     overdueTasks, onMarkDone: markDone, onRescheduleToTomorrow: rescheduleToTomorrow,
     onMoveToInbox: moveToInbox, onDelete: requestDeleteTask, onEdit: setEditingTask, onAssignTask: assignTask,
     onAddTask: () => setShowAdd(true), onAddTaskForDay: openAddForDay, onAddTaskForBucket: openAddForBucket, onCreateTask: addTask, onRollover: rolloverOverdue,
@@ -1029,7 +1029,7 @@ export default function App() {
                 ))}
               </div>
               <div className="ml-1">
-                <ViewSwitcher activeView={activeView} onChangeView={setActiveView} collaborations={collaborations} collabMap={collabMap} />
+                <ViewSwitcher activeView={activeView} onChangeView={(v) => { setActiveView(v); localStorage.setItem('activeView', v) }} collaborations={collaborations} collabMap={collabMap} />
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -1042,7 +1042,7 @@ export default function App() {
               <button onClick={() => setShowVisionMission(true)} className="px-3 py-1.5 text-sm font-medium text-indigo-600 border border-indigo-200 rounded-lg hover:bg-indigo-50">Vision and Mission</button>
               <button onClick={() => setShowAdd(true)} className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700">+ Add task</button>
               <NotificationBell tasks={tasks} />
-              <SettingsDropdown onOpenCollaborations={() => setShowCollab(true)} tasks={tasks} rolloverMode={rolloverMode} onRolloverModeChange={mode => { setRolloverMode(mode); localStorage.setItem('rolloverMode', mode) }} />
+              <SettingsDropdown onOpenCollaborations={() => setShowCollab(true)} tasks={tasks} rolloverMode={rolloverMode} onRolloverModeChange={mode => { setRolloverMode(mode); localStorage.setItem('rolloverMode', mode) }} calView={calView} onCalViewChange={(v) => { setCalView(v); localStorage.setItem('calView', v) }} activeView={activeView} onActiveViewChange={(v) => { setActiveView(v); localStorage.setItem('activeView', v) }} collaborations={collaborations} />
             </div>
           </header>
           <div className="mx-3 mt-3 shrink-0">
