@@ -562,8 +562,8 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
           not_started: null,
         }
         const mobileStatusBadge = MOBILE_STATUS_BADGE[mobileStatus]
-        const cardBg = 'white'
-        const cardBorder = '1px solid #e5e7eb'
+        const cardBg = mobileStatus === 'paused' ? '#fffbeb' : 'white'
+        const cardBorder = mobileStatus === 'paused' ? '1px solid #fde68a' : '1px solid #e5e7eb'
       return (
         <div key={goal.id} onClick={() => { if (pressedGoalId !== goal.id) setViewingGoalId(goal.id) }} style={{ border: cardBorder, borderLeft: goal.priority && PRIORITY_BORDER[goal.priority] ? '4px solid ' + PRIORITY_BORDER[goal.priority] : cardBorder, borderRadius: '10px', padding: '10px 12px', marginBottom: '8px', background: cardBg, position: 'relative', cursor: 'pointer' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
