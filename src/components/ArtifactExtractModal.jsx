@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
-import { format } from 'date-fns'
 
 export default function ArtifactExtractModal({ artifact, version, onClose, onDone }) {
   const { user } = useAuth()
@@ -32,7 +31,6 @@ export default function ArtifactExtractModal({ artifact, version, onClose, onDon
   async function addToSchedule() {
     setStep('saving')
     const toAdd = items.filter((_, i) => selected[i])
-    const today = format(new Date(), 'yyyy-MM-dd')
 
     const goals = toAdd.filter(i => i.type === 'goal')
     const tasks = toAdd.filter(i => i.type === 'task')
@@ -51,9 +49,9 @@ export default function ArtifactExtractModal({ artifact, version, onClose, onDon
         owner_id: user.id,
         title: t.title,
         notes: t.description || null,
-        scheduled_date: t.dueDate || today,
-        bucket: t.bucket || 'morning',
-        status: 'scheduled',
+        scheduled_date: null,
+        bucket: null,
+        status: 'inbox',
         source_artifact_version_id: version.id,
       })))
     }
