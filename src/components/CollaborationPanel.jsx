@@ -9,6 +9,129 @@ function randomCode() {
   return code
 }
 
+function ArtifactForm({ url, setUrl, title, setTitle, notes, setNotes, saving, error, onSubmit, onCancel, label = 'Push artifact' }) {
+  return (
+    <div className="bg-gray-50 rounded-lg p-3 space-y-2 mt-2">
+      {error && <p className="text-xs text-red-600">{error}</p>}
+      <input
+        type="url" placeholder="Claude.ai artifact URL"
+        value={url} onChange={e => setUrl(e.target.value)}
+        className="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:border-indigo-400"
+        style={{ fontSize: 16 }}
+      />
+      <input
+        type="text" placeholder="Title (e.g. 12-Week Strength Plan)"
+        value={title} onChange={e => setTitle(e.target.value)}
+        className="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:border-indigo-400"
+        style={{ fontSize: 16 }}
+      />
+      <textarea
+        placeholder="Notes (optional)"
+        value={notes} onChange={e => setNotes(e.target.value)}
+        rows={2}
+        className="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:border-indigo-400 resize-none"
+        style={{ fontSize: 16 }}
+      />
+      <div className="flex gap-2">
+        <button
+          onClick={onSubmit}
+          disabled={saving || !url.trim() || !title.trim()}
+          className="flex-1 py-1.5 text-xs font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-50"
+        >
+          {saving ? 'Saving...' : label}
+        </button>
+        <button onClick={onCancel} className="px-3 py-1.5 text-xs text-gray-500 border border-gray-200 rounded-lg hover:bg-gray-100">
+          Cancel
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function ArtifactCard({ artifact, versions, unreadCount, onDelete, onToggleMain, onMarkRead, userId,
+  pushingArtifact, setPushingArtifact, artifactUrl, setArtifactUrl, artifactTitle, setArtifactTitle,
+  artifactNotes, setArtifactNotes, savingArtifact, artifactError, pushNewVersion,
+  expandedArtifact, setExpandedArtifact }) {
+  const latest = versions?.[0]
+  const isOwner = artifact.created_by === userId
+  const hasUnread = unreadCount > 0
+  const isExpanded = expandedArtifact === artifact.id
+  const isPushingVersion = pushingArtifact === `version-${artifact.id}`
+
+  return (
+    <div className={`border rounded-lg p-3 ${hasUnread ? 'border-indigo-300 bg-indigo-50' : 'border-gray-200 bg-white'}`}>
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1.5 mb-0.5">
+            {hasUnread && <span className="w-2 h-2 rounded-full bg-indigo-500 shrink-0" />}
+            <p className="text-sm font-medium text-gray-900 truncate">{latest?.title || 'Untitled'}</p>
+            <span className="text-xs text-gray-400 shrink-0">v{latest?.version_number}</span>
+          </div>
+          <p className="text-xs text-gray-500">by {latest?.profiles?.username || 'unknown'} · {latest ? new Date(latest.created_at).toLocaleDateString() : ''}</p>
+          {latest?.notes && <p className="text-xs text-gray-500 mt-0.5 italic">"{latest.notes}"</p>}
+        </div>
+        <div className="flex items-center gap-1.5 shrink-0">
+          <a href={latest?.url} target="_blank" rel="noopener noreferrer"
+            onClick={() => hasUnread && onMarkRead(artifact.id)}
+            className="text-xs text-indigo-600 hover:text-indigo-700 font-medium">Open</a>
+          <button onClick={() => setExpandedArtifact(isExpanded ? null : artifact.id)}
+            className="text-xs text-gray-400 hover:text-gray-600">{isExpanded ? '▲' : '▼'}</button>
+        </div>
+      </div>
+
+      {isExpanded && (
+        <div className="mt-2 pt-2 border-t border-gray-100 space-y-1.5">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-medium text-gray-500">Show in calendar/goals</p>
+            <button onClick={() => onToggleMain(artifact.id, artifact.display_in_main_view)}
+              className={`relative w-8 h-4 rounded-full transition-colors ${artifact.display_in_main_view ? 'bg-indigo-500' : 'bg-gray-300'}`}>
+              <span className={`absolute top-0.5 w-3 h-3 bg-white rounded-full shadow transition-transform ${artifact.display_in_main_view ? 'translate-x-4' : 'translate-x-0.5'}`} />
+            </button>
+          </div>
+
+          {versions?.length > 1 && (
+            <div>
+              <p className="text-xs font-medium text-gray-500 mb-1">Version history</p>
+              <div className="space-y-1">
+                {versions.map(v => (
+                  <div key={v.id} className="flex items-center justify-between text-xs text-gray-600 bg-gray-50 rounded px-2 py-1">
+                    <span>v{v.version_number} — {v.title}</span>
+                    <a href={v.url} target="_blank" rel="noopener noreferrer" className="text-indigo-500 hover:underline">Open</a>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="flex gap-2 pt-1">
+            {isOwner && (
+              <button
+                onClick={() => { setPushingArtifact(isPushingVersion ? null : `version-${artifact.id}`); setArtifactUrl(''); setArtifactTitle(latest?.title || ''); setArtifactNotes('') }}
+                className="text-xs text-indigo-600 hover:text-indigo-700 font-medium"
+              >
+                + New version
+              </button>
+            )}
+            <button onClick={() => onDelete(artifact.id)} className="text-xs text-red-400 hover:text-red-600">Delete</button>
+          </div>
+
+          {isPushingVersion && (
+            <ArtifactForm
+              url={artifactUrl} setUrl={setArtifactUrl}
+              title={artifactTitle} setTitle={setArtifactTitle}
+              notes={artifactNotes} setNotes={setArtifactNotes}
+              saving={savingArtifact} error={artifactError}
+              onSubmit={() => pushNewVersion(artifact.id)}
+              onCancel={() => setPushingArtifact(null)}
+              label="Push new version"
+            />
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function CollaborationPanel({ onClose }) {
   const { user } = useAuth()
 
@@ -40,6 +163,18 @@ export default function CollaborationPanel({ onClose }) {
   const [inviteError, setInviteError] = useState('')
   const [inviteSuccess, setInviteSuccess] = useState('')
   const [respondingId, setRespondingId] = useState(null)
+
+  // ── Artifacts state ────────────────────────────────────────
+  const [artifacts, setArtifacts] = useState([]) // all artifacts visible to user
+  const [artifactVersions, setArtifactVersions] = useState({}) // { artifact_id: [versions] }
+  const [artifactNotifications, setArtifactNotifications] = useState([])
+  const [pushingArtifact, setPushingArtifact] = useState(null) // collab.id or coaching rel.id or 'personal'
+  const [artifactUrl, setArtifactUrl] = useState('')
+  const [artifactTitle, setArtifactTitle] = useState('')
+  const [artifactNotes, setArtifactNotes] = useState('')
+  const [savingArtifact, setSavingArtifact] = useState(false)
+  const [artifactError, setArtifactError] = useState('')
+  const [expandedArtifact, setExpandedArtifact] = useState(null)
 
   // ── Fetch collaborations ───────────────────────────────────
   const fetchCollaborations = useCallback(async () => {
@@ -143,6 +278,111 @@ export default function CollaborationPanel({ onClose }) {
   }, [user])
 
   useEffect(() => { fetchCoachingData() }, [fetchCoachingData])
+
+  // ── Fetch artifacts ────────────────────────────────────────
+  const fetchArtifacts = useCallback(async () => {
+    if (!user) return
+    const { data: arts } = await supabase
+      .from('artifacts')
+      .select('id, scope, recipient_id, collaboration_id, created_by, display_in_main_view, created_at, profiles!artifacts_created_by_fkey(username)')
+      .is('deleted_at', null)
+      .order('created_at', { ascending: false })
+    setArtifacts(arts || [])
+
+    if (!arts?.length) return
+    const { data: versions } = await supabase
+      .from('artifact_versions')
+      .select('id, artifact_id, version_number, url, title, notes, pushed_by, created_at, profiles!artifact_versions_pushed_by_fkey(username)')
+      .in('artifact_id', arts.map(a => a.id))
+      .order('version_number', { ascending: false })
+    const grouped = {}
+    for (const v of versions || []) {
+      grouped[v.artifact_id] = grouped[v.artifact_id] || []
+      grouped[v.artifact_id].push(v)
+    }
+    setArtifactVersions(grouped)
+
+    const { data: notifs } = await supabase
+      .from('artifact_notifications')
+      .select('id, artifact_id, artifact_version_id, is_read, created_at')
+      .eq('recipient_id', user.id)
+      .eq('is_read', false)
+    setArtifactNotifications(notifs || [])
+  }, [user])
+
+  useEffect(() => { fetchArtifacts() }, [fetchArtifacts])
+
+  // ── Artifact actions ───────────────────────────────────────
+  async function pushArtifact({ scope, recipientId, collaborationId }) {
+    if (!artifactUrl.trim() || !artifactTitle.trim()) return
+    setSavingArtifact(true)
+    setArtifactError('')
+
+    // Create artifact container
+    const insertData = { scope, created_by: user.id, display_in_main_view: false }
+    if (scope === 'personal') insertData.recipient_id = recipientId
+    if (scope === 'collaboration') insertData.collaboration_id = collaborationId
+
+    const { data: art, error: artErr } = await supabase
+      .from('artifacts').insert(insertData).select().single()
+    if (artErr) { setArtifactError(artErr.message); setSavingArtifact(false); return }
+
+    // Create first version
+    const { error: verErr } = await supabase.from('artifact_versions').insert({
+      artifact_id: art.id,
+      url: artifactUrl.trim(),
+      title: artifactTitle.trim(),
+      notes: artifactNotes.trim() || null,
+      pushed_by: user.id,
+    })
+    if (verErr) { setArtifactError(verErr.message); setSavingArtifact(false); return }
+
+    setSavingArtifact(false)
+    setArtifactUrl('')
+    setArtifactTitle('')
+    setArtifactNotes('')
+    setPushingArtifact(null)
+    fetchArtifacts()
+  }
+
+  async function pushNewVersion(artifactId) {
+    if (!artifactUrl.trim() || !artifactTitle.trim()) return
+    setSavingArtifact(true)
+    setArtifactError('')
+    const { error } = await supabase.from('artifact_versions').insert({
+      artifact_id: artifactId,
+      url: artifactUrl.trim(),
+      title: artifactTitle.trim(),
+      notes: artifactNotes.trim() || null,
+      pushed_by: user.id,
+    })
+    if (error) { setArtifactError(error.message); setSavingArtifact(false); return }
+    setSavingArtifact(false)
+    setArtifactUrl('')
+    setArtifactTitle('')
+    setArtifactNotes('')
+    setPushingArtifact(null)
+    fetchArtifacts()
+  }
+
+  async function deleteArtifact(artifactId) {
+    await supabase.from('artifacts')
+      .update({ deleted_at: new Date().toISOString(), deleted_by: user.id })
+      .eq('id', artifactId)
+    fetchArtifacts()
+  }
+
+  async function markNotificationsRead(artifactId) {
+    const ids = artifactNotifications.filter(n => n.artifact_id === artifactId).map(n => n.id)
+    if (!ids.length) return
+    await supabase.from('artifact_notifications').update({ is_read: true }).in('id', ids)
+    setArtifactNotifications(prev => prev.filter(n => !ids.includes(n.id)))
+  }
+
+  async function toggleDisplayInMain(artifactId, current) {
+    await supabase.from('artifacts').update({ display_in_main_view: !current }).eq('id', artifactId)
+    setArtifacts(prev => prev.map(a => a.id === artifactId ? { ...a, display_in_main_view: !current } : a))
+  }
 
   // ── Collaboration actions ──────────────────────────────────
   async function createCollaboration(e) {
@@ -357,18 +597,63 @@ export default function CollaborationPanel({ onClose }) {
                 {coachRelationships.length > 0 && (
                   <div className="mb-4">
                     <p className="text-xs font-medium text-gray-500 mb-2">Active coaching relationships</p>
-                    <div className="space-y-1.5">
+                    <div className="space-y-3">
                       {coachRelationships.map(rel => {
                         const isCoach = rel.coach_id === user.id
+                        const partnerId = isCoach ? rel.member_id : rel.coach_id
+                        const partnerName = isCoach ? rel.member?.username : rel.coach?.username
+                        const relArtifacts = artifacts.filter(a => a.scope === 'personal' && (
+                          (a.recipient_id === partnerId && a.created_by === user.id) ||
+                          (a.recipient_id === user.id && a.created_by === partnerId)
+                        ))
+                        const isPushingNew = pushingArtifact === `coaching-${rel.id}`
                         return (
-                          <div key={rel.id} className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2">
-                            <span className="text-xs px-1.5 py-0.5 rounded font-medium"
-                              style={{ background: isCoach ? '#e0e7ff' : '#dcfce7', color: isCoach ? '#4338ca' : '#15803d' }}>
-                              {isCoach ? 'Coach' : 'Member'}
-                            </span>
-                            <span className="text-sm text-gray-700">
-                              {isCoach ? rel.member?.username : rel.coach?.username}
-                            </span>
+                          <div key={rel.id} className="border border-gray-100 rounded-lg p-2.5">
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs px-1.5 py-0.5 rounded font-medium"
+                                  style={{ background: isCoach ? '#e0e7ff' : '#dcfce7', color: isCoach ? '#4338ca' : '#15803d' }}>
+                                  {isCoach ? 'Coach' : 'Member'}
+                                </span>
+                                <span className="text-sm text-gray-700">{partnerName}</span>
+                              </div>
+                              <button
+                                onClick={() => { setPushingArtifact(isPushingNew ? null : `coaching-${rel.id}`); setArtifactUrl(''); setArtifactTitle(''); setArtifactNotes('') }}
+                                className="text-xs text-indigo-600 hover:text-indigo-700 font-medium"
+                              >
+                                + Artifact
+                              </button>
+                            </div>
+                            {isPushingNew && (
+                              <ArtifactForm
+                                url={artifactUrl} setUrl={setArtifactUrl}
+                                title={artifactTitle} setTitle={setArtifactTitle}
+                                notes={artifactNotes} setNotes={setArtifactNotes}
+                                saving={savingArtifact} error={artifactError}
+                                onSubmit={() => pushArtifact({ scope: 'personal', recipientId: isCoach ? partnerId : user.id })}
+                                onCancel={() => setPushingArtifact(null)}
+                              />
+                            )}
+                            {relArtifacts.length > 0 && (
+                              <div className="space-y-2 mt-1">
+                                {relArtifacts.map(art => (
+                                  <ArtifactCard
+                                    key={art.id} artifact={art}
+                                    versions={artifactVersions[art.id]}
+                                    unreadCount={artifactNotifications.filter(n => n.artifact_id === art.id).length}
+                                    onDelete={deleteArtifact} onToggleMain={toggleDisplayInMain}
+                                    onMarkRead={markNotificationsRead} userId={user.id}
+                                    pushingArtifact={pushingArtifact} setPushingArtifact={setPushingArtifact}
+                                    artifactUrl={artifactUrl} setArtifactUrl={setArtifactUrl}
+                                    artifactTitle={artifactTitle} setArtifactTitle={setArtifactTitle}
+                                    artifactNotes={artifactNotes} setArtifactNotes={setArtifactNotes}
+                                    savingArtifact={savingArtifact} artifactError={artifactError}
+                                    pushNewVersion={pushNewVersion}
+                                    expandedArtifact={expandedArtifact} setExpandedArtifact={setExpandedArtifact}
+                                  />
+                                ))}
+                              </div>
+                            )}
                           </div>
                         )
                       })}
@@ -483,7 +768,7 @@ export default function CollaborationPanel({ onClose }) {
                   Members: {collab.collaboration_members?.map(m => m.profiles?.username || 'unknown').join(', ') || '—'}
                 </div>
                 {inviteCodes[collab.id]?.length > 0 && (
-                  <div className="space-y-1.5">
+                  <div className="space-y-1.5 mb-2">
                     {inviteCodes[collab.id].map(inv => (
                       <div key={inv.code} className="flex items-center justify-between bg-gray-50 rounded-lg px-2.5 py-1.5">
                         <span className="font-mono text-sm text-gray-800 tracking-wider">{inv.code}</span>
@@ -498,6 +783,50 @@ export default function CollaborationPanel({ onClose }) {
                     ))}
                   </div>
                 )}
+
+                {/* Artifacts for this collaboration */}
+                <div className="mt-2 pt-2 border-t border-gray-100">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <p className="text-xs font-medium text-gray-500">Artifacts</p>
+                    <button
+                      onClick={() => { setPushingArtifact(pushingArtifact === `collab-${collab.id}` ? null : `collab-${collab.id}`); setArtifactUrl(''); setArtifactTitle(''); setArtifactNotes('') }}
+                      className="text-xs text-indigo-600 hover:text-indigo-700 font-medium"
+                    >
+                      + Add
+                    </button>
+                  </div>
+                  {pushingArtifact === `collab-${collab.id}` && (
+                    <ArtifactForm
+                      url={artifactUrl} setUrl={setArtifactUrl}
+                      title={artifactTitle} setTitle={setArtifactTitle}
+                      notes={artifactNotes} setNotes={setArtifactNotes}
+                      saving={savingArtifact} error={artifactError}
+                      onSubmit={() => pushArtifact({ scope: 'collaboration', collaborationId: collab.id })}
+                      onCancel={() => setPushingArtifact(null)}
+                    />
+                  )}
+                  {artifacts.filter(a => a.scope === 'collaboration' && a.collaboration_id === collab.id).length === 0 && pushingArtifact !== `collab-${collab.id}` && (
+                    <p className="text-xs text-gray-400">No artifacts yet.</p>
+                  )}
+                  <div className="space-y-2">
+                    {artifacts.filter(a => a.scope === 'collaboration' && a.collaboration_id === collab.id).map(art => (
+                      <ArtifactCard
+                        key={art.id} artifact={art}
+                        versions={artifactVersions[art.id]}
+                        unreadCount={artifactNotifications.filter(n => n.artifact_id === art.id).length}
+                        onDelete={deleteArtifact} onToggleMain={toggleDisplayInMain}
+                        onMarkRead={markNotificationsRead} userId={user.id}
+                        pushingArtifact={pushingArtifact} setPushingArtifact={setPushingArtifact}
+                        artifactUrl={artifactUrl} setArtifactUrl={setArtifactUrl}
+                        artifactTitle={artifactTitle} setArtifactTitle={setArtifactTitle}
+                        artifactNotes={artifactNotes} setArtifactNotes={setArtifactNotes}
+                        savingArtifact={savingArtifact} artifactError={artifactError}
+                        pushNewVersion={pushNewVersion}
+                        expandedArtifact={expandedArtifact} setExpandedArtifact={setExpandedArtifact}
+                      />
+                    ))}
+                  </div>
+                </div>
               </div>
             ))}
           </div>
