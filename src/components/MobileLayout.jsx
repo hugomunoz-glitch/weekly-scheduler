@@ -254,6 +254,18 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
       const aRank = a.priority in PRIORITY_RANK ? PRIORITY_RANK[a.priority] : 3
       const bRank = b.priority in PRIORITY_RANK ? PRIORITY_RANK[b.priority] : 3
       result = aRank !== bRank ? aRank - bRank : a.title.localeCompare(b.title)
+    } else if (sortMode === 'progress') {
+      const statusRank = { in_progress: 0, paused: 1, not_started: 2, completed: 3 }
+      function mobileGoalStatus(g) {
+        if (g.status === 'paused') return 'paused'
+        const lnk = goalTasks.filter(t => t.goal_id === g.id)
+        if (lnk.length > 0 && lnk.every(t => t.status === 'done')) return 'completed'
+        if (lnk.some(t => t.status === 'done')) return 'in_progress'
+        return 'not_started'
+      }
+      const aR = statusRank[mobileGoalStatus(a)] ?? 2
+      const bR = statusRank[mobileGoalStatus(b)] ?? 2
+      result = aR !== bR ? aR - bR : a.title.localeCompare(b.title)
     } else if (sortMode === 'term') {
       const termRank = { long: 0, short: 1 }
       const aR = a.term in termRank ? termRank[a.term] : 2
@@ -410,6 +422,7 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
               <option value="created">Date Created</option>
               <option value="deadline">Deadline</option>
               <option value="priority">Priority</option>
+              <option value="progress">Progress</option>
               <option value="term">Long/Short Term</option>
             </select>
             <button

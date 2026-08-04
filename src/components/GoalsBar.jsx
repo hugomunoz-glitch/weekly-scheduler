@@ -166,6 +166,11 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
       const aRank = a.priority in PRIORITY_RANK ? PRIORITY_RANK[a.priority] : 3
       const bRank = b.priority in PRIORITY_RANK ? PRIORITY_RANK[b.priority] : 3
       result = aRank !== bRank ? aRank - bRank : a.title.localeCompare(b.title)
+    } else if (sortMode === 'progress') {
+      const statusRank = { in_progress: 0, paused: 1, not_started: 2, completed: 3 }
+      const aR = statusRank[goalStatus(a, goalTasks)] ?? 2
+      const bR = statusRank[goalStatus(b, goalTasks)] ?? 2
+      result = aR !== bR ? aR - bR : a.title.localeCompare(b.title)
     } else if (sortMode === 'term') {
       const termRank = { long: 0, short: 1 }
       const aR = a.term in termRank ? termRank[a.term] : 2
@@ -1109,6 +1114,7 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
               <option value="created">Date Created</option>
               <option value="deadline">Deadline</option>
               <option value="priority">Priority</option>
+              <option value="progress">Progress</option>
               <option value="term">Long/Short Term</option>
             </select>
             <button
