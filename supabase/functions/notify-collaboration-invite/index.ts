@@ -23,8 +23,11 @@ serve(async (req) => {
     <div style="background:#f3f4f6;border-radius:8px;padding:16px;text-align:center;margin:0 0 20px">
       <span style="font-family:monospace;font-size:28px;font-weight:700;letter-spacing:4px;color:#111827">${code}</span>
     </div>
-    <a href="${APP_URL}" style="display:inline-block;background:#6366f1;color:white;font-weight:600;font-size:14px;padding:10px 20px;border-radius:8px;text-decoration:none">Open Schedulent</a>
-    <p style="color:#9ca3af;font-size:12px;margin:24px 0 0">Enter this code on the sign-up screen or in the Collaborations panel. If you didn't expect this invitation, you can safely ignore this email.</p>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:24px">
+      <a href="${APP_URL}/signup" style="display:inline-block;background:#6366f1;color:white;font-weight:600;font-size:14px;padding:10px 20px;border-radius:8px;text-decoration:none">Create an account</a>
+      <a href="${APP_URL}" style="display:inline-block;background:#f3f4f6;color:#374151;font-weight:600;font-size:14px;padding:10px 20px;border-radius:8px;text-decoration:none">I already have an account</a>
+    </div>
+    <p style="color:#9ca3af;font-size:12px;margin:0">Enter the invite code above when signing up or in the Collaborations panel. If you didn't expect this invitation, you can safely ignore this email.</p>
   </div>
 </body>
 </html>`
