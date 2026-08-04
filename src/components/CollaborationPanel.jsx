@@ -272,7 +272,40 @@ export default function CollaborationPanel({ onClose }) {
           </form>
         </div>
 
-        {/* ── Coaching section (only when both flags are on) ── */}
+        {/* Pending invitations received — always visible regardless of coaching flags */}
+        {receivedInvites.length > 0 && (
+          <div className="mb-5 pb-5 border-b border-gray-100">
+            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Coaching</h3>
+            <p className="text-xs font-medium text-gray-500 mb-2">Coaching invitations for you</p>
+            <div className="space-y-2">
+              {receivedInvites.map(inv => (
+                <div key={inv.id} className="border border-indigo-100 bg-indigo-50 rounded-lg px-3 py-2.5">
+                  <p className="text-sm font-medium text-gray-800 mb-0.5">
+                    {inv.profiles?.username || 'Someone'} wants to coach you
+                  </p>
+                  {inv.message && <p className="text-xs text-gray-500 mb-2">"{inv.message}"</p>}
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => respondToInvite(inv.id, true)}
+                      disabled={respondingId === inv.id}
+                      className="flex-1 py-1.5 text-xs font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-50"
+                    >
+                      {respondingId === inv.id ? '...' : 'Accept'}
+                    </button>
+                    <button
+                      onClick={() => respondToInvite(inv.id, false)}
+                      disabled={respondingId === inv.id}
+                      className="flex-1 py-1.5 text-xs font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+                    >
+                      Decline
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {coachingGlobalEnabled && (
           <div className="mb-5 pb-5 border-b border-gray-100">
             <div className="flex items-center justify-between mb-3">
@@ -281,39 +314,6 @@ export default function CollaborationPanel({ onClose }) {
                 <span className="text-xs text-gray-400 italic">Not enabled on your account</span>
               )}
             </div>
-
-            {/* Pending invitations received — always visible regardless of coaching_enabled */}
-            {receivedInvites.length > 0 && (
-              <div className="mb-4">
-                <p className="text-xs font-medium text-gray-500 mb-2">Coaching invitations for you</p>
-                <div className="space-y-2">
-                  {receivedInvites.map(inv => (
-                    <div key={inv.id} className="border border-indigo-100 bg-indigo-50 rounded-lg px-3 py-2.5">
-                      <p className="text-sm font-medium text-gray-800 mb-0.5">
-                        {inv.profiles?.username || 'Someone'} wants to coach you
-                      </p>
-                      {inv.message && <p className="text-xs text-gray-500 mb-2">"{inv.message}"</p>}
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => respondToInvite(inv.id, true)}
-                          disabled={respondingId === inv.id}
-                          className="flex-1 py-1.5 text-xs font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-50"
-                        >
-                          {respondingId === inv.id ? '...' : 'Accept'}
-                        </button>
-                        <button
-                          onClick={() => respondToInvite(inv.id, false)}
-                          disabled={respondingId === inv.id}
-                          className="flex-1 py-1.5 text-xs font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50"
-                        >
-                          Decline
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
 
             {coachingVisible && (
               <>
