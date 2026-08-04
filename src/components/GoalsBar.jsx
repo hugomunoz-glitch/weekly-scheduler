@@ -1018,11 +1018,7 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
                   </span>
                 </div>
               )}
-              {isFullyCompleted ? (
-                <div className="mt-1">
-                  <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-600">✓ Complete — All tasks done</span>
-                </div>
-              ) : (
+              {!isFullyCompleted && (
                 <div className="flex items-center gap-1.5 mt-1">
                   <div className="flex-1 h-1 bg-gray-100 rounded-full overflow-hidden">
                     <div className="h-full rounded-full transition-all" style={{ width: pct + '%', background: goalDisplayColor }} />
