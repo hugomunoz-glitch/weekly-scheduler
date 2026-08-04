@@ -10,7 +10,7 @@ function randomCode() {
   return code
 }
 
-function ArtifactForm({ url, setUrl, title, setTitle, notes, setNotes, content, setContent, saving, error, onSubmit, onCancel, label = 'Push artifact' }) {
+function ArtifactForm({ title, setTitle, notes, setNotes, content, setContent, saving, error, onSubmit, onCancel, label = 'Push artifact' }) {
   return (
     <div className="bg-gray-50 rounded-lg p-3 space-y-2 mt-2">
       {error && <p className="text-xs text-red-600">{error}</p>}
@@ -34,20 +34,6 @@ function ArtifactForm({ url, setUrl, title, setTitle, notes, setNotes, content, 
         className="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:border-indigo-400 resize-none"
         style={{ fontSize: 16 }}
       />
-      <div className="flex items-center gap-2">
-        <input
-          type="url" placeholder="Link URL (optional)"
-          value={url} onChange={e => setUrl(e.target.value)}
-          className="flex-1 px-2.5 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:border-indigo-400"
-          style={{ fontSize: 16 }}
-        />
-        {url.trim() && (
-          <a href={url.trim()} target="_blank" rel="noopener noreferrer"
-            className="text-xs text-indigo-600 hover:text-indigo-700 font-medium shrink-0">
-            Open ↗
-          </a>
-        )}
-      </div>
       <div className="flex gap-2">
         <button
           onClick={onSubmit}
@@ -87,11 +73,6 @@ function ArtifactCard({ artifact, versions, unreadCount, onDelete, onToggleMain,
           {latest?.notes && <p className="text-xs text-gray-500 mt-0.5 italic">"{latest.notes}"</p>}
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
-          {latest?.url && (
-            <a href={latest.url} target="_blank" rel="noopener noreferrer"
-              onClick={() => hasUnread && onMarkRead(artifact.id)}
-              className="text-xs text-indigo-600 hover:text-indigo-700 font-medium">Open ↗</a>
-          )}
           <button onClick={() => onExtract({ artifact, version: latest })}
             className="text-xs text-emerald-600 hover:text-emerald-700 font-medium">Extract</button>
           <button onClick={() => setExpandedArtifact(isExpanded ? null : artifact.id)}
@@ -116,7 +97,6 @@ function ArtifactCard({ artifact, versions, unreadCount, onDelete, onToggleMain,
                 {versions.map(v => (
                   <div key={v.id} className="flex items-center justify-between text-xs text-gray-600 bg-gray-50 rounded px-2 py-1">
                     <span>v{v.version_number} — {v.title}</span>
-                    <a href={v.url} target="_blank" rel="noopener noreferrer" className="text-indigo-500 hover:underline">Open</a>
                   </div>
                 ))}
               </div>
@@ -137,7 +117,7 @@ function ArtifactCard({ artifact, versions, unreadCount, onDelete, onToggleMain,
 
           {isPushingVersion && (
             <ArtifactForm
-              url={artifactUrl} setUrl={setArtifactUrl}
+
               title={artifactTitle} setTitle={setArtifactTitle}
               notes={artifactNotes} setNotes={setArtifactNotes}
               content={artifactContent} setContent={setArtifactContent}
@@ -353,7 +333,6 @@ export default function CollaborationPanel({ onClose }) {
     // Create first version
     const { error: verErr } = await supabase.from('artifact_versions').insert({
       artifact_id: art.id,
-      url: artifactUrl.trim() || null,
       title: artifactTitle.trim(),
       notes: artifactNotes.trim() || null,
       content: artifactContent.trim() || null,
@@ -376,7 +355,6 @@ export default function CollaborationPanel({ onClose }) {
     setArtifactError('')
     const { error } = await supabase.from('artifact_versions').insert({
       artifact_id: artifactId,
-      url: artifactUrl.trim() || null,
       title: artifactTitle.trim(),
       notes: artifactNotes.trim() || null,
       content: artifactContent.trim() || null,
@@ -565,7 +543,7 @@ export default function CollaborationPanel({ onClose }) {
               </div>
               {isPushingPersonal && (
                 <ArtifactForm
-                  url={artifactUrl} setUrl={setArtifactUrl}
+    
                   title={artifactTitle} setTitle={setArtifactTitle}
                   notes={artifactNotes} setNotes={setArtifactNotes}
                   content={artifactContent} setContent={setArtifactContent}
@@ -716,7 +694,7 @@ export default function CollaborationPanel({ onClose }) {
                             </div>
                             {isPushingNew && (
                               <ArtifactForm
-                                url={artifactUrl} setUrl={setArtifactUrl}
+                  
                                 title={artifactTitle} setTitle={setArtifactTitle}
                                 notes={artifactNotes} setNotes={setArtifactNotes}
                                 content={artifactContent} setContent={setArtifactContent}
@@ -889,7 +867,7 @@ export default function CollaborationPanel({ onClose }) {
                   </div>
                   {pushingArtifact === `collab-${collab.id}` && (
                     <ArtifactForm
-                      url={artifactUrl} setUrl={setArtifactUrl}
+        
                       title={artifactTitle} setTitle={setArtifactTitle}
                       notes={artifactNotes} setNotes={setArtifactNotes}
                       content={artifactContent} setContent={setArtifactContent}
