@@ -813,15 +813,13 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
                     status === 'paused' ? (
                       <button
                         onClick={(e) => { e.stopPropagation(); onPauseGoal(goal.id, false) }}
-                        className="text-[10px] font-semibold px-1.5 py-0.5 rounded border transition-colors"
-                        style={{ color: '#4338ca', background: '#eef2ff', borderColor: '#c7d2fe' }}
+                        className="text-[18px] text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 px-1.5 py-0.5 rounded transition-colors leading-none"
                         title="Resume goal"
                       >▶</button>
                     ) : (
                       <button
                         onClick={(e) => { e.stopPropagation(); onPauseGoal(goal.id, true) }}
-                        className="text-[10px] font-semibold px-1.5 py-0.5 rounded border transition-colors"
-                        style={{ color: '#b45309', background: '#fffbeb', borderColor: '#fde68a' }}
+                        className="text-[18px] text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 px-1.5 py-0.5 rounded transition-colors leading-none"
                         title="Pause goal"
                       >⏸</button>
                     )
