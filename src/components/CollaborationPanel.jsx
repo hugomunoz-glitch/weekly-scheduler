@@ -87,9 +87,11 @@ function ArtifactCard({ artifact, versions, unreadCount, onDelete, onToggleMain,
           {latest?.notes && <p className="text-xs text-gray-500 mt-0.5 italic">"{latest.notes}"</p>}
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
-          <a href={latest?.url} target="_blank" rel="noopener noreferrer"
-            onClick={() => hasUnread && onMarkRead(artifact.id)}
-            className="text-xs text-indigo-600 hover:text-indigo-700 font-medium">Open</a>
+          {latest?.url && (
+            <a href={latest.url} target="_blank" rel="noopener noreferrer"
+              onClick={() => hasUnread && onMarkRead(artifact.id)}
+              className="text-xs text-indigo-600 hover:text-indigo-700 font-medium">Open ↗</a>
+          )}
           <button onClick={() => onExtract({ artifact, version: latest })}
             className="text-xs text-emerald-600 hover:text-emerald-700 font-medium">Extract</button>
           <button onClick={() => setExpandedArtifact(isExpanded ? null : artifact.id)}
