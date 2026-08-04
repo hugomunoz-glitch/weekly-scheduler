@@ -299,7 +299,11 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
             <div className="flex justify-end -mb-1">
               <button
                 type="button"
-                onClick={() => setBulkMode(m => !m)}
+                onClick={() => {
+                  if (bulkMode) { setTitle(bulkTitles.split('\n')[0].trim()); setBulkTitles('') }
+                  else { setBulkTitles(title); setTitle('') }
+                  setBulkMode(m => !m)
+                }}
                 className="text-xs text-indigo-500 hover:text-indigo-700"
               >
                 {bulkMode ? 'Switch to single task' : 'Add multiple tasks at once'}
