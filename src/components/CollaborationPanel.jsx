@@ -894,6 +894,7 @@ export default function CollaborationPanel({ onClose }) {
                         savingArtifact={savingArtifact} artifactError={artifactError}
                         pushNewVersion={pushNewVersion}
                         expandedArtifact={expandedArtifact} setExpandedArtifact={setExpandedArtifact}
+                        onExtract={setExtractingArtifact}
                       />
                     ))}
                   </div>
