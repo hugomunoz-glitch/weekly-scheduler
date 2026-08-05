@@ -1090,7 +1090,7 @@ export default function App() {
       )}
       {showAdd && <AddTaskModal onAdd={addTask} onClose={() => { setShowAdd(false); setAddForDate(null); setAddForTime(null); setAddForBucket(null); setFollowUpPrefill(null) }} goals={visibleGoals} onAddGoal={addGoal} initialScheduledDate={addForDate} initialStartTime={addForTime} initialBucket={addForBucket} existingTaskCategories={taskCategories} collaborations={collaborations} collabMembersMap={collabMembersMap} defaultCollaborationId={defaultCollaborationId} followUpPrefill={followUpPrefill} />}
       {editingTask && <AddTaskModal editingTask={editingTask} onEdit={editTask} onClose={() => setEditingTask(null)} goals={visibleGoals} onAddGoal={addGoal} existingTaskCategories={taskCategories} collaborations={collaborations} collabMembersMap={collabMembersMap} defaultCollaborationId={defaultCollaborationId} onCreateFollowUp={(prefill) => { setEditingTask(null); setFollowUpPrefill(prefill); setShowAdd(true) }} />}
-      {showCollab && <CollaborationPanel onClose={() => setShowCollab(false)} />}
+      {showCollab && <CollaborationPanel onClose={() => setShowCollab(false)} goals={goals} goalTasks={goalTasks} />}
       {showReflect && <DailyReflection onClose={() => setShowReflect(false)} />}
       {showDashboard && <Dashboard tasks={tasks} goals={visibleGoals} goalTasks={goalTasks} collaborations={collaborations} collabMap={collabMap} collabMembersMap={collabMembersMap} profileMap={profileMap} weekStart={weekStart} onClose={() => setShowDashboard(false)} onEditGoal={editGoal} />}
       {showVisionMission && <VisionMission onClose={() => setShowVisionMission(false)} />}

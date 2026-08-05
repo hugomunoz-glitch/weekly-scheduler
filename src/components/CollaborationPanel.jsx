@@ -185,42 +185,18 @@ function ArtifactCard({ artifact, versions, unreadCount, onDelete, onToggleMain,
   const [savingSequence, setSavingSequence] = useState(false)
   const [loadingSequence, setLoadingSequence] = useState(false)
 
-  async function openSequenceEditor() {
+  function openSequenceEditor() {
     setEditingSequence(true)
-    setLoadingSequence(true)
+    setLoadingSequence(false)
 
-    // First try: goals linked to a specific version of this artifact
-    const versionIds = (versions || []).map(v => v.id)
-    let { data: extractedGoals } = await supabase
-      .from('goals')
-      .select('id, title, description, source_artifact_version_id')
-      .in('source_artifact_version_id', versionIds)
-      .order('created_at')
+    // Use goals already loaded in App — no extra query needed
+    const tasksByGoal = {}
+    appGoalTasks.forEach(t => {
+      if (!tasksByGoal[t.goal_id]) tasksByGoal[t.goal_id] = []
+      tasksByGoal[t.goal_id].push(t)
+    })
 
-    // Fallback: all goals visible to the current user (RLS scopes this automatically)
-    if (!extractedGoals || extractedGoals.length === 0) {
-      const { data: allGoals } = await supabase
-        .from('goals')
-        .select('id, title, description, source_artifact_version_id')
-        .order('created_at')
-      extractedGoals = allGoals || []
-    }
-
-    const goalIds = extractedGoals.map(g => g.id)
-    let tasksByGoal = {}
-    if (goalIds.length > 0) {
-      const { data: linkedTasks } = await supabase
-        .from('tasks')
-        .select('id, title, goal_id')
-        .in('goal_id', goalIds)
-        .order('created_at')
-      ;(linkedTasks || []).forEach(t => {
-        if (!tasksByGoal[t.goal_id]) tasksByGoal[t.goal_id] = []
-        tasksByGoal[t.goal_id].push(t)
-      })
-    }
-
-    const goalsWithTasks = extractedGoals.map(g => ({
+    const goalsWithTasks = appGoals.map(g => ({
       ...g,
       tasks: tasksByGoal[g.id] || [],
     }))
@@ -411,7 +387,7 @@ function ArtifactCard({ artifact, versions, unreadCount, onDelete, onToggleMain,
   )
 }
 
-export default function CollaborationPanel({ onClose }) {
+export default function CollaborationPanel({ onClose, goals: appGoals = [], goalTasks: appGoalTasks = [] }) {
   const { user } = useAuth()
 
   // ── Collaboration state ────────────────────────────────────
