@@ -135,11 +135,22 @@ export default function ArtifactExtractModal({ artifact, version, onClose, onDon
             if (!prereqTitle) return null
             const prereqId = newGoalIdsByTitle[prereqTitle] || null
             if (!prereqId) return null
-            return { id: newGoalIdsByTitle[g.title], prerequisite_goal_id: prereqId }
+            const goalId = newGoalIdsByTitle[g.title]
+            if (!goalId) return null
+            return { id: goalId, prerequisite_goal_id: prereqId }
           })
           .filter(Boolean)
         for (const upd of prereqUpdates) {
-          await supabase.from('goals').update({ prerequisite_goal_id: upd.prerequisite_goal_id }).eq('id', upd.id)
+          const { error: prereqErr } = await supabase
+            .from('goals')
+            .update({ prerequisite_goal_id: upd.prerequisite_goal_id })
+            .eq('id', upd.id)
+          if (prereqErr) {
+            console.error('Failed to set prerequisite:', prereqErr)
+            setError('Goals saved but prerequisite links failed: ' + prereqErr.message)
+            setStep('review')
+            return
+          }
         }
       }
     }
