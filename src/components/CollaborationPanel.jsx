@@ -189,16 +189,26 @@ function ArtifactCard({ artifact, versions, unreadCount, onDelete, onToggleMain,
     setEditingSequence(true)
     setLoadingSequence(true)
 
-    // Fetch goals extracted from any version of this artifact
+    // First try: goals linked to a specific version of this artifact
     const versionIds = (versions || []).map(v => v.id)
-    const { data: extractedGoals } = await supabase
+    let { data: extractedGoals } = await supabase
       .from('goals')
       .select('id, title, description, source_artifact_version_id')
       .in('source_artifact_version_id', versionIds)
       .eq('owner_id', userId)
       .order('created_at')
 
-    const goalIds = (extractedGoals || []).map(g => g.id)
+    // Fallback: all goals for this user (so older extractions without source_artifact_version_id still show up)
+    if (!extractedGoals || extractedGoals.length === 0) {
+      const { data: allGoals } = await supabase
+        .from('goals')
+        .select('id, title, description, source_artifact_version_id')
+        .eq('owner_id', userId)
+        .order('created_at')
+      extractedGoals = allGoals || []
+    }
+
+    const goalIds = extractedGoals.map(g => g.id)
     let tasksByGoal = {}
     if (goalIds.length > 0) {
       const { data: linkedTasks } = await supabase
@@ -212,7 +222,7 @@ function ArtifactCard({ artifact, versions, unreadCount, onDelete, onToggleMain,
       })
     }
 
-    const goalsWithTasks = (extractedGoals || []).map(g => ({
+    const goalsWithTasks = extractedGoals.map(g => ({
       ...g,
       tasks: tasksByGoal[g.id] || [],
     }))
@@ -323,7 +333,7 @@ function ArtifactCard({ artifact, versions, unreadCount, onDelete, onToggleMain,
                   {loadingSequence ? (
                     <p className="text-xs text-gray-400 py-2 text-center">Loading goals…</p>
                   ) : sequenceDraft.length === 0 ? (
-                    <p className="text-xs text-gray-400 py-2 text-center">No extracted goals found for this artifact. Extract first, then edit the sequence.</p>
+                    <p className="text-xs text-gray-400 py-2 text-center">No goals found. Extract tasks & goals from this artifact first.</p>
                   ) : (
                     <div className="space-y-1.5">
                       {sequenceDraft.map((goal, idx) => (
