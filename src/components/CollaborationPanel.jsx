@@ -94,8 +94,27 @@ function GoalSequenceEditor({ goalSequence, setGoalSequence }) {
   )
 }
 
+async function suggestGoalsFromContent({ title, notes, content }) {
+  const { data, error } = await supabase.functions.invoke('extract-artifact-tasks', {
+    body: { title: title || 'Untitled', notes: notes || null, content: content || null },
+    headers: { 'Content-Type': 'application/json' },
+  })
+  if (error || data?.error) return []
+  return (data?.items || []).filter(i => i.type === 'goal').map(g => ({ title: g.title, description: g.description || '' }))
+}
+
 function ArtifactForm({ title, setTitle, notes, setNotes, content, setContent, goalSequence, setGoalSequence, saving, error, onSubmit, onCancel, label = 'Push artifact' }) {
   const [showGoalEditor, setShowGoalEditor] = useState(false)
+  const [suggesting, setSuggesting] = useState(false)
+
+  async function handleSuggest() {
+    if (!content.trim() && !title.trim()) return
+    setSuggesting(true)
+    setShowGoalEditor(true)
+    const suggested = await suggestGoalsFromContent({ title, notes, content })
+    if (suggested.length > 0) setGoalSequence(suggested)
+    setSuggesting(false)
+  }
 
   return (
     <div className="bg-gray-50 rounded-lg p-3 space-y-2 mt-2">
@@ -139,7 +158,20 @@ function ArtifactForm({ title, setTitle, notes, setNotes, content, setContent, g
           <p className="text-[11px] text-gray-400 mt-1">Optional — define goals and their unlock order so users see a pre-set sequence when they extract.</p>
         )}
         {showGoalEditor && (
-          <GoalSequenceEditor goalSequence={goalSequence} setGoalSequence={setGoalSequence} />
+          <>
+            <div className="flex justify-end mb-1.5">
+              <button
+                onClick={handleSuggest}
+                disabled={suggesting || (!content.trim() && !title.trim())}
+                className="text-xs text-indigo-600 hover:text-indigo-700 font-medium disabled:opacity-40 flex items-center gap-1"
+              >
+                {suggesting ? (
+                  <><span className="inline-block w-3 h-3 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin" /> Suggesting…</>
+                ) : '✦ Suggest goals from content'}
+              </button>
+            </div>
+            <GoalSequenceEditor goalSequence={goalSequence} setGoalSequence={setGoalSequence} />
+          </>
         )}
         {!showGoalEditor && goalSequence.length > 0 && (
           <div className="mt-1.5 space-y-0.5">
@@ -184,6 +216,28 @@ function ArtifactCard({ artifact, versions, unreadCount, onDelete, onToggleMain,
   const [sequenceDraft, setSequenceDraft] = useState([]) // [{id, title, description, tasks:[]}] ordered
   const [savingSequence, setSavingSequence] = useState(false)
   const [loadingSequence, setLoadingSequence] = useState(false)
+  const [suggestingSequence, setSuggestingSequence] = useState(false)
+
+  async function handleSuggestSequence() {
+    if (!latest) return
+    setSuggestingSequence(true)
+    const suggested = await suggestGoalsFromContent({
+      title: latest.title,
+      notes: latest.notes,
+      content: latest.content,
+    })
+    if (suggested.length > 0) {
+      // Map suggested titles onto existing sequenceDraft goals if titles match, otherwise keep draft
+      const byTitle = {}
+      sequenceDraft.forEach(g => { byTitle[g.title] = g })
+      const merged = suggested.map(s => byTitle[s.title] || { ...s, tasks: [] })
+      // Append any existing draft goals not in suggestion
+      const suggestedTitles = new Set(suggested.map(s => s.title))
+      sequenceDraft.forEach(g => { if (!suggestedTitles.has(g.title)) merged.push(g) })
+      setSequenceDraft(merged)
+    }
+    setSuggestingSequence(false)
+  }
 
   function openSequenceEditor() {
     setEditingSequence(true)
@@ -306,7 +360,20 @@ function ArtifactCard({ artifact, versions, unreadCount, onDelete, onToggleMain,
                 <div className="bg-gray-50 rounded-lg p-2.5 space-y-2">
                   <div className="flex items-center justify-between">
                     <p className="text-xs font-medium text-gray-700">Goal sequence</p>
-                    <span className="text-[10px] text-gray-400">Use ▲▼ to reorder</span>
+                    <div className="flex items-center gap-2">
+                      {latest?.content && (
+                        <button
+                          onClick={handleSuggestSequence}
+                          disabled={suggestingSequence}
+                          className="text-[10px] text-indigo-500 hover:text-indigo-700 font-medium disabled:opacity-40 flex items-center gap-1"
+                        >
+                          {suggestingSequence ? (
+                            <><span className="inline-block w-2.5 h-2.5 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin" /> Suggesting…</>
+                          ) : '✦ Suggest order'}
+                        </button>
+                      )}
+                      <span className="text-[10px] text-gray-400">▲▼ to reorder</span>
+                    </div>
                   </div>
                   {loadingSequence ? (
                     <p className="text-xs text-gray-400 py-2 text-center">Loading goals…</p>
