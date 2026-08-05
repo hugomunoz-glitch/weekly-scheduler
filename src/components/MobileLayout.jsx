@@ -803,8 +803,8 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: '160px', overflowY: 'auto' }}>
                       {sortedLinked.map(t => (
                         <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '20px', color: '#4b5563', padding: '6px 8px', minWidth: 0, borderLeft: t.priority && PRIORITY_BORDER[t.priority] ? '4px solid ' + PRIORITY_BORDER[t.priority] : undefined }}>
-                          <span onClick={() => onMarkDone(t.id)} style={{ color: t.status === 'done' ? '#10b981' : '#d1d5db', fontSize: '22px', cursor: 'pointer', flexShrink: 0 }}>{t.status === 'done' ? '✓' : '○'}</span>
-                          <span onClick={() => handleEditTask(t.id)} style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'pointer', textDecoration: t.status === 'done' ? 'line-through' : 'none', color: t.status === 'done' ? '#9ca3af' : '#4b5563' }}>{t.title}</span>
+                          <span onClick={() => onMarkDone(t.id)} style={{ color: t.status === 'done' ? '#10b981' : isLocked ? '#e5e7eb' : '#d1d5db', fontSize: '22px', cursor: 'pointer', flexShrink: 0 }}>{t.status === 'done' ? '✓' : '○'}</span>
+                          <span onClick={() => handleEditTask(t.id)} style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'pointer', textDecoration: t.status === 'done' ? 'line-through' : 'none', color: t.status === 'done' ? '#9ca3af' : isLocked ? '#9ca3af' : '#4b5563' }}>{t.title}</span>
                           {t.collaboration_id && collabMap && collabMap[t.collaboration_id] && (
                             <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', flexShrink: 0, background: collabMap[t.collaboration_id].color }} />
                           )}

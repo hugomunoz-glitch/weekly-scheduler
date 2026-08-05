@@ -420,6 +420,8 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
           <div className="p-4 max-h-[70vh] overflow-y-auto">
             {(() => {
               const goal = viewingGoal
+              const viewingPrereq = goal.prerequisite_goal_id ? goals.find(g => g.id === goal.prerequisite_goal_id) : null
+              const viewingIsLocked = viewingPrereq && !isGoalCompleted(viewingPrereq, goalTasks)
               const linked = goalTasks.filter(t => t.goal_id === goal.id)
               const sortedLinked = [...linked].sort((a, b) => {
                 const aDone = a.status === 'done', bDone = b.status === 'done'
@@ -489,9 +491,9 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
                                     title={t.priority ? PRIORITY_LABELS[t.priority] + ' priority' : undefined}
                                   >
                                     <span className="cursor-pointer shrink-0" onClick={() => onMarkDone(t.id)}>
-                                      <span className={t.status === 'done' ? 'text-green-500' : 'text-gray-300'}>{t.status === 'done' ? '✓' : '○'}</span>
+                                      <span className={t.status === 'done' ? 'text-green-500' : viewingIsLocked ? 'text-gray-200' : 'text-gray-300'}>{t.status === 'done' ? '✓' : '○'}</span>
                                     </span>
-                                    <span className={'flex-1 truncate cursor-pointer ' + (t.status === 'done' ? 'line-through text-gray-400' : '')} onClick={() => handleEditTask(t.id)}>{t.title}</span>
+                                    <span className={'flex-1 truncate cursor-pointer ' + (t.status === 'done' ? 'line-through text-gray-400' : viewingIsLocked ? 'text-gray-400' : '')} onClick={() => handleEditTask(t.id)}>{t.title}</span>
                                     {t.collaboration_id && collabMap && collabMap[t.collaboration_id] && (
                                       <span
                                         className="inline-block w-2 h-2 rounded-full shrink-0"
