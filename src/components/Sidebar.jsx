@@ -9,7 +9,7 @@ const PRIORITY_COLORS = { high: '#ef4444', medium: '#f59e0b', low: '#9ca3af' }
 const PRIORITY_LABELS = { high: 'High', medium: 'Medium', low: 'Low' }
 const PRIORITY_BORDER = { high: '#ef4444', medium: '#f59e0b', low: '#22c55e' }
 
-function Inbox({ tasks, goalMap, collabMap, collabMembersMap, profileMap, onAssignTask, onMarkDone, onEdit, onDelete, onDuplicate, onBulkDelete, search, sortMode, sortDir, categoryFilter, externalSelectMode, onExitSelectMode, lockedGoalIds }) {
+function Inbox({ tasks, goalMap, collabMap, collabMembersMap, profileMap, onAssignTask, onMarkDone, onEdit, onDelete, onDuplicate, onBulkDelete, search, sortMode, sortDir, categoryFilter, externalSelectMode, onExitSelectMode, lockedGoalIds, lockedTaskIds, onUnlockTask }) {
   const [hoverId, setHoverId] = useState(null)
   const selectMode = externalSelectMode || false
   const [selectedIds, setSelectedIds] = useState(new Set())
@@ -86,12 +86,12 @@ function Inbox({ tasks, goalMap, collabMap, collabMembersMap, profileMap, onAssi
                       ) : (
                       <button
                         onClick={(e) => { e.stopPropagation(); onMarkDone(task.id) }}
-                        className={'mt-0.5 w-4 h-4 rounded-full border flex items-center justify-center shrink-0 transition-colors ' + (task.status === 'done' ? 'bg-emerald-500 border-emerald-500 text-white' : lockedGoalIds?.has(task.goal_id) ? 'border-gray-200' : 'border-gray-300 hover:border-emerald-400 hover:bg-emerald-50')}
+                        className={'mt-0.5 w-4 h-4 rounded-full border flex items-center justify-center shrink-0 transition-colors ' + (task.status === 'done' ? 'bg-emerald-500 border-emerald-500 text-white' : (lockedTaskIds?.has(task.id) || task.is_locked) ? 'border-gray-200' : 'border-gray-300 hover:border-emerald-400 hover:bg-emerald-50')}
                       >
                         {task.status === 'done' && <span className="text-xs leading-none">&#10003;</span>}
                       </button>
                       )}
-                      <p className={'text-sm leading-snug break-words flex-1 ' + (task.status === 'done' ? 'line-through text-gray-400' : lockedGoalIds?.has(task.goal_id) ? 'text-gray-400' : 'text-gray-800')}>
+                      <p className={'text-sm leading-snug break-words flex-1 ' + (task.status === 'done' ? 'line-through text-gray-400' : (lockedTaskIds?.has(task.id) || task.is_locked) ? 'text-gray-400' : 'text-gray-800')}>
                         {task.collaboration_id && collabMap && collabMap[task.collaboration_id] && (
                           <span
                             className="inline-block w-2 h-2 rounded-full mr-1.5 align-middle"
@@ -142,6 +142,9 @@ function Inbox({ tasks, goalMap, collabMap, collabMembersMap, profileMap, onAssi
                       <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                         <button onClick={() => onEdit(task)} className="text-[27px] text-indigo-400 hover:text-indigo-600 leading-none" title="Edit">&#9998;</button>
                         {onDuplicate && <button onClick={() => onDuplicate(task.id)} className="text-[20px] text-gray-400 hover:text-indigo-600 leading-none" title="Duplicate">&#10697;</button>}
+                        {(lockedTaskIds?.has(task.id) || task.is_locked) && onUnlockTask && (
+                          <button onClick={() => onUnlockTask(task.id)} className="text-[11px] font-semibold text-amber-600 hover:text-amber-700 leading-none px-1.5 py-0.5 rounded border border-amber-300 hover:border-amber-400" title="Unlock this task">🔓 Unlock</button>
+                        )}
                         {task.scheduled_date && (
                           <span className="text-xs text-gray-400">Scheduled: {format(parseISO(task.scheduled_date), 'MMM d')}</span>
                         )}
@@ -324,7 +327,7 @@ function Assistant({ goals, tasks, onCreateTask, onAddGoal }) {
   )
 }
 
-export default function Sidebar({ tasks, goalMap, collabMap, collabMembersMap, profileMap, onAssignTask, onMarkDone, goals, allTasks, onAddTask, onCreateTask, onAddGoal, onEdit, onDelete, onDuplicate, onBulkDeleteTasks, lockedGoalIds }) {
+export default function Sidebar({ tasks, goalMap, collabMap, collabMembersMap, profileMap, onAssignTask, onMarkDone, goals, allTasks, onAddTask, onCreateTask, onAddGoal, onEdit, onDelete, onDuplicate, onBulkDeleteTasks, lockedGoalIds, lockedTaskIds, onUnlockTask, onUnlockGoal }) {
   const [tab, setTab] = useState('inbox')
   const [taskSearch, setTaskSearch] = useState('')
   const [showTaskSearch, setShowTaskSearch] = useState(false)
@@ -401,7 +404,7 @@ export default function Sidebar({ tasks, goalMap, collabMap, collabMembersMap, p
                 {taskCategories.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
-            <Inbox tasks={tasks} goalMap={goalMap} collabMap={collabMap} collabMembersMap={collabMembersMap} profileMap={profileMap} onAssignTask={onAssignTask} onMarkDone={onMarkDone} onEdit={onEdit} onDelete={onDelete} onDuplicate={onDuplicate} onBulkDelete={ids => { if (onBulkDeleteTasks) onBulkDeleteTasks(ids); setInboxSelectMode(false) }} search={taskSearch} sortMode={taskSort} sortDir={taskSortDir} categoryFilter={taskCategoryFilter} externalSelectMode={inboxSelectMode} onExitSelectMode={() => setInboxSelectMode(false)} lockedGoalIds={lockedGoalIds} />
+            <Inbox tasks={tasks} goalMap={goalMap} collabMap={collabMap} collabMembersMap={collabMembersMap} profileMap={profileMap} onAssignTask={onAssignTask} onMarkDone={onMarkDone} onEdit={onEdit} onDelete={onDelete} onDuplicate={onDuplicate} onBulkDelete={ids => { if (onBulkDeleteTasks) onBulkDeleteTasks(ids); setInboxSelectMode(false) }} search={taskSearch} sortMode={taskSort} sortDir={taskSortDir} categoryFilter={taskCategoryFilter} externalSelectMode={inboxSelectMode} onExitSelectMode={() => setInboxSelectMode(false)} lockedGoalIds={lockedGoalIds} lockedTaskIds={lockedTaskIds} onUnlockTask={onUnlockTask} />
           </>
         ) : (
           <Assistant goals={goals} tasks={allTasks} onCreateTask={onCreateTask} onAddGoal={onAddGoal} />

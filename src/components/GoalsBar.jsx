@@ -59,7 +59,7 @@ const STATUS_BADGE = {
   not_started: null,
 }
 
-export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations, collabMembersMap, defaultCollaborationId, onAddGoal, onEditGoal, onDeleteGoal, onDuplicateGoal, onPauseGoal, onMarkDone, onDelete, onDuplicateTask, onCreateTask, onEditTask, activeView, onChangeView, hidden, onBulkDeleteGoals }) {
+export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations, collabMembersMap, defaultCollaborationId, onAddGoal, onEditGoal, onDeleteGoal, onDuplicateGoal, onPauseGoal, onMarkDone, onDelete, onDuplicateTask, onCreateTask, onEditTask, activeView, onChangeView, hidden, onBulkDeleteGoals, onUnlockGoal, onUnlockTask, lockedTaskIds }) {
   const [adding, setAdding] = useState(false)
   const [selectMode, setSelectMode] = useState(false)
   const [selectedGoalIds, setSelectedGoalIds] = useState(new Set())
@@ -519,6 +519,13 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
                                       >
                                         &#10697;
                                       </button>
+                                    )}
+                                    {(viewingIsLocked || lockedTaskIds?.has(t.id) || t.is_locked) && onUnlockTask && (
+                                      <button
+                                        onClick={(e) => { e.stopPropagation(); onUnlockTask(t.id) }}
+                                        className="text-[10px] font-semibold text-amber-600 hover:text-amber-700 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 leading-none px-0.5"
+                                        title="Unlock this task"
+                                      >🔓</button>
                                     )}
                                     <button
                                       onClick={(e) => { e.stopPropagation(); onDelete(t.id, e) }}
@@ -1099,6 +1106,13 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
                       className="text-[20px] text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 px-1.5 py-0.5 rounded transition-colors leading-none"
                       title="Duplicate goal"
                     >&#10697;</button>
+                  )}
+                  {isLocked && onUnlockGoal && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onUnlockGoal(goal.id) }}
+                      className="text-[11px] font-semibold text-amber-600 hover:text-amber-700 px-1.5 py-0.5 rounded border border-amber-300 hover:border-amber-400 transition-colors leading-none"
+                      title="Unlock this goal and all its tasks"
+                    >🔓 Unlock</button>
                   )}
                   {!isFullyCompleted && onPauseGoal && (
                     status === 'paused' ? (
