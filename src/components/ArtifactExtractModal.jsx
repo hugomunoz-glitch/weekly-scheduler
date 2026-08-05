@@ -137,13 +137,13 @@ export default function ArtifactExtractModal({ artifact, version, onClose, onDon
             if (!prereqId) return null
             const goalId = newGoalIdsByTitle[g.title]
             if (!goalId) return null
-            return { id: goalId, prerequisite_goal_id: prereqId }
+            return { id: goalId, prerequisite_goal_id: prereqId, sequential_predecessor_id: prereqId }
           })
           .filter(Boolean)
         for (const upd of prereqUpdates) {
           const { error: prereqErr } = await supabase
             .from('goals')
-            .update({ prerequisite_goal_id: upd.prerequisite_goal_id })
+            .update({ prerequisite_goal_id: upd.prerequisite_goal_id, sequential_predecessor_id: upd.sequential_predecessor_id })
             .eq('id', upd.id)
           if (prereqErr) {
             console.error('Failed to set prerequisite:', prereqErr)

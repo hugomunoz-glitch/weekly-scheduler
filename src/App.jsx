@@ -821,9 +821,11 @@ export default function App() {
   }
 
   async function lockGoal(goalId) {
-    // Clear unlock overrides on goal and all its tasks — everything returns to sequential order
-    await supabase.from('goals').update({ is_unlocked: false }).eq('id', goalId)
-    setGoals(prev => prev.map(g => g.id === goalId ? { ...g, is_unlocked: false } : g))
+    const goal = goals.find(g => g.id === goalId)
+    // Restore prerequisite_goal_id from the permanent sequential_predecessor_id record
+    const prereqId = goal?.sequential_predecessor_id || null
+    await supabase.from('goals').update({ is_unlocked: false, prerequisite_goal_id: prereqId }).eq('id', goalId)
+    setGoals(prev => prev.map(g => g.id === goalId ? { ...g, is_unlocked: false, prerequisite_goal_id: prereqId } : g))
     const goalTaskIds = goalTasks.filter(t => t.goal_id === goalId).map(t => t.id)
     if (goalTaskIds.length > 0) {
       await supabase.from('tasks').update({ is_unlocked: false }).in('id', goalTaskIds)
