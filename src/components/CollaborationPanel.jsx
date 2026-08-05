@@ -180,6 +180,25 @@ function ArtifactCard({ artifact, versions, unreadCount, onDelete, onToggleMain,
   const isExpanded = expandedArtifact === artifact.id
   const isPushingVersion = pushingArtifact === `version-${artifact.id}`
 
+  const [editingSequence, setEditingSequence] = useState(false)
+  const [sequenceDraft, setSequenceDraft] = useState([])
+  const [savingSequence, setSavingSequence] = useState(false)
+
+  function openSequenceEditor() {
+    setSequenceDraft(latest?.goal_sequence || [])
+    setEditingSequence(true)
+  }
+
+  async function saveSequence() {
+    if (!latest) return
+    setSavingSequence(true)
+    await supabase.from('artifact_versions')
+      .update({ goal_sequence: sequenceDraft.length > 0 ? sequenceDraft : null })
+      .eq('id', latest.id)
+    setSavingSequence(false)
+    setEditingSequence(false)
+  }
+
   return (
     <div className={`border rounded-lg p-3 ${hasUnread ? 'border-indigo-300 bg-indigo-50' : 'border-gray-200 bg-white'}`}>
       <div className="flex items-start justify-between gap-2">
@@ -220,6 +239,43 @@ function ArtifactCard({ artifact, versions, unreadCount, onDelete, onToggleMain,
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {isOwner && (
+            <div className="pt-1">
+              {!editingSequence ? (
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs text-gray-500">Goal sequence:</span>
+                    {latest?.goal_sequence?.length > 0 ? (
+                      <span className="text-xs text-indigo-600">{latest.goal_sequence.map(g => g.title).join(' → ')}</span>
+                    ) : (
+                      <span className="text-xs text-gray-400">none</span>
+                    )}
+                  </div>
+                  <button onClick={openSequenceEditor} className="text-xs text-indigo-600 hover:text-indigo-700 font-medium shrink-0 ml-2">
+                    Edit sequence
+                  </button>
+                </div>
+              ) : (
+                <div className="bg-gray-50 rounded-lg p-2.5 space-y-2">
+                  <p className="text-xs font-medium text-gray-700">Edit goal sequence</p>
+                  <GoalSequenceEditor goalSequence={sequenceDraft} setGoalSequence={setSequenceDraft} />
+                  <div className="flex gap-2 pt-1">
+                    <button
+                      onClick={saveSequence}
+                      disabled={savingSequence}
+                      className="flex-1 py-1.5 text-xs font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-50"
+                    >
+                      {savingSequence ? 'Saving…' : 'Save sequence'}
+                    </button>
+                    <button onClick={() => setEditingSequence(false)} className="px-3 py-1.5 text-xs text-gray-500 border border-gray-200 rounded-lg hover:bg-gray-100">
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -416,7 +472,7 @@ export default function CollaborationPanel({ onClose }) {
     if (!arts?.length) return
     const { data: versions } = await supabase
       .from('artifact_versions')
-      .select('id, artifact_id, version_number, url, title, notes, content, pushed_by, created_at, profiles!artifact_versions_pushed_by_fkey(username)')
+      .select('id, artifact_id, version_number, url, title, notes, content, goal_sequence, pushed_by, created_at, profiles!artifact_versions_pushed_by_fkey(username)')
       .in('artifact_id', arts.map(a => a.id))
       .order('version_number', { ascending: false })
     const grouped = {}
