@@ -575,16 +575,19 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
         const pct = linked.length > 0 ? Math.round((done.length / linked.length) * 100) : 0
         const goalDisplayColor = (goal.category ? categoryBadge(goal.category)?.color : null) || goal.color
         const isFullyCompleted = linked.length > 0 && linked.every(t => t.status === 'done')
-        const mobileStatus = goal.status === 'paused' ? 'paused' : isFullyCompleted ? 'completed' : linked.some(t => t.status === 'done') ? 'in_progress' : 'not_started'
+        const prereq = goal.prerequisite_goal_id ? goals.find(g => g.id === goal.prerequisite_goal_id) : null
+        const isLocked = prereq && !(goalTasks.filter(t => t.goal_id === prereq.id).length > 0 && goalTasks.filter(t => t.goal_id === prereq.id).every(t => t.status === 'done'))
+        const mobileStatus = goal.status === 'paused' ? 'paused' : isLocked ? 'locked' : isFullyCompleted ? 'completed' : linked.some(t => t.status === 'done') ? 'in_progress' : 'not_started'
         const MOBILE_STATUS_BADGE = {
           in_progress: { label: 'In Progress', color: '#4338ca', bg: '#eef2ff', dot: '#6366f1' },
           paused:      { label: 'Paused',      color: '#6b7280', bg: '#f3f4f6', dot: '#9ca3af' },
           completed:   { label: 'Completed',   color: '#059669', bg: '#d1fae5', dot: '#10b981' },
+          locked:      { label: 'Locked',      color: '#9ca3af', bg: '#f3f4f6', dot: '#d1d5db' },
           not_started: null,
         }
         const mobileStatusBadge = MOBILE_STATUS_BADGE[mobileStatus]
-        const cardBg = selectedGoalIds.has(goal.id) ? '#eef2ff' : mobileStatus === 'paused' ? '#fffbeb' : 'white'
-        const cardBorder = selectedGoalIds.has(goal.id) ? '1px solid #6366f1' : mobileStatus === 'paused' ? '1px solid #fde68a' : '1px solid #e5e7eb'
+        const cardBg = selectedGoalIds.has(goal.id) ? '#eef2ff' : mobileStatus === 'paused' ? '#fffbeb' : isLocked ? '#f9fafb' : 'white'
+        const cardBorder = selectedGoalIds.has(goal.id) ? '1px solid #6366f1' : mobileStatus === 'paused' ? '1px solid #fde68a' : isLocked ? '1px solid #e5e7eb' : '1px solid #e5e7eb'
       return (
         <div key={goal.id}
           onClick={() => {
@@ -594,9 +597,9 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
               setViewingGoalId(goal.id)
             }
           }}
-          style={{ border: cardBorder, borderLeft: goal.priority && PRIORITY_BORDER[goal.priority] ? '4px solid ' + PRIORITY_BORDER[goal.priority] : cardBorder, borderRadius: '10px', padding: '10px 12px', marginBottom: '8px', background: cardBg, position: 'relative', cursor: 'pointer' }}>
+          style={{ border: cardBorder, borderLeft: goal.priority && PRIORITY_BORDER[goal.priority] ? '4px solid ' + PRIORITY_BORDER[goal.priority] : cardBorder, borderRadius: '10px', padding: '10px 12px', marginBottom: '8px', background: cardBg, position: 'relative', cursor: 'pointer', opacity: isLocked ? 0.6 : 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-            <span style={{ fontSize: "15px", fontWeight: 600, color: isFullyCompleted ? "#9ca3af" : "#1f2937", flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textDecoration: isFullyCompleted ? 'line-through' : 'none' }}>{goal.title}</span>
+            <span style={{ fontSize: "15px", fontWeight: 600, color: isFullyCompleted || isLocked ? "#9ca3af" : "#1f2937", flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textDecoration: isFullyCompleted ? 'line-through' : 'none' }}>{goal.title}</span>
             {goal.collaboration_id && collabMap && collabMap[goal.collaboration_id] && (
               <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', flexShrink: 0, background: collabMap[goal.collaboration_id].color }} />
             )}
