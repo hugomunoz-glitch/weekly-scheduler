@@ -110,7 +110,7 @@ function longPressHandlers(timerRef, firedRef, onLongPress, ms = 550) {
 }
 
 
-function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations, defaultCollaborationId, onAddGoal, onEditGoal, onDeleteGoal, onDuplicateGoal, onPauseGoal, onMarkDone, onDelete, onCreateTask, onEditTask, onBulkDeleteGoals, onUnlockGoal, onUnlockTask, lockedTaskIds, onLockGoal, onLockTask }) {
+function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations, defaultCollaborationId, onAddGoal, onEditGoal, onDeleteGoal, onDuplicateGoal, onPauseGoal, onMarkDone, onDelete, onCreateTask, onEditTask, onBulkDeleteGoals, onUnlockGoal, onUnlockTask, lockedGoalIds, lockedTaskIds, onLockGoal, onLockTask }) {
   const [adding, setAdding] = useState(false)
   const [selectMode, setSelectMode] = useState(false)
   const [selectedGoalIds, setSelectedGoalIds] = useState(new Set())
@@ -1742,7 +1742,7 @@ export default function MobileLayout({
       )}
 
       {(mobileCalView === 'week' || mobileCalView === 'workweek') && activeTab === 'goals' && (
-        <MobileGoalsBar goals={goals} goalTasks={goalTasks} allTasks={tasks} collabMap={collabMap} collaborations={collaborations} defaultCollaborationId={defaultCollaborationId} onAddGoal={onAddGoal} onEditGoal={onEditGoal} onDeleteGoal={onDeleteGoal} onDuplicateGoal={onDuplicateGoal} onPauseGoal={onPauseGoal} onMarkDone={onMarkDone} onDelete={onDelete} onCreateTask={onCreateTask} onEditTask={onEdit} onBulkDeleteGoals={onBulkDeleteGoals} onUnlockGoal={onUnlockGoal} onUnlockTask={onUnlockTask} lockedTaskIds={lockedTaskIds} onLockGoal={onLockGoal} onLockTask={onLockTask} />
+        <MobileGoalsBar goals={goals} goalTasks={goalTasks} allTasks={tasks} collabMap={collabMap} collaborations={collaborations} defaultCollaborationId={defaultCollaborationId} onAddGoal={onAddGoal} onEditGoal={onEditGoal} onDeleteGoal={onDeleteGoal} onDuplicateGoal={onDuplicateGoal} onPauseGoal={onPauseGoal} onMarkDone={onMarkDone} onDelete={onDelete} onCreateTask={onCreateTask} onEditTask={onEdit} onBulkDeleteGoals={onBulkDeleteGoals} onUnlockGoal={onUnlockGoal} onUnlockTask={onUnlockTask} lockedGoalIds={lockedGoalIds} lockedTaskIds={lockedTaskIds} onLockGoal={onLockGoal} onLockTask={onLockTask} />
       )}
 
       {(mobileCalView === 'week' || mobileCalView === 'workweek') && activeTab === 'inbox' && (
