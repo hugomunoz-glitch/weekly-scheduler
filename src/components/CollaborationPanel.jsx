@@ -189,14 +189,17 @@ function ArtifactCard({ artifact, versions, unreadCount, onDelete, onToggleMain,
     setEditingSequence(true)
     setLoadingSequence(false)
 
-    // Use goals already loaded in App — no extra query needed
+    // Filter to only goals linked to this artifact's versions
+    const versionIds = new Set((versions || []).map(v => v.id))
+    const artifactGoals = (allGoals || []).filter(g => versionIds.has(g.source_artifact_version_id))
+
     const tasksByGoal = {}
     ;(allGoalTasks || []).forEach(t => {
       if (!tasksByGoal[t.goal_id]) tasksByGoal[t.goal_id] = []
       tasksByGoal[t.goal_id].push(t)
     })
 
-    const goalsWithTasks = (allGoals || []).map(g => ({
+    const goalsWithTasks = artifactGoals.map(g => ({
       ...g,
       tasks: tasksByGoal[g.id] || [],
     }))
@@ -307,7 +310,7 @@ function ArtifactCard({ artifact, versions, unreadCount, onDelete, onToggleMain,
                   {loadingSequence ? (
                     <p className="text-xs text-gray-400 py-2 text-center">Loading goals…</p>
                   ) : sequenceDraft.length === 0 ? (
-                    <p className="text-xs text-gray-400 py-2 text-center">No goals found ({allGoals?.length ?? 0} in app). Extract tasks & goals from this artifact first.</p>
+                    <p className="text-xs text-gray-400 py-2 text-center">No goals found for this artifact. Extract first, then edit the sequence.</p>
                   ) : (
                     <div className="space-y-1.5">
                       {sequenceDraft.map((goal, idx) => (
