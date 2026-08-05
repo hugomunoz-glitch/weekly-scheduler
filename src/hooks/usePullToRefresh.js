@@ -12,19 +12,26 @@ export function usePullToRefresh(onRefresh, scrollRef) {
   useEffect(() => {
     const el = scrollRef?.current ?? window
 
-    function getScrollTop() {
-      return scrollRef?.current ? scrollRef.current.scrollTop : window.scrollY
+    // Walk up from the touch target to find any scrollable ancestor that is scrolled down.
+    // If one exists, don't allow pull-to-refresh (user is scrolling up inside content).
+    function isInsideScrolledContent(target) {
+      let node = target
+      while (node && node !== scrollRef?.current) {
+        if (node.scrollTop > 0) return true
+        node = node.parentElement
+      }
+      return false
     }
 
     function onTouchStart(e) {
-      if (getScrollTop() > 0) return  // only pull from the very top
+      if (isInsideScrolledContent(e.target)) return
       startY.current = e.touches[0].clientY
       pulling.current = true
     }
 
     function onTouchMove(e) {
       if (!pulling.current || startY.current === null) return
-      if (getScrollTop() > 0) { pulling.current = false; startY.current = null; setPullY(0); return }
+      if (isInsideScrolledContent(e.target)) { pulling.current = false; startY.current = null; setPullY(0); return }
       const dy = e.touches[0].clientY - startY.current
       if (dy <= 0) { setPullY(0); return }
       // Rubber-band: diminishing returns past THRESHOLD
@@ -35,7 +42,7 @@ export function usePullToRefresh(onRefresh, scrollRef) {
     async function onTouchEnd() {
       if (!pulling.current) return
       pulling.current = false
-      const triggered = pullY >= THRESHOLD * 0.5
+      const triggered = pullY >= THRESHOLD
       startY.current = null
       setPullY(0)
       if (triggered && !refreshing) {
@@ -55,5 +62,5 @@ export function usePullToRefresh(onRefresh, scrollRef) {
     }
   }, [onRefresh, pullY, refreshing, scrollRef])
 
-  return { pullY, refreshing, threshold: THRESHOLD * 0.5 }
+  return { pullY, refreshing, threshold: THRESHOLD }
 }
