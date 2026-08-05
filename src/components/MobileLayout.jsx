@@ -941,7 +941,7 @@ function MobileDayView({ date, tasks, dueCards, goalMap, collabMap, profileMap, 
   )
 }
 
-function MobileInbox({ tasks, goalMap, collabMap, collabMembersMap, profileMap, onAssignTask, onMarkDone, onAddTask, onEdit, onDelete, onDuplicate, onBulkDelete, search, sortMode, sortDir, categoryFilter, externalSelectMode, onExitSelectMode }) {
+function MobileInbox({ tasks, goalMap, collabMap, collabMembersMap, profileMap, onAssignTask, onMarkDone, onAddTask, onEdit, onDelete, onDuplicate, onBulkDelete, search, sortMode, sortDir, categoryFilter, externalSelectMode, onExitSelectMode, lockedGoalIds }) {
   const [pressedTaskId, setPressedTaskId] = useState(null)
   const selectMode = externalSelectMode || false
   const [selectedIds, setSelectedIds] = useState(new Set())
@@ -1003,13 +1003,13 @@ function MobileInbox({ tasks, goalMap, collabMap, collabMembersMap, profileMap, 
                       ) : (
                       <button
                         onClick={(e) => { e.stopPropagation(); onMarkDone(task.id) }}
-                        style={{ marginTop: '2px', width: '16px', height: '16px', borderRadius: '50%', border: '2px solid ' + (task.status === 'done' ? '#10b981' : '#d1d5db'), background: task.status === 'done' ? '#10b981' : 'transparent', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '10px', lineHeight: 1 }}
+                        style={{ marginTop: '2px', width: '16px', height: '16px', borderRadius: '50%', border: '2px solid ' + (task.status === 'done' ? '#10b981' : lockedGoalIds?.has(task.goal_id) ? '#e5e7eb' : '#d1d5db'), background: task.status === 'done' ? '#10b981' : 'transparent', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '10px', lineHeight: 1 }}
                       >
                         {task.status === 'done' && '\u2713'}
                       </button>
                       )}
                       <div style={{ flex: 1 }}>
-                        <p style={{ fontSize: '14px', color: task.status === 'done' ? '#9ca3af' : '#1f2937', margin: 0, textDecoration: task.status === 'done' ? 'line-through' : 'none' }}>
+                        <p style={{ fontSize: '14px', color: task.status === 'done' ? '#9ca3af' : lockedGoalIds?.has(task.goal_id) ? '#9ca3af' : '#1f2937', margin: 0, textDecoration: task.status === 'done' ? 'line-through' : 'none' }}>
                           {task.collaboration_id && collabMap && collabMap[task.collaboration_id] && (
                             <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', marginRight: '6px', verticalAlign: 'middle', background: collabMap[task.collaboration_id].color }} title={'Shared with: ' + collabMap[task.collaboration_id].name} />
                           )}
@@ -1477,7 +1477,7 @@ function MobileAssistant({ goals, tasks, onCreateTask, onAddGoal }) {
 }
 
 export default function MobileLayout({
-  weekStart, weekDays, tasks, goals, goalMap, collabMap, collabMembersMap, profileMap, goalTasks, inboxTasks, loading,
+  weekStart, weekDays, tasks, goals, goalMap, collabMap, collabMembersMap, profileMap, goalTasks, inboxTasks, lockedGoalIds, loading,
   collaborations, activeView, onChangeView, defaultCollaborationId,
   overdueTasks, onPrevWeek, onNextWeek, onMarkDone,
   onRescheduleToTomorrow, onMoveToInbox, onDelete, onEdit, onAddTask, onAddTaskForBucket, onCreateTask,
@@ -1761,7 +1761,7 @@ export default function MobileLayout({
               {taskCategories.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
-          <MobileInbox tasks={loading ? [] : inboxTasks} goalMap={goalMap} collabMap={collabMap} collabMembersMap={collabMembersMap} profileMap={profileMap} onAssignTask={onAssignTask} onMarkDone={onMarkDone} onAddTask={onAddTask} onEdit={onEdit} onDelete={onDelete} onDuplicate={onDuplicateTask} onBulkDelete={ids => { if (onBulkDeleteTasks) onBulkDeleteTasks(ids); setInboxSelectMode(false) }} search={taskSearch} sortMode={taskSort} sortDir={taskSortDir} categoryFilter={taskCategoryFilter} externalSelectMode={inboxSelectMode} onExitSelectMode={() => setInboxSelectMode(false)} />
+          <MobileInbox tasks={loading ? [] : inboxTasks} goalMap={goalMap} collabMap={collabMap} collabMembersMap={collabMembersMap} profileMap={profileMap} onAssignTask={onAssignTask} onMarkDone={onMarkDone} onAddTask={onAddTask} onEdit={onEdit} onDelete={onDelete} onDuplicate={onDuplicateTask} onBulkDelete={ids => { if (onBulkDeleteTasks) onBulkDeleteTasks(ids); setInboxSelectMode(false) }} search={taskSearch} sortMode={taskSort} sortDir={taskSortDir} categoryFilter={taskCategoryFilter} externalSelectMode={inboxSelectMode} onExitSelectMode={() => setInboxSelectMode(false)} lockedGoalIds={lockedGoalIds} />
         </>
       )}
 

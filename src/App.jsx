@@ -217,6 +217,15 @@ export default function App() {
 
   const today = startOfDay(new Date())
   const goalMap = Object.fromEntries(goals.map(g => [g.id, g]))
+  const lockedGoalIds = new Set(
+    goals.filter(g => {
+      if (!g.prerequisite_goal_id) return false
+      const prereq = goalMap[g.prerequisite_goal_id]
+      if (!prereq) return false
+      const prereqTasks = goalTasks.filter(t => t.goal_id === prereq.id)
+      return !(prereqTasks.length > 0 && prereqTasks.every(t => t.status === 'done'))
+    }).map(g => g.id)
+  )
 
   const visibleTasks = useMemo(() => {
     if (activeView === 'all') return tasks
@@ -1012,7 +1021,7 @@ export default function App() {
   }
 
   const sharedProps = {
-    weekStart, weekDays, tasks: visibleTasks, goals: visibleGoals, goalMap, collabMap, collabMembersMap, profileMap, goalTasks: visibleGoalTasks, inboxTasks, loading,
+    weekStart, weekDays, tasks: visibleTasks, goals: visibleGoals, goalMap, collabMap, collabMembersMap, profileMap, goalTasks: visibleGoalTasks, inboxTasks, lockedGoalIds, loading,
     collaborations, activeView, onChangeView: (v) => { setActiveView(v); localStorage.setItem('activeView', v) }, defaultCollaborationId,
     overdueTasks, onMarkDone: markDone, onRescheduleToTomorrow: rescheduleToTomorrow,
     onMoveToInbox: moveToInbox, onDelete: requestDeleteTask, onEdit: setEditingTask, onAssignTask: assignTask,
@@ -1117,7 +1126,7 @@ export default function App() {
               </button>
               {showSidebar && (
                 <div className="rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-                  <Sidebar tasks={inboxTasks} goalMap={goalMap} collabMap={collabMap} collabMembersMap={collabMembersMap} profileMap={profileMap} onAssignTask={assignTask} onMarkDone={markDone} goals={visibleGoals} allTasks={visibleTasks} onAddTask={() => setShowAdd(true)} onCreateTask={addTask} onAddGoal={addGoal} onEdit={setEditingTask} onDelete={requestDeleteTask} onDuplicate={duplicateTask} onBulkDeleteTasks={bulkDeleteTasks} />
+                  <Sidebar tasks={inboxTasks} goalMap={goalMap} collabMap={collabMap} collabMembersMap={collabMembersMap} profileMap={profileMap} onAssignTask={assignTask} onMarkDone={markDone} goals={visibleGoals} allTasks={visibleTasks} onAddTask={() => setShowAdd(true)} onCreateTask={addTask} onAddGoal={addGoal} onEdit={setEditingTask} onDelete={requestDeleteTask} onDuplicate={duplicateTask} onBulkDeleteTasks={bulkDeleteTasks} lockedGoalIds={lockedGoalIds} />
                 </div>
               )}
             </div>
