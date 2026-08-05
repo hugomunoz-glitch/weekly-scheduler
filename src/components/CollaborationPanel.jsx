@@ -173,7 +173,7 @@ function ArtifactForm({ title, setTitle, notes, setNotes, content, setContent, g
 function ArtifactCard({ artifact, versions, unreadCount, onDelete, onToggleMain, onMarkRead, userId,
   pushingArtifact, setPushingArtifact, artifactUrl, setArtifactUrl, artifactTitle, setArtifactTitle,
   artifactNotes, setArtifactNotes, savingArtifact, artifactError, pushNewVersion,
-  expandedArtifact, setExpandedArtifact, onExtract }) {
+  expandedArtifact, setExpandedArtifact, onExtract, allGoals, allGoalTasks }) {
   const latest = versions?.[0]
   const isOwner = artifact.created_by === userId
   const hasUnread = unreadCount > 0
@@ -191,12 +191,12 @@ function ArtifactCard({ artifact, versions, unreadCount, onDelete, onToggleMain,
 
     // Use goals already loaded in App — no extra query needed
     const tasksByGoal = {}
-    appGoalTasks.forEach(t => {
+    ;(allGoalTasks || []).forEach(t => {
       if (!tasksByGoal[t.goal_id]) tasksByGoal[t.goal_id] = []
       tasksByGoal[t.goal_id].push(t)
     })
 
-    const goalsWithTasks = appGoals.map(g => ({
+    const goalsWithTasks = (allGoals || []).map(g => ({
       ...g,
       tasks: tasksByGoal[g.id] || [],
     }))
@@ -832,6 +832,7 @@ export default function CollaborationPanel({ onClose, goals: appGoals = [], goal
                       pushNewVersion={pushNewVersion}
                       expandedArtifact={expandedArtifact} setExpandedArtifact={setExpandedArtifact}
                       onExtract={setExtractingArtifact}
+                      allGoals={appGoals} allGoalTasks={appGoalTasks}
                     />
                   ))}
                 </div>
@@ -979,6 +980,7 @@ export default function CollaborationPanel({ onClose, goals: appGoals = [], goal
                                     pushNewVersion={pushNewVersion}
                                     expandedArtifact={expandedArtifact} setExpandedArtifact={setExpandedArtifact}
                                     onExtract={setExtractingArtifact}
+                                    allGoals={appGoals} allGoalTasks={appGoalTasks}
                                   />
                                 ))}
                               </div>
@@ -1154,6 +1156,7 @@ export default function CollaborationPanel({ onClose, goals: appGoals = [], goal
                         pushNewVersion={pushNewVersion}
                         expandedArtifact={expandedArtifact} setExpandedArtifact={setExpandedArtifact}
                         onExtract={setExtractingArtifact}
+                        allGoals={appGoals} allGoalTasks={appGoalTasks}
                       />
                     ))}
                   </div>
