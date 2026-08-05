@@ -245,8 +245,7 @@ function ArtifactCard({ artifact, versions, unreadCount, onDelete, onToggleMain,
 
     // Prefer goals linked to this artifact's versions; fall back to all user goals
     const versionIds = new Set((versions || []).map(v => v.id))
-    const linked = (allGoals || []).filter(g => versionIds.has(g.source_artifact_version_id))
-    const artifactGoals = linked.length > 0 ? linked : (allGoals || [])
+    const artifactGoals = (allGoals || []).filter(g => versionIds.has(g.source_artifact_version_id))
 
     const tasksByGoal = {}
     ;(allGoalTasks || []).forEach(t => {
@@ -378,7 +377,7 @@ function ArtifactCard({ artifact, versions, unreadCount, onDelete, onToggleMain,
                   {loadingSequence ? (
                     <p className="text-xs text-gray-400 py-2 text-center">Loading goals…</p>
                   ) : sequenceDraft.length === 0 ? (
-                    <p className="text-xs text-gray-400 py-2 text-center">No goals found. Extract tasks & goals from this artifact first.</p>
+                    <p className="text-xs text-gray-400 py-2 text-center">No goals linked to this artifact yet. Hit <strong>Extract</strong> to pull goals & tasks from this artifact first.</p>
                   ) : (
                     <div className="space-y-1.5">
                       {sequenceDraft.map((goal, idx) => (
