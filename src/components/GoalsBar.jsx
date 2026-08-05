@@ -59,7 +59,7 @@ const STATUS_BADGE = {
   not_started: null,
 }
 
-export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations, collabMembersMap, defaultCollaborationId, onAddGoal, onEditGoal, onDeleteGoal, onDuplicateGoal, onPauseGoal, onMarkDone, onDelete, onDuplicateTask, onCreateTask, onEditTask, activeView, onChangeView, hidden, onBulkDeleteGoals, onUnlockGoal, onUnlockTask, lockedTaskIds, onLockGoal, onLockTask }) {
+export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations, collabMembersMap, defaultCollaborationId, onAddGoal, onEditGoal, onDeleteGoal, onDuplicateGoal, onPauseGoal, onMarkDone, onDelete, onDuplicateTask, onCreateTask, onEditTask, activeView, onChangeView, hidden, onBulkDeleteGoals, onUnlockGoal, onUnlockTask, lockedGoalIds, lockedTaskIds, onLockGoal, onLockTask }) {
   const [adding, setAdding] = useState(false)
   const [selectMode, setSelectMode] = useState(false)
   const [selectedGoalIds, setSelectedGoalIds] = useState(new Set())
