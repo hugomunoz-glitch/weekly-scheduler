@@ -181,19 +181,75 @@ function ArtifactCard({ artifact, versions, unreadCount, onDelete, onToggleMain,
   const isPushingVersion = pushingArtifact === `version-${artifact.id}`
 
   const [editingSequence, setEditingSequence] = useState(false)
-  const [sequenceDraft, setSequenceDraft] = useState([])
+  const [sequenceDraft, setSequenceDraft] = useState([]) // [{id, title, description, tasks:[]}] ordered
   const [savingSequence, setSavingSequence] = useState(false)
+  const [loadingSequence, setLoadingSequence] = useState(false)
 
-  function openSequenceEditor() {
-    setSequenceDraft(latest?.goal_sequence || [])
+  async function openSequenceEditor() {
     setEditingSequence(true)
+    setLoadingSequence(true)
+
+    // Fetch goals extracted from any version of this artifact
+    const versionIds = (versions || []).map(v => v.id)
+    const { data: extractedGoals } = await supabase
+      .from('goals')
+      .select('id, title, description, source_artifact_version_id')
+      .in('source_artifact_version_id', versionIds)
+      .eq('owner_id', userId)
+      .order('created_at')
+
+    const goalIds = (extractedGoals || []).map(g => g.id)
+    let tasksByGoal = {}
+    if (goalIds.length > 0) {
+      const { data: linkedTasks } = await supabase
+        .from('tasks')
+        .select('id, title, goal_id')
+        .in('goal_id', goalIds)
+        .order('created_at')
+      ;(linkedTasks || []).forEach(t => {
+        if (!tasksByGoal[t.goal_id]) tasksByGoal[t.goal_id] = []
+        tasksByGoal[t.goal_id].push(t)
+      })
+    }
+
+    const goalsWithTasks = (extractedGoals || []).map(g => ({
+      ...g,
+      tasks: tasksByGoal[g.id] || [],
+    }))
+
+    // If a saved sequence exists, use that order; otherwise use DB order
+    const saved = latest?.goal_sequence || []
+    if (saved.length > 0) {
+      const byTitle = {}
+      goalsWithTasks.forEach(g => { byTitle[g.title] = g })
+      const ordered = saved.map(s => byTitle[s.title]).filter(Boolean)
+      // Append any goals not in the saved sequence
+      const inSaved = new Set(saved.map(s => s.title))
+      goalsWithTasks.forEach(g => { if (!inSaved.has(g.title)) ordered.push(g) })
+      setSequenceDraft(ordered)
+    } else {
+      setSequenceDraft(goalsWithTasks)
+    }
+
+    setLoadingSequence(false)
+  }
+
+  function moveInSequence(idx, dir) {
+    setSequenceDraft(prev => {
+      const next = [...prev]
+      const target = idx + dir
+      if (target < 0 || target >= next.length) return prev
+      ;[next[idx], next[target]] = [next[target], next[idx]]
+      return next
+    })
   }
 
   async function saveSequence() {
     if (!latest) return
     setSavingSequence(true)
+    const toSave = sequenceDraft.map(g => ({ title: g.title, description: g.description || null }))
     await supabase.from('artifact_versions')
-      .update({ goal_sequence: sequenceDraft.length > 0 ? sequenceDraft : null })
+      .update({ goal_sequence: toSave.length > 0 ? toSave : null })
       .eq('id', latest.id)
     setSavingSequence(false)
     setEditingSequence(false)
@@ -246,10 +302,10 @@ function ArtifactCard({ artifact, versions, unreadCount, onDelete, onToggleMain,
             <div className="pt-1">
               {!editingSequence ? (
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-xs text-gray-500">Goal sequence:</span>
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span className="text-xs text-gray-500 shrink-0">Goal sequence:</span>
                     {latest?.goal_sequence?.length > 0 ? (
-                      <span className="text-xs text-indigo-600">{latest.goal_sequence.map(g => g.title).join(' → ')}</span>
+                      <span className="text-xs text-indigo-600 truncate">{latest.goal_sequence.map(g => g.title).join(' → ')}</span>
                     ) : (
                       <span className="text-xs text-gray-400">none</span>
                     )}
@@ -260,12 +316,50 @@ function ArtifactCard({ artifact, versions, unreadCount, onDelete, onToggleMain,
                 </div>
               ) : (
                 <div className="bg-gray-50 rounded-lg p-2.5 space-y-2">
-                  <p className="text-xs font-medium text-gray-700">Edit goal sequence</p>
-                  <GoalSequenceEditor goalSequence={sequenceDraft} setGoalSequence={setSequenceDraft} />
-                  <div className="flex gap-2 pt-1">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-medium text-gray-700">Goal sequence</p>
+                    <span className="text-[10px] text-gray-400">Use ▲▼ to reorder</span>
+                  </div>
+                  {loadingSequence ? (
+                    <p className="text-xs text-gray-400 py-2 text-center">Loading goals…</p>
+                  ) : sequenceDraft.length === 0 ? (
+                    <p className="text-xs text-gray-400 py-2 text-center">No extracted goals found for this artifact. Extract first, then edit the sequence.</p>
+                  ) : (
+                    <div className="space-y-1.5">
+                      {sequenceDraft.map((goal, idx) => (
+                        <div key={goal.id || idx} className="bg-white border border-gray-200 rounded-lg p-2">
+                          <div className="flex items-start gap-2">
+                            <div className="flex flex-col gap-0.5 shrink-0 pt-0.5">
+                              <button onClick={() => moveInSequence(idx, -1)} disabled={idx === 0}
+                                className="text-gray-300 hover:text-gray-600 disabled:opacity-20 text-xs leading-none">▲</button>
+                              <button onClick={() => moveInSequence(idx, 1)} disabled={idx === sequenceDraft.length - 1}
+                                className="text-gray-300 hover:text-gray-600 disabled:opacity-20 text-xs leading-none">▼</button>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-[10px] font-bold text-indigo-400 shrink-0">#{idx + 1}</span>
+                                <p className="text-xs font-medium text-gray-800 truncate">{goal.title}</p>
+                              </div>
+                              {goal.tasks?.length > 0 && (
+                                <div className="mt-1 pl-3 space-y-0.5">
+                                  {goal.tasks.map(t => (
+                                    <p key={t.id} className="text-[11px] text-gray-500 truncate">· {t.title}</p>
+                                  ))}
+                                </div>
+                              )}
+                              {idx < sequenceDraft.length - 1 && (
+                                <p className="text-[10px] text-indigo-300 mt-1">↓ unlocks next goal</p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <div className="flex gap-2">
                     <button
                       onClick={saveSequence}
-                      disabled={savingSequence}
+                      disabled={savingSequence || loadingSequence || sequenceDraft.length === 0}
                       className="flex-1 py-1.5 text-xs font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-50"
                     >
                       {savingSequence ? 'Saving…' : 'Save sequence'}
