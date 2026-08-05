@@ -195,15 +195,13 @@ function ArtifactCard({ artifact, versions, unreadCount, onDelete, onToggleMain,
       .from('goals')
       .select('id, title, description, source_artifact_version_id')
       .in('source_artifact_version_id', versionIds)
-      .eq('owner_id', userId)
       .order('created_at')
 
-    // Fallback: all goals for this user (so older extractions without source_artifact_version_id still show up)
+    // Fallback: all goals visible to the current user (RLS scopes this automatically)
     if (!extractedGoals || extractedGoals.length === 0) {
       const { data: allGoals } = await supabase
         .from('goals')
         .select('id, title, description, source_artifact_version_id')
-        .eq('owner_id', userId)
         .order('created_at')
       extractedGoals = allGoals || []
     }
