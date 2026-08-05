@@ -110,8 +110,10 @@ function longPressHandlers(timerRef, firedRef, onLongPress, ms = 550) {
 }
 
 
-function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations, defaultCollaborationId, onAddGoal, onEditGoal, onDeleteGoal, onDuplicateGoal, onPauseGoal, onMarkDone, onDelete, onCreateTask, onEditTask }) {
+function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations, defaultCollaborationId, onAddGoal, onEditGoal, onDeleteGoal, onDuplicateGoal, onPauseGoal, onMarkDone, onDelete, onCreateTask, onEditTask, onBulkDeleteGoals }) {
   const [adding, setAdding] = useState(false)
+  const [selectMode, setSelectMode] = useState(false)
+  const [selectedGoalIds, setSelectedGoalIds] = useState(new Set())
   const [newTitle, setNewTitle] = useState('')
   const [newCategory, setNewCategory] = useState('')
   const [customCategory, setCustomCategory] = useState(false)
@@ -407,6 +409,10 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
             </button>
           )}
+          <button
+            onClick={() => { setSelectMode(m => !m); setSelectedGoalIds(new Set()) }}
+            style={{ fontSize: '11px', fontWeight: 600, padding: '4px 8px', borderRadius: '7px', border: '1.5px solid ' + (selectMode ? '#6366f1' : '#d1d5db'), background: selectMode ? '#6366f1' : '#fff', color: selectMode ? '#fff' : '#374151', cursor: 'pointer' }}
+          >Select</button>
           <button onClick={() => setAdding(true)} style={{ background: '#6366f1', color: 'white', border: 'none', borderRadius: '8px', padding: '6px 12px', fontSize: '12px', cursor: 'pointer' }} title="Add goal">+</button>
         </div>
       </div>
@@ -577,20 +583,34 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
           not_started: null,
         }
         const mobileStatusBadge = MOBILE_STATUS_BADGE[mobileStatus]
-        const cardBg = mobileStatus === 'paused' ? '#fffbeb' : 'white'
-        const cardBorder = mobileStatus === 'paused' ? '1px solid #fde68a' : '1px solid #e5e7eb'
+        const cardBg = selectedGoalIds.has(goal.id) ? '#eef2ff' : mobileStatus === 'paused' ? '#fffbeb' : 'white'
+        const cardBorder = selectedGoalIds.has(goal.id) ? '1px solid #6366f1' : mobileStatus === 'paused' ? '1px solid #fde68a' : '1px solid #e5e7eb'
       return (
-        <div key={goal.id} onClick={() => { if (pressedGoalId !== goal.id) setViewingGoalId(goal.id) }} style={{ border: cardBorder, borderLeft: goal.priority && PRIORITY_BORDER[goal.priority] ? '4px solid ' + PRIORITY_BORDER[goal.priority] : cardBorder, borderRadius: '10px', padding: '10px 12px', marginBottom: '8px', background: cardBg, position: 'relative', cursor: 'pointer' }}>
+        <div key={goal.id}
+          onClick={() => {
+            if (selectMode) {
+              setSelectedGoalIds(prev => { const n = new Set(prev); n.has(goal.id) ? n.delete(goal.id) : n.add(goal.id); return n })
+            } else if (pressedGoalId !== goal.id) {
+              setViewingGoalId(goal.id)
+            }
+          }}
+          style={{ border: cardBorder, borderLeft: goal.priority && PRIORITY_BORDER[goal.priority] ? '4px solid ' + PRIORITY_BORDER[goal.priority] : cardBorder, borderRadius: '10px', padding: '10px 12px', marginBottom: '8px', background: cardBg, position: 'relative', cursor: 'pointer' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
             <span style={{ fontSize: "15px", fontWeight: 600, color: isFullyCompleted ? "#9ca3af" : "#1f2937", flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textDecoration: isFullyCompleted ? 'line-through' : 'none' }}>{goal.title}</span>
             {goal.collaboration_id && collabMap && collabMap[goal.collaboration_id] && (
               <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', flexShrink: 0, background: collabMap[goal.collaboration_id].color }} />
             )}
+            {selectMode ? (
+              <div style={{ width: '18px', height: '18px', borderRadius: '4px', border: '2px solid ' + (selectedGoalIds.has(goal.id) ? '#6366f1' : '#d1d5db'), background: selectedGoalIds.has(goal.id) ? '#6366f1' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: '#fff', fontSize: '10px' }}>
+                {selectedGoalIds.has(goal.id) && '✓'}
+              </div>
+            ) : (
             <button
               onClick={(e) => { e.stopPropagation(); setPressedGoalId(pressedGoalId === goal.id ? null : goal.id) }}
               style={{ background: 'none', border: 'none', color: '#6b7280', flexShrink: 0, padding: '0 0 0 4px', lineHeight: 1, fontSize: '16px' }}
               title="More actions"
             >&#8942;</button>
+            )}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px', paddingLeft: '2px', flexWrap: 'wrap' }}>
             {inlineCategoryGoalId === goal.id ? (
@@ -834,6 +854,18 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
       )
     })}
       </div>
+      {selectMode && (
+        <div style={{ padding: '8px 16px 12px', display: 'flex', gap: '8px', borderTop: '1px solid #f3f4f6', flexShrink: 0 }}>
+          <button
+            onClick={() => { if (selectedGoalIds.size > 0 && onBulkDeleteGoals) { onBulkDeleteGoals([...selectedGoalIds]); setSelectMode(false); setSelectedGoalIds(new Set()) } }}
+            disabled={selectedGoalIds.size === 0}
+            style={{ flex: 1, padding: '9px', borderRadius: '9px', border: 'none', background: selectedGoalIds.size > 0 ? '#ef4444' : '#fca5a5', color: '#fff', fontSize: '13px', fontWeight: 600, cursor: selectedGoalIds.size > 0 ? 'pointer' : 'default' }}
+          >
+            {selectedGoalIds.size > 0 ? `Delete selected (${selectedGoalIds.size})` : 'Delete selected (0)'}
+          </button>
+          <button onClick={() => { setSelectMode(false); setSelectedGoalIds(new Set()) }} style={{ padding: '9px 13px', borderRadius: '9px', border: '1.5px solid #e5e7eb', background: '#fff', color: '#6b7280', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
+        </div>
+      )}
     </div>
   )
 }
@@ -906,8 +938,12 @@ function MobileDayView({ date, tasks, dueCards, goalMap, collabMap, profileMap, 
   )
 }
 
-function MobileInbox({ tasks, goalMap, collabMap, collabMembersMap, profileMap, onAssignTask, onMarkDone, onAddTask, onEdit, onDelete, onDuplicate, search, sortMode, sortDir, categoryFilter }) {
+function MobileInbox({ tasks, goalMap, collabMap, collabMembersMap, profileMap, onAssignTask, onMarkDone, onAddTask, onEdit, onDelete, onDuplicate, onBulkDelete, search, sortMode, sortDir, categoryFilter, externalSelectMode, onExitSelectMode }) {
   const [pressedTaskId, setPressedTaskId] = useState(null)
+  const selectMode = externalSelectMode || false
+  const [selectedIds, setSelectedIds] = useState(new Set())
+  function toggleSelect(id) { setSelectedIds(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n }) }
+  function exitSelectMode() { if (onExitSelectMode) onExitSelectMode(); setSelectedIds(new Set()) }
   const searched = search && search.trim() ? tasks.filter(t => t.title.toLowerCase().includes(search.trim().toLowerCase())) : tasks
   const filteredTasks = categoryFilter && categoryFilter !== 'all' ? searched.filter(t => t.category === categoryFilter) : searched
   const visibleTasks = [...filteredTasks].sort((a, b) => {
@@ -954,14 +990,21 @@ function MobileInbox({ tasks, goalMap, collabMap, collabMembersMap, profileMap, 
                 {(provided, snapshot) => {
                   const row = (
                   <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}
-                    style={{ ...provided.draggableProps.style, border: '1px solid ' + (snapshot.isDragging ? '#a5b4fc' : '#e5e7eb'), borderLeft: task.priority && PRIORITY_BORDER[task.priority] ? '4px solid ' + PRIORITY_BORDER[task.priority] : undefined, borderRadius: '10px', padding: '10px 12px', background: 'white', marginBottom: '8px', WebkitTouchCallout: 'none', WebkitUserSelect: 'none', userSelect: 'none', touchAction: 'manipulation' }}>
+                    onClick={selectMode ? () => toggleSelect(task.id) : undefined}
+                    style={{ ...provided.draggableProps.style, border: '1px solid ' + (selectedIds.has(task.id) ? '#6366f1' : snapshot.isDragging ? '#a5b4fc' : '#e5e7eb'), borderLeft: task.priority && PRIORITY_BORDER[task.priority] ? '4px solid ' + PRIORITY_BORDER[task.priority] : undefined, borderRadius: '10px', padding: '10px 12px', background: selectedIds.has(task.id) ? '#eef2ff' : 'white', marginBottom: '8px', WebkitTouchCallout: 'none', WebkitUserSelect: 'none', userSelect: 'none', touchAction: 'manipulation' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
+                      {selectMode ? (
+                        <div style={{ marginTop: '2px', width: '16px', height: '16px', borderRadius: '4px', border: '2px solid ' + (selectedIds.has(task.id) ? '#6366f1' : '#d1d5db'), background: selectedIds.has(task.id) ? '#6366f1' : 'transparent', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '10px', lineHeight: 1 }}>
+                          {selectedIds.has(task.id) && '\u2713'}
+                        </div>
+                      ) : (
                       <button
                         onClick={(e) => { e.stopPropagation(); onMarkDone(task.id) }}
-                        style={{ marginTop: '2px', width: '16px', height: '16px', borderRadius: '4px', border: '1px solid ' + (task.status === 'done' ? '#a7f3d0' : '#d1d5db'), background: task.status === 'done' ? '#d1fae5' : 'transparent', color: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '11px', lineHeight: 1 }}
+                        style={{ marginTop: '2px', width: '16px', height: '16px', borderRadius: '50%', border: '2px solid ' + (task.status === 'done' ? '#10b981' : '#d1d5db'), background: task.status === 'done' ? '#10b981' : 'transparent', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '10px', lineHeight: 1 }}
                       >
                         {task.status === 'done' && '\u2713'}
                       </button>
+                      )}
                       <div style={{ flex: 1 }}>
                         <p style={{ fontSize: '14px', color: task.status === 'done' ? '#9ca3af' : '#1f2937', margin: 0, textDecoration: task.status === 'done' ? 'line-through' : 'none' }}>
                           {task.collaboration_id && collabMap && collabMap[task.collaboration_id] && (
@@ -978,7 +1021,7 @@ function MobileInbox({ tasks, goalMap, collabMap, collabMembersMap, profileMap, 
                           return <span style={{ fontSize: '9px', fontWeight: 500, padding: '2px 6px', borderRadius: '4px', display: 'inline-block', marginTop: '4px', marginLeft: '4px', color: c, background: c + '1a' }} title={'Assigned to: ' + profileMap[task.assigned_to]}>{profileMap[task.assigned_to]}</span>
                         })()}
                       </div>
-                      {!snapshot.isDragging && (
+                      {!selectMode && !snapshot.isDragging && (
                         <button
                           onClick={(e) => { e.stopPropagation(); setPressedTaskId(pressedTaskId === task.id ? null : task.id) }}
                           style={{ background: 'none', border: 'none', color: '#6b7280', flexShrink: 0, padding: '0 0 0 4px', lineHeight: 1, fontSize: '16px' }}
@@ -989,7 +1032,7 @@ function MobileInbox({ tasks, goalMap, collabMap, collabMembersMap, profileMap, 
                       )}
                     </div>
                     {task.notes && <p style={{ fontSize: '12px', color: '#9ca3af', margin: '4px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{task.notes}</p>}
-                    {!snapshot.isDragging && pressedTaskId === task.id && (
+                    {!selectMode && !snapshot.isDragging && pressedTaskId === task.id && (
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '8px' }}>
                         <button onClick={(e) => { e.stopPropagation(); onEdit(task) }} style={{ fontSize: '27px', color: '#6366f1', background: 'none', border: 'none', padding: 0, cursor: 'pointer', lineHeight: 1 }} title="Edit">&#9998;</button>
                         {onDuplicate && <button onClick={(e) => { e.stopPropagation(); setPressedTaskId(null); onDuplicate(task.id) }} style={{ fontSize: '20px', color: '#9ca3af', background: 'none', border: 'none', padding: 0, cursor: 'pointer', lineHeight: 1 }} title="Duplicate">&#10697;</button>}
@@ -1024,6 +1067,18 @@ function MobileInbox({ tasks, goalMap, collabMap, collabMembersMap, profileMap, 
         )}
       </Droppable>
       </div>
+      {selectMode && (
+        <div style={{ padding: '8px 12px 12px', display: 'flex', gap: '8px', borderTop: '1px solid #f3f4f6', flexShrink: 0 }}>
+          <button
+            onClick={() => { if (selectedIds.size > 0 && onBulkDelete) { onBulkDelete([...selectedIds]); exitSelectMode() } }}
+            disabled={selectedIds.size === 0}
+            style={{ flex: 1, padding: '9px', borderRadius: '9px', border: 'none', background: selectedIds.size > 0 ? '#ef4444' : '#fca5a5', color: '#fff', fontSize: '13px', fontWeight: 600, cursor: selectedIds.size > 0 ? 'pointer' : 'default' }}
+          >
+            {selectedIds.size > 0 ? `Delete selected (${selectedIds.size})` : 'Delete selected (0)'}
+          </button>
+          <button onClick={exitSelectMode} style={{ padding: '9px 13px', borderRadius: '9px', border: '1.5px solid #e5e7eb', background: '#fff', color: '#6b7280', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
+        </div>
+      )}
     </div>
   )
 }
@@ -1425,7 +1480,8 @@ export default function MobileLayout({
   onRescheduleToTomorrow, onMoveToInbox, onDelete, onEdit, onAddTask, onAddTaskForBucket, onCreateTask,
   onRollover, onAddGoal, onEditGoal, onDeleteGoal, onPauseGoal, onAssignTask,
   onDuplicateGoal, onDuplicateTask,
-  rolloverMode, onRolloverModeChange, onRefresh
+  rolloverMode, onRolloverModeChange, onRefresh,
+  onBulkDeleteGoals, onBulkDeleteTasks
 }) {
   const [selectedDay, setSelectedDay] = useState(() => {
     const todayStr = format(new Date(), 'yyyy-MM-dd')
@@ -1524,6 +1580,7 @@ export default function MobileLayout({
   const [taskSort, setTaskSort] = useState('deadline')
   const [taskSortDir, setTaskSortDir] = useState(1)
   const [taskCategoryFilter, setTaskCategoryFilter] = useState('all')
+  const [inboxSelectMode, setInboxSelectMode] = useState(false)
   const taskCategories = [...new Set(tasks.map(t => t.category).filter(Boolean))].sort()
 
   const tasksForDay = (date) => tasks.filter(t => t.scheduled_date === format(date, 'yyyy-MM-dd'))
@@ -1639,7 +1696,7 @@ export default function MobileLayout({
       )}
 
       {(mobileCalView === 'week' || mobileCalView === 'workweek') && activeTab === 'goals' && (
-        <MobileGoalsBar goals={goals} goalTasks={goalTasks} allTasks={tasks} collabMap={collabMap} collaborations={collaborations} defaultCollaborationId={defaultCollaborationId} onAddGoal={onAddGoal} onEditGoal={onEditGoal} onDeleteGoal={onDeleteGoal} onDuplicateGoal={onDuplicateGoal} onPauseGoal={onPauseGoal} onMarkDone={onMarkDone} onDelete={onDelete} onCreateTask={onCreateTask} onEditTask={onEdit} />
+        <MobileGoalsBar goals={goals} goalTasks={goalTasks} allTasks={tasks} collabMap={collabMap} collaborations={collaborations} defaultCollaborationId={defaultCollaborationId} onAddGoal={onAddGoal} onEditGoal={onEditGoal} onDeleteGoal={onDeleteGoal} onDuplicateGoal={onDuplicateGoal} onPauseGoal={onPauseGoal} onMarkDone={onMarkDone} onDelete={onDelete} onCreateTask={onCreateTask} onEditTask={onEdit} onBulkDeleteGoals={onBulkDeleteGoals} />
       )}
 
       {(mobileCalView === 'week' || mobileCalView === 'workweek') && activeTab === 'inbox' && (
@@ -1663,6 +1720,10 @@ export default function MobileLayout({
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
                 </button>
               )}
+              <button
+                onClick={() => setInboxSelectMode(m => !m)}
+                style={{ fontSize: '11px', fontWeight: 600, padding: '4px 8px', borderRadius: '7px', border: '1.5px solid ' + (inboxSelectMode ? '#6366f1' : '#d1d5db'), background: inboxSelectMode ? '#6366f1' : '#fff', color: inboxSelectMode ? '#fff' : '#374151', cursor: 'pointer' }}
+              >Select</button>
               <button onClick={onAddTask} style={{ background: '#6366f1', color: 'white', border: 'none', borderRadius: '8px', padding: '6px 12px', fontSize: '12px', cursor: 'pointer' }} title="Add task">+</button>
             </div>
           </div>
@@ -1697,7 +1758,7 @@ export default function MobileLayout({
               {taskCategories.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
-          <MobileInbox tasks={loading ? [] : inboxTasks} goalMap={goalMap} collabMap={collabMap} collabMembersMap={collabMembersMap} profileMap={profileMap} onAssignTask={onAssignTask} onMarkDone={onMarkDone} onAddTask={onAddTask} onEdit={onEdit} onDelete={onDelete} onDuplicate={onDuplicateTask} search={taskSearch} sortMode={taskSort} sortDir={taskSortDir} categoryFilter={taskCategoryFilter} />
+          <MobileInbox tasks={loading ? [] : inboxTasks} goalMap={goalMap} collabMap={collabMap} collabMembersMap={collabMembersMap} profileMap={profileMap} onAssignTask={onAssignTask} onMarkDone={onMarkDone} onAddTask={onAddTask} onEdit={onEdit} onDelete={onDelete} onDuplicate={onDuplicateTask} onBulkDelete={ids => { if (onBulkDeleteTasks) onBulkDeleteTasks(ids); setInboxSelectMode(false) }} search={taskSearch} sortMode={taskSort} sortDir={taskSortDir} categoryFilter={taskCategoryFilter} externalSelectMode={inboxSelectMode} onExitSelectMode={() => setInboxSelectMode(false)} />
         </>
       )}
 

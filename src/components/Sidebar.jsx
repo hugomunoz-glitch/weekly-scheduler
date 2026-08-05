@@ -9,8 +9,10 @@ const PRIORITY_COLORS = { high: '#ef4444', medium: '#f59e0b', low: '#9ca3af' }
 const PRIORITY_LABELS = { high: 'High', medium: 'Medium', low: 'Low' }
 const PRIORITY_BORDER = { high: '#ef4444', medium: '#f59e0b', low: '#22c55e' }
 
-function Inbox({ tasks, goalMap, collabMap, collabMembersMap, profileMap, onAssignTask, onMarkDone, onEdit, onDelete, onDuplicate, search, sortMode, sortDir, categoryFilter }) {
+function Inbox({ tasks, goalMap, collabMap, collabMembersMap, profileMap, onAssignTask, onMarkDone, onEdit, onDelete, onDuplicate, onBulkDelete, search, sortMode, sortDir, categoryFilter, externalSelectMode, onExitSelectMode }) {
   const [hoverId, setHoverId] = useState(null)
+  const selectMode = externalSelectMode || false
+  const [selectedIds, setSelectedIds] = useState(new Set())
   const searched = search && search.trim() ? tasks.filter(t => t.title.toLowerCase().includes(search.trim().toLowerCase())) : tasks
   const filteredTasks = categoryFilter && categoryFilter !== 'all' ? searched.filter(t => t.category === categoryFilter) : searched
   const visibleTasks = [...filteredTasks].sort((a, b) => {
@@ -33,6 +35,18 @@ function Inbox({ tasks, goalMap, collabMap, collabMembersMap, profileMap, onAssi
     }
     return result * sortDir
   })
+  function toggleSelect(id) {
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+  function exitSelectMode() {
+    if (onExitSelectMode) onExitSelectMode()
+    setSelectedIds(new Set())
+  }
+
   return (
     <div className="flex-1 min-h-0 flex flex-col">
       <Droppable droppableId="inbox">
@@ -45,14 +59,15 @@ function Inbox({ tasks, goalMap, collabMap, collabMembersMap, profileMap, onAssi
               </div>
             )}
             {visibleTasks.map((task, index) => (
-              <Draggable key={task.id} draggableId={task.id} index={index}>
+              <Draggable key={task.id} draggableId={task.id} index={index} isDragDisabled={selectMode}>
                 {(provided, snapshot) => (
                   <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}
-                    className={'relative group border rounded-lg px-3 py-2.5 bg-white transition-colors ' + (snapshot.isDragging ? 'border-indigo-300 shadow-lg' : 'border-gray-200 hover:border-gray-300')}
+                    className={'relative group border rounded-lg px-3 py-2.5 bg-white transition-colors cursor-pointer ' + (selectedIds.has(task.id) ? 'border-indigo-400 bg-indigo-50' : snapshot.isDragging ? 'border-indigo-300 shadow-lg' : 'border-gray-200 hover:border-gray-300')}
                     style={{ ...provided.draggableProps.style, ...(task.priority && PRIORITY_BORDER[task.priority] ? { borderLeft: '4px solid ' + PRIORITY_BORDER[task.priority] } : {}) }}
                     title={task.priority ? PRIORITY_LABELS[task.priority] + ' priority' : undefined}
-                    onMouseEnter={() => setHoverId(task.id)} onMouseLeave={() => setHoverId(null)}>
-                    {!snapshot.isDragging && (
+                    onMouseEnter={() => !selectMode && setHoverId(task.id)} onMouseLeave={() => setHoverId(null)}
+                    onClick={selectMode ? () => toggleSelect(task.id) : undefined}>
+                    {!selectMode && !snapshot.isDragging && (
                       <button
                         onClick={(e) => { e.stopPropagation(); onDelete(task.id, e) }}
                         className="absolute -top-2 -right-2 w-4 h-4 rounded-full bg-red-500 hover:bg-red-600 text-white text-[9px] font-semibold flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm z-10"
@@ -62,12 +77,20 @@ function Inbox({ tasks, goalMap, collabMap, collabMembersMap, profileMap, onAssi
                       </button>
                     )}
                     <div className="flex items-start gap-2">
+                      {selectMode ? (
+                        <div
+                          className={'mt-0.5 w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors ' + (selectedIds.has(task.id) ? 'bg-indigo-600 border-indigo-600 text-white' : 'border-gray-300')}
+                        >
+                          {selectedIds.has(task.id) && <span className="text-[10px] leading-none">&#10003;</span>}
+                        </div>
+                      ) : (
                       <button
                         onClick={(e) => { e.stopPropagation(); onMarkDone(task.id) }}
-                        className={'mt-0.5 w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors ' + (task.status === 'done' ? 'bg-emerald-100 border-emerald-200 text-emerald-600' : 'border-gray-300 hover:border-emerald-400 hover:bg-emerald-50')}
+                        className={'mt-0.5 w-4 h-4 rounded-full border flex items-center justify-center shrink-0 transition-colors ' + (task.status === 'done' ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-gray-300 hover:border-emerald-400 hover:bg-emerald-50')}
                       >
                         {task.status === 'done' && <span className="text-xs leading-none">&#10003;</span>}
                       </button>
+                      )}
                       <p className={'text-sm leading-snug break-words flex-1 ' + (task.status === 'done' ? 'line-through text-gray-400' : 'text-gray-800')}>
                         {task.collaboration_id && collabMap && collabMap[task.collaboration_id] && (
                           <span
@@ -115,7 +138,7 @@ function Inbox({ tasks, goalMap, collabMap, collabMembersMap, profileMap, onAssi
                       </div>
                     )}
                     {task.notes && <p className="text-xs text-gray-400 mt-1 truncate">{task.notes}</p>}
-                    {!snapshot.isDragging && hoverId === task.id && (
+                    {!selectMode && !snapshot.isDragging && hoverId === task.id && (
                       <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                         <button onClick={() => onEdit(task)} className="text-[27px] text-indigo-400 hover:text-indigo-600 leading-none" title="Edit">&#9998;</button>
                         {onDuplicate && <button onClick={() => onDuplicate(task.id)} className="text-[20px] text-gray-400 hover:text-indigo-600 leading-none" title="Duplicate">&#10697;</button>}
@@ -135,9 +158,22 @@ function Inbox({ tasks, goalMap, collabMap, collabMembersMap, profileMap, onAssi
           </div>
         )}
       </Droppable>
-      <div className="px-4 py-3 border-t border-gray-100 shrink-0">
-        <p className="text-xs text-gray-400">Drag tasks onto any day to schedule them.</p>
-      </div>
+      {selectMode ? (
+        <div className="px-3 py-2 border-t border-gray-100 flex gap-2 shrink-0">
+          <button
+            onClick={() => { if (selectedIds.size > 0 && onBulkDelete) { onBulkDelete([...selectedIds]); exitSelectMode() } }}
+            disabled={selectedIds.size === 0}
+            className={'flex-1 py-1.5 rounded-lg text-xs font-semibold text-white transition-colors ' + (selectedIds.size > 0 ? 'bg-red-500 hover:bg-red-600' : 'bg-red-300 cursor-not-allowed')}
+          >
+            {selectedIds.size > 0 ? `Delete selected (${selectedIds.size})` : 'Delete selected (0)'}
+          </button>
+          <button onClick={exitSelectMode} className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-gray-200 text-gray-500 hover:bg-gray-50">Cancel</button>
+        </div>
+      ) : (
+        <div className="px-4 py-3 border-t border-gray-100 shrink-0">
+          <p className="text-xs text-gray-400">Drag tasks onto any day to schedule them.</p>
+        </div>
+      )}
     </div>
   )
 }
@@ -288,13 +324,14 @@ function Assistant({ goals, tasks, onCreateTask, onAddGoal }) {
   )
 }
 
-export default function Sidebar({ tasks, goalMap, collabMap, collabMembersMap, profileMap, onAssignTask, onMarkDone, goals, allTasks, onAddTask, onCreateTask, onAddGoal, onEdit, onDelete, onDuplicate }) {
+export default function Sidebar({ tasks, goalMap, collabMap, collabMembersMap, profileMap, onAssignTask, onMarkDone, goals, allTasks, onAddTask, onCreateTask, onAddGoal, onEdit, onDelete, onDuplicate, onBulkDeleteTasks }) {
   const [tab, setTab] = useState('inbox')
   const [taskSearch, setTaskSearch] = useState('')
   const [showTaskSearch, setShowTaskSearch] = useState(false)
   const [taskSort, setTaskSort] = useState('deadline')
   const [taskSortDir, setTaskSortDir] = useState(1)
   const [taskCategoryFilter, setTaskCategoryFilter] = useState('all')
+  const [inboxSelectMode, setInboxSelectMode] = useState(false)
   const taskCategories = [...new Set(allTasks.map(t => t.category).filter(Boolean))].sort()
   return (
     <div className="w-64 bg-white flex flex-col shrink-0 overflow-hidden h-full">
@@ -330,6 +367,10 @@ export default function Sidebar({ tasks, goalMap, collabMap, collabMembersMap, p
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
                 </button>
               )}
+              <button
+                onClick={() => setInboxSelectMode(m => !m)}
+                className={'text-xs font-semibold px-2 py-1 rounded-lg border transition-colors ' + (inboxSelectMode ? 'bg-indigo-600 border-indigo-600 text-white' : 'border-gray-200 text-gray-500 hover:border-indigo-300')}
+              >Select</button>
               <button onClick={onAddTask} className="text-xs text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg px-2.5 py-1 font-medium" title="Add task">+</button>
             </div>
             <div className="px-4 pb-2 flex items-end gap-2 shrink-0 overflow-x-auto">
@@ -360,7 +401,7 @@ export default function Sidebar({ tasks, goalMap, collabMap, collabMembersMap, p
                 {taskCategories.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
-            <Inbox tasks={tasks} goalMap={goalMap} collabMap={collabMap} collabMembersMap={collabMembersMap} profileMap={profileMap} onAssignTask={onAssignTask} onMarkDone={onMarkDone} onEdit={onEdit} onDelete={onDelete} onDuplicate={onDuplicate} search={taskSearch} sortMode={taskSort} sortDir={taskSortDir} categoryFilter={taskCategoryFilter} />
+            <Inbox tasks={tasks} goalMap={goalMap} collabMap={collabMap} collabMembersMap={collabMembersMap} profileMap={profileMap} onAssignTask={onAssignTask} onMarkDone={onMarkDone} onEdit={onEdit} onDelete={onDelete} onDuplicate={onDuplicate} onBulkDelete={ids => { if (onBulkDeleteTasks) onBulkDeleteTasks(ids); setInboxSelectMode(false) }} search={taskSearch} sortMode={taskSort} sortDir={taskSortDir} categoryFilter={taskCategoryFilter} externalSelectMode={inboxSelectMode} onExitSelectMode={() => setInboxSelectMode(false)} />
           </>
         ) : (
           <Assistant goals={goals} tasks={allTasks} onCreateTask={onCreateTask} onAddGoal={onAddGoal} />

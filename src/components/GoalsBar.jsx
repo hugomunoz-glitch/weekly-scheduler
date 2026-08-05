@@ -59,8 +59,10 @@ const STATUS_BADGE = {
   not_started: null,
 }
 
-export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations, collabMembersMap, defaultCollaborationId, onAddGoal, onEditGoal, onDeleteGoal, onDuplicateGoal, onPauseGoal, onMarkDone, onDelete, onDuplicateTask, onCreateTask, onEditTask, activeView, onChangeView, hidden }) {
+export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations, collabMembersMap, defaultCollaborationId, onAddGoal, onEditGoal, onDeleteGoal, onDuplicateGoal, onPauseGoal, onMarkDone, onDelete, onDuplicateTask, onCreateTask, onEditTask, activeView, onChangeView, hidden, onBulkDeleteGoals }) {
   const [adding, setAdding] = useState(false)
+  const [selectMode, setSelectMode] = useState(false)
+  const [selectedGoalIds, setSelectedGoalIds] = useState(new Set())
   const [newTitle, setNewTitle] = useState('')
   const [newGoalTasks, setNewGoalTasks] = useState([''])
   const [newCategory, setNewCategory] = useState('')
@@ -677,6 +679,10 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
             </div>
           )}
         </div>
+        <button
+          onClick={() => { setSelectMode(m => !m); setSelectedGoalIds(new Set()) }}
+          className={'text-xs font-semibold px-2 py-1 rounded-lg border transition-colors shrink-0 ' + (selectMode ? 'bg-indigo-600 border-indigo-600 text-white' : 'border-gray-200 text-gray-500 hover:border-indigo-300')}
+        >Select</button>
         {adding ? (
           <div className="border border-gray-200 rounded-lg p-3 space-y-2 bg-gray-50 shrink-0 w-72">
             <div className="flex justify-end -mb-1">
@@ -863,14 +869,30 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
         const statusBadge = STATUS_BADGE[status]
         const isLocked = status === 'locked'
         const goalDisplayColor = (goal.category ? categoryBadge(goal.category)?.color : null) || goal.color
+        const isGoalSelected = selectedGoalIds.has(goal.id)
         return (
           <div
             key={goal.id}
-            className={'flex items-start gap-2 border rounded-lg px-3 py-1.5 shrink-0 min-w-[160px] group cursor-pointer relative ' + (isFullyCompleted ? 'border-emerald-100 bg-white' : isLocked ? 'border-gray-200 bg-gray-50 opacity-60' : status === 'paused' ? 'border-amber-200 bg-amber-50' : 'border-gray-200 bg-white')}
+            className={'flex items-start gap-2 border rounded-lg px-3 py-1.5 shrink-0 min-w-[160px] group cursor-pointer relative ' + (isGoalSelected ? 'border-indigo-400 bg-indigo-50' : isFullyCompleted ? 'border-emerald-100 bg-white' : isLocked ? 'border-gray-200 bg-gray-50 opacity-60' : status === 'paused' ? 'border-amber-200 bg-amber-50' : 'border-gray-200 bg-white')}
             style={goal.priority && PRIORITY_BORDER[goal.priority] ? { borderLeft: '4px solid ' + PRIORITY_BORDER[goal.priority] } : undefined}
             title={goal.priority ? PRIORITY_LABELS[goal.priority] + ' priority' : undefined}
-            onClick={(e) => openPopup(goal.id, e)}
+            onClick={(e) => {
+              if (selectMode) {
+                setSelectedGoalIds(prev => {
+                  const next = new Set(prev)
+                  next.has(goal.id) ? next.delete(goal.id) : next.add(goal.id)
+                  return next
+                })
+              } else {
+                openPopup(goal.id, e)
+              }
+            }}
           >
+            {selectMode && (
+              <div className={'absolute top-1.5 right-1.5 w-4 h-4 rounded border flex items-center justify-center transition-colors ' + (isGoalSelected ? 'bg-indigo-600 border-indigo-600 text-white' : 'border-gray-300 bg-white')}>
+                {isGoalSelected && <span className="text-[9px] leading-none">&#10003;</span>}
+              </div>
+            )}
             <div className="flex-1 min-w-0">
               {editingId === goal.id ? (
                 <form onSubmit={(e) => handleEditSubmit(e, goal.id)} className="space-y-1" onClick={(e) => e.stopPropagation()}>
@@ -1114,6 +1136,18 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
         )
       })}
       </div>
+      {selectMode && (
+        <div className="flex gap-2 mt-2">
+          <button
+            onClick={() => { if (selectedGoalIds.size > 0 && onBulkDeleteGoals) { onBulkDeleteGoals([...selectedGoalIds]); setSelectMode(false); setSelectedGoalIds(new Set()) } }}
+            disabled={selectedGoalIds.size === 0}
+            className={'flex-1 py-1.5 rounded-lg text-xs font-semibold text-white transition-colors ' + (selectedGoalIds.size > 0 ? 'bg-red-500 hover:bg-red-600' : 'bg-red-300 cursor-not-allowed')}
+          >
+            {selectedGoalIds.size > 0 ? `Delete selected (${selectedGoalIds.size})` : 'Delete selected (0)'}
+          </button>
+          <button onClick={() => { setSelectMode(false); setSelectedGoalIds(new Set()) }} className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-gray-200 text-gray-500 hover:bg-gray-50">Cancel</button>
+        </div>
+      )}
       <div className="flex items-end gap-2 mt-2">
         <div className="flex flex-col gap-0.5">
           <span className="text-[10px] text-gray-400 font-medium leading-none">Sort by</span>

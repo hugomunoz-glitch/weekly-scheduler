@@ -874,6 +874,38 @@ export default function App() {
     } }])
   }
 
+  function bulkDeleteTasks(taskIds) {
+    const toRemove = tasks.filter(t => taskIds.includes(t.id))
+    const toRemoveGoal = goalTasks.filter(t => taskIds.includes(t.id))
+    setTasks(prev => prev.filter(t => !taskIds.includes(t.id)))
+    setGoalTasks(prev => prev.filter(t => !taskIds.includes(t.id)))
+    const batchId = 'bulk-' + Date.now()
+    const timerId = setTimeout(() => {
+      performDeleteTasks(taskIds)
+      setUndoQueue(prev => prev.filter(u => u.id !== batchId))
+    }, UNDO_MS)
+    setUndoQueue(prev => [...prev, { id: batchId, type: 'task', label: toRemove.length + ' tasks', timerId, restore: () => {
+      setTasks(prev => [...prev, ...toRemove])
+      setGoalTasks(prev => [...prev, ...toRemoveGoal])
+    } }])
+  }
+
+  function bulkDeleteGoals(goalIds) {
+    const toRemove = goals.filter(g => goalIds.includes(g.id))
+    const relatedTasks = goalTasks.filter(t => goalIds.includes(t.goal_id))
+    setGoals(prev => prev.filter(g => !goalIds.includes(g.id)))
+    setGoalTasks(prev => prev.filter(t => !goalIds.includes(t.goal_id)))
+    const batchId = 'bulk-goals-' + Date.now()
+    const timerId = setTimeout(async () => {
+      for (const id of goalIds) await performDeleteGoal(id)
+      setUndoQueue(prev => prev.filter(u => u.id !== batchId))
+    }, UNDO_MS)
+    setUndoQueue(prev => [...prev, { id: batchId, type: 'goal', label: toRemove.length + ' goals', timerId, restore: () => {
+      setGoals(prev => [...prev, ...toRemove])
+      setGoalTasks(prev => [...prev, ...relatedTasks])
+    } }])
+  }
+
   function undoDelete(id) {
     setUndoQueue(prev => {
       const entry = prev.find(u => u.id === id)
@@ -986,7 +1018,7 @@ export default function App() {
     onMoveToInbox: moveToInbox, onDelete: requestDeleteTask, onEdit: setEditingTask, onAssignTask: assignTask,
     onAddTask: () => setShowAdd(true), onAddTaskForDay: openAddForDay, onAddTaskForBucket: openAddForBucket, onCreateTask: addTask, onRollover: rolloverOverdue,
     rolloverMode, onRolloverModeChange: mode => { setRolloverMode(mode); localStorage.setItem('rolloverMode', mode) },
-    onAddGoal: addGoal, onEditGoal: editGoal, onDeleteGoal: deleteGoal, onDuplicateGoal: duplicateGoal, onPauseGoal: pauseGoal,
+    onAddGoal: addGoal, onEditGoal: editGoal, onDeleteGoal: deleteGoal, onDuplicateGoal: duplicateGoal, onPauseGoal: pauseGoal, onBulkDeleteGoals: bulkDeleteGoals, onBulkDeleteTasks: bulkDeleteTasks,
     onDuplicateTask: duplicateTask,
     onPrevWeek: () => setWeekStart(w => subWeeks(w, 1)),
     onNextWeek: () => setWeekStart(w => addWeeks(w, 1)),
@@ -1051,7 +1083,7 @@ export default function App() {
           </header>
           <div className="mx-3 mt-3 shrink-0">
             <div className={showGoals ? 'rounded-xl border border-gray-200 shadow-sm overflow-hidden' : ''}>
-              <GoalsBar goals={visibleGoals} goalTasks={visibleGoalTasks} allTasks={visibleTasks} collabMap={collabMap} collaborations={collaborations} collabMembersMap={collabMembersMap} defaultCollaborationId={defaultCollaborationId} onAddGoal={addGoal} onEditGoal={editGoal} onDeleteGoal={deleteGoal} onDuplicateGoal={duplicateGoal} onPauseGoal={pauseGoal} onMarkDone={markDone} onDelete={requestDeleteTask} onDuplicateTask={duplicateTask} onCreateTask={addTask} onEditTask={setEditingTask} activeView={activeView} onChangeView={setActiveView} hidden={!showGoals} />
+              <GoalsBar goals={visibleGoals} goalTasks={visibleGoalTasks} allTasks={visibleTasks} collabMap={collabMap} collaborations={collaborations} collabMembersMap={collabMembersMap} defaultCollaborationId={defaultCollaborationId} onAddGoal={addGoal} onEditGoal={editGoal} onDeleteGoal={deleteGoal} onDuplicateGoal={duplicateGoal} onPauseGoal={pauseGoal} onMarkDone={markDone} onDelete={requestDeleteTask} onDuplicateTask={duplicateTask} onCreateTask={addTask} onEditTask={setEditingTask} activeView={activeView} onChangeView={setActiveView} hidden={!showGoals} onBulkDeleteGoals={bulkDeleteGoals} />
             </div>
             <button
               onClick={() => { setShowGoals(v => { localStorage.setItem('showGoals', !v); return !v }) }}
@@ -1085,7 +1117,7 @@ export default function App() {
               </button>
               {showSidebar && (
                 <div className="rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-                  <Sidebar tasks={inboxTasks} goalMap={goalMap} collabMap={collabMap} collabMembersMap={collabMembersMap} profileMap={profileMap} onAssignTask={assignTask} onMarkDone={markDone} goals={visibleGoals} allTasks={visibleTasks} onAddTask={() => setShowAdd(true)} onCreateTask={addTask} onAddGoal={addGoal} onEdit={setEditingTask} onDelete={requestDeleteTask} onDuplicate={duplicateTask} />
+                  <Sidebar tasks={inboxTasks} goalMap={goalMap} collabMap={collabMap} collabMembersMap={collabMembersMap} profileMap={profileMap} onAssignTask={assignTask} onMarkDone={markDone} goals={visibleGoals} allTasks={visibleTasks} onAddTask={() => setShowAdd(true)} onCreateTask={addTask} onAddGoal={addGoal} onEdit={setEditingTask} onDelete={requestDeleteTask} onDuplicate={duplicateTask} onBulkDeleteTasks={bulkDeleteTasks} />
                 </div>
               )}
             </div>
