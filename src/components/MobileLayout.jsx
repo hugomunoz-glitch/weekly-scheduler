@@ -110,7 +110,7 @@ function longPressHandlers(timerRef, firedRef, onLongPress, ms = 550) {
 }
 
 
-function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations, defaultCollaborationId, onAddGoal, onEditGoal, onDeleteGoal, onDuplicateGoal, onPauseGoal, onMarkDone, onDelete, onCreateTask, onEditTask, onBulkDeleteGoals, onUnlockGoal, onUnlockTask, lockedTaskIds }) {
+function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations, defaultCollaborationId, onAddGoal, onEditGoal, onDeleteGoal, onDuplicateGoal, onPauseGoal, onMarkDone, onDelete, onCreateTask, onEditTask, onBulkDeleteGoals, onUnlockGoal, onUnlockTask, lockedTaskIds, onLockGoal, onLockTask }) {
   const [adding, setAdding] = useState(false)
   const [selectMode, setSelectMode] = useState(false)
   const [selectedGoalIds, setSelectedGoalIds] = useState(new Set())
@@ -667,8 +667,10 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
             <div onClick={e => e.stopPropagation()} style={{ display: 'flex', alignItems: 'center', gap: '14px', marginTop: '8px', paddingTop: '8px', borderTop: '1px solid #f3f4f6' }}>
               <button onClick={(e) => { e.stopPropagation(); setPressedGoalId(null); startEditGoal(goal) }} style={{ fontSize: '24px', color: '#6b7280', background: 'none', border: 'none', padding: 0, cursor: 'pointer', lineHeight: 1 }} title="Edit goal">&#9998;</button>
               {onDuplicateGoal && <button onClick={(e) => { e.stopPropagation(); setPressedGoalId(null); onDuplicateGoal(goal.id) }} style={{ fontSize: '20px', color: '#6b7280', background: 'none', border: 'none', padding: 0, cursor: 'pointer', lineHeight: 1 }} title="Duplicate goal">&#10697;</button>}
-              {isLocked && onUnlockGoal && (
-                <button onClick={(e) => { e.stopPropagation(); setPressedGoalId(null); onUnlockGoal(goal.id) }} style={{ fontSize: '12px', fontWeight: 600, color: '#d97706', background: 'none', border: '1px solid #fcd34d', borderRadius: '6px', padding: '3px 8px', cursor: 'pointer', lineHeight: 1 }} title="Unlock this goal and all its tasks">🔓 Unlock</button>
+              {isLocked ? (
+                onUnlockGoal && <button onClick={(e) => { e.stopPropagation(); setPressedGoalId(null); onUnlockGoal(goal.id) }} style={{ fontSize: '12px', fontWeight: 600, color: '#d97706', background: 'none', border: '1px solid #fcd34d', borderRadius: '6px', padding: '3px 8px', cursor: 'pointer', lineHeight: 1 }} title="Unlock this goal and all its tasks">🔓 Unlock</button>
+              ) : (
+                !isFullyCompleted && onLockGoal && <button onClick={(e) => { e.stopPropagation(); setPressedGoalId(null); onLockGoal(goal.id) }} style={{ fontSize: '12px', fontWeight: 600, color: '#6b7280', background: 'none', border: '1px solid #d1d5db', borderRadius: '6px', padding: '3px 8px', cursor: 'pointer', lineHeight: 1 }} title="Lock this goal and all its tasks">🔒 Lock</button>
               )}
               {isFullyCompleted && (
                 <button onClick={(e) => { e.stopPropagation(); setPressedGoalId(null); setViewingGoalId(goal.id) }} style={{ fontSize: '12px', fontWeight: 600, color: '#6366f1', background: 'none', border: 'none', padding: 0, cursor: 'pointer', lineHeight: 1 }} title="Add tasks to revive goal">+ Tasks</button>
@@ -814,8 +816,10 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
                           {t.start_time && (
                             <span style={{ fontSize: '13px', color: '#a5b4fc', flexShrink: 0, whiteSpace: 'nowrap' }}>{formatTime(t.start_time)}</span>
                           )}
-                          {(isLocked || lockedTaskIds?.has(t.id) || t.is_locked) && onUnlockTask && (
-                            <span onClick={(e) => { e.stopPropagation(); onUnlockTask(t.id) }} style={{ fontSize: '14px', cursor: 'pointer', padding: '2px 4px', flexShrink: 0, lineHeight: 1 }} title="Unlock this task">🔓</span>
+                          {(isLocked || lockedTaskIds?.has(t.id) || t.is_locked) ? (
+                            onUnlockTask && <span onClick={(e) => { e.stopPropagation(); onUnlockTask(t.id) }} style={{ fontSize: '14px', cursor: 'pointer', padding: '2px 4px', flexShrink: 0, lineHeight: 1 }} title="Unlock this task">🔓</span>
+                          ) : (
+                            onLockTask && <span onClick={(e) => { e.stopPropagation(); onLockTask(t.id) }} style={{ fontSize: '14px', cursor: 'pointer', padding: '2px 4px', flexShrink: 0, lineHeight: 1 }} title="Lock this task">🔒</span>
                           )}
                           <span onClick={(e) => { e.stopPropagation(); onDelete(t.id, e) }} style={{ color: '#ef4444', fontSize: '17px', fontWeight: 500, cursor: 'pointer', padding: '2px 4px', flexShrink: 0, lineHeight: 1 }}>&#10005;</span>
                         </div>
@@ -947,7 +951,7 @@ function MobileDayView({ date, tasks, dueCards, goalMap, collabMap, profileMap, 
   )
 }
 
-function MobileInbox({ tasks, goalMap, collabMap, collabMembersMap, profileMap, onAssignTask, onMarkDone, onAddTask, onEdit, onDelete, onDuplicate, onBulkDelete, search, sortMode, sortDir, categoryFilter, externalSelectMode, onExitSelectMode, lockedGoalIds, lockedTaskIds, onUnlockTask }) {
+function MobileInbox({ tasks, goalMap, collabMap, collabMembersMap, profileMap, onAssignTask, onMarkDone, onAddTask, onEdit, onDelete, onDuplicate, onBulkDelete, search, sortMode, sortDir, categoryFilter, externalSelectMode, onExitSelectMode, lockedGoalIds, lockedTaskIds, onUnlockTask, onLockTask }) {
   const [pressedTaskId, setPressedTaskId] = useState(null)
   const selectMode = externalSelectMode || false
   const [selectedIds, setSelectedIds] = useState(new Set())
@@ -1045,8 +1049,10 @@ function MobileInbox({ tasks, goalMap, collabMap, collabMembersMap, profileMap, 
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '8px' }}>
                         <button onClick={(e) => { e.stopPropagation(); onEdit(task) }} style={{ fontSize: '27px', color: '#6366f1', background: 'none', border: 'none', padding: 0, cursor: 'pointer', lineHeight: 1 }} title="Edit">&#9998;</button>
                         {onDuplicate && <button onClick={(e) => { e.stopPropagation(); setPressedTaskId(null); onDuplicate(task.id) }} style={{ fontSize: '20px', color: '#9ca3af', background: 'none', border: 'none', padding: 0, cursor: 'pointer', lineHeight: 1 }} title="Duplicate">&#10697;</button>}
-                        {(lockedTaskIds?.has(task.id) || task.is_locked) && onUnlockTask && (
-                          <button onClick={(e) => { e.stopPropagation(); setPressedTaskId(null); onUnlockTask(task.id) }} style={{ fontSize: '12px', fontWeight: 600, color: '#d97706', background: 'none', border: '1px solid #fcd34d', borderRadius: '6px', padding: '3px 8px', cursor: 'pointer', lineHeight: 1 }} title="Unlock this task">🔓 Unlock</button>
+                        {(lockedTaskIds?.has(task.id) || task.is_locked) ? (
+                          onUnlockTask && <button onClick={(e) => { e.stopPropagation(); setPressedTaskId(null); onUnlockTask(task.id) }} style={{ fontSize: '12px', fontWeight: 600, color: '#d97706', background: 'none', border: '1px solid #fcd34d', borderRadius: '6px', padding: '3px 8px', cursor: 'pointer', lineHeight: 1 }} title="Unlock this task">🔓 Unlock</button>
+                        ) : (
+                          onLockTask && <button onClick={(e) => { e.stopPropagation(); setPressedTaskId(null); onLockTask(task.id) }} style={{ fontSize: '12px', fontWeight: 600, color: '#6b7280', background: 'none', border: '1px solid #d1d5db', borderRadius: '6px', padding: '3px 8px', cursor: 'pointer', lineHeight: 1 }} title="Lock this task">🔒 Lock</button>
                         )}
                         {task.collaboration_id && collabMembersMap && collabMembersMap[task.collaboration_id] && collabMembersMap[task.collaboration_id].length > 0 && (
                           <select
@@ -1493,7 +1499,7 @@ export default function MobileLayout({
   onRollover, onAddGoal, onEditGoal, onDeleteGoal, onPauseGoal, onAssignTask,
   onDuplicateGoal, onDuplicateTask,
   rolloverMode, onRolloverModeChange, onRefresh,
-  onBulkDeleteGoals, onBulkDeleteTasks, onUnlockTask, onUnlockGoal, lockedTaskIds
+  onBulkDeleteGoals, onBulkDeleteTasks, onUnlockTask, onUnlockGoal, lockedTaskIds, onLockTask, onLockGoal
 }) {
   const [selectedDay, setSelectedDay] = useState(() => {
     const todayStr = format(new Date(), 'yyyy-MM-dd')
@@ -1708,7 +1714,7 @@ export default function MobileLayout({
       )}
 
       {(mobileCalView === 'week' || mobileCalView === 'workweek') && activeTab === 'goals' && (
-        <MobileGoalsBar goals={goals} goalTasks={goalTasks} allTasks={tasks} collabMap={collabMap} collaborations={collaborations} defaultCollaborationId={defaultCollaborationId} onAddGoal={onAddGoal} onEditGoal={onEditGoal} onDeleteGoal={onDeleteGoal} onDuplicateGoal={onDuplicateGoal} onPauseGoal={onPauseGoal} onMarkDone={onMarkDone} onDelete={onDelete} onCreateTask={onCreateTask} onEditTask={onEdit} onBulkDeleteGoals={onBulkDeleteGoals} onUnlockGoal={onUnlockGoal} onUnlockTask={onUnlockTask} lockedTaskIds={lockedTaskIds} />
+        <MobileGoalsBar goals={goals} goalTasks={goalTasks} allTasks={tasks} collabMap={collabMap} collaborations={collaborations} defaultCollaborationId={defaultCollaborationId} onAddGoal={onAddGoal} onEditGoal={onEditGoal} onDeleteGoal={onDeleteGoal} onDuplicateGoal={onDuplicateGoal} onPauseGoal={onPauseGoal} onMarkDone={onMarkDone} onDelete={onDelete} onCreateTask={onCreateTask} onEditTask={onEdit} onBulkDeleteGoals={onBulkDeleteGoals} onUnlockGoal={onUnlockGoal} onUnlockTask={onUnlockTask} lockedTaskIds={lockedTaskIds} onLockGoal={onLockGoal} onLockTask={onLockTask} />
       )}
 
       {(mobileCalView === 'week' || mobileCalView === 'workweek') && activeTab === 'inbox' && (
@@ -1770,7 +1776,7 @@ export default function MobileLayout({
               {taskCategories.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
-          <MobileInbox tasks={loading ? [] : inboxTasks} goalMap={goalMap} collabMap={collabMap} collabMembersMap={collabMembersMap} profileMap={profileMap} onAssignTask={onAssignTask} onMarkDone={onMarkDone} onAddTask={onAddTask} onEdit={onEdit} onDelete={onDelete} onDuplicate={onDuplicateTask} onBulkDelete={ids => { if (onBulkDeleteTasks) onBulkDeleteTasks(ids); setInboxSelectMode(false) }} search={taskSearch} sortMode={taskSort} sortDir={taskSortDir} categoryFilter={taskCategoryFilter} externalSelectMode={inboxSelectMode} onExitSelectMode={() => setInboxSelectMode(false)} lockedGoalIds={lockedGoalIds} lockedTaskIds={lockedTaskIds} onUnlockTask={onUnlockTask} />
+          <MobileInbox tasks={loading ? [] : inboxTasks} goalMap={goalMap} collabMap={collabMap} collabMembersMap={collabMembersMap} profileMap={profileMap} onAssignTask={onAssignTask} onMarkDone={onMarkDone} onAddTask={onAddTask} onEdit={onEdit} onDelete={onDelete} onDuplicate={onDuplicateTask} onBulkDelete={ids => { if (onBulkDeleteTasks) onBulkDeleteTasks(ids); setInboxSelectMode(false) }} search={taskSearch} sortMode={taskSort} sortDir={taskSortDir} categoryFilter={taskCategoryFilter} externalSelectMode={inboxSelectMode} onExitSelectMode={() => setInboxSelectMode(false)} lockedGoalIds={lockedGoalIds} lockedTaskIds={lockedTaskIds} onUnlockTask={onUnlockTask} onLockTask={onLockTask} />
         </>
       )}
 

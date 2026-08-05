@@ -219,6 +219,7 @@ export default function App() {
   const goalMap = Object.fromEntries(goals.map(g => [g.id, g]))
   const lockedGoalIds = new Set(
     goals.filter(g => {
+      if (g.is_locked) return true
       if (!g.prerequisite_goal_id) return false
       const prereq = goalMap[g.prerequisite_goal_id]
       if (!prereq) return false
@@ -814,20 +815,34 @@ export default function App() {
   }
   const UNDO_MS = 6000
 
+  async function lockTask(taskId) {
+    await supabase.from('tasks').update({ is_locked: true }).eq('id', taskId)
+    setTasks(prev => prev.map(t => t.id === taskId ? { ...t, is_locked: true } : t))
+    setGoalTasks(prev => prev.map(t => t.id === taskId ? { ...t, is_locked: true } : t))
+  }
+
+  async function lockGoal(goalId) {
+    await supabase.from('goals').update({ is_locked: true }).eq('id', goalId)
+    setGoals(prev => prev.map(g => g.id === goalId ? { ...g, is_locked: true } : g))
+    const goalTaskIds = goalTasks.filter(t => t.goal_id === goalId).map(t => t.id)
+    if (goalTaskIds.length > 0) {
+      await supabase.from('tasks').update({ is_locked: true }).in('id', goalTaskIds)
+      setGoalTasks(prev => prev.map(t => goalTaskIds.includes(t.id) ? { ...t, is_locked: true } : t))
+    }
+  }
+
   async function unlockTask(taskId) {
-    // Find the goal this task belongs to
     const task = [...tasks, ...goalTasks].find(t => t.id === taskId)
     if (!task) return
     const goalId = task.goal_id
-    // Clear individual lock on this task
     await supabase.from('tasks').update({ is_locked: false }).eq('id', taskId)
     setTasks(prev => prev.map(t => t.id === taskId ? { ...t, is_locked: false } : t))
     setGoalTasks(prev => prev.map(t => t.id === taskId ? { ...t, is_locked: false } : t))
     if (goalId) {
-      // Clear the goal's prerequisite (unlocking the goal)
-      await supabase.from('goals').update({ prerequisite_goal_id: null }).eq('id', goalId)
-      setGoals(prev => prev.map(g => g.id === goalId ? { ...g, prerequisite_goal_id: null } : g))
-      // Lock all OTHER tasks in the same goal individually so they stay locked
+      // Unlock the goal itself
+      await supabase.from('goals').update({ prerequisite_goal_id: null, is_locked: false }).eq('id', goalId)
+      setGoals(prev => prev.map(g => g.id === goalId ? { ...g, prerequisite_goal_id: null, is_locked: false } : g))
+      // Individually lock all OTHER tasks in the goal so they stay locked
       const otherTaskIds = goalTasks.filter(t => t.goal_id === goalId && t.id !== taskId).map(t => t.id)
       if (otherTaskIds.length > 0) {
         await supabase.from('tasks').update({ is_locked: true }).in('id', otherTaskIds)
@@ -837,10 +852,8 @@ export default function App() {
   }
 
   async function unlockGoal(goalId) {
-    // Clear the goal's prerequisite
-    await supabase.from('goals').update({ prerequisite_goal_id: null }).eq('id', goalId)
-    setGoals(prev => prev.map(g => g.id === goalId ? { ...g, prerequisite_goal_id: null } : g))
-    // Clear individual locks on all tasks in this goal
+    await supabase.from('goals').update({ prerequisite_goal_id: null, is_locked: false }).eq('id', goalId)
+    setGoals(prev => prev.map(g => g.id === goalId ? { ...g, prerequisite_goal_id: null, is_locked: false } : g))
     const goalTaskIds = goalTasks.filter(t => t.goal_id === goalId).map(t => t.id)
     if (goalTaskIds.length > 0) {
       await supabase.from('tasks').update({ is_locked: false }).in('id', goalTaskIds)
@@ -1066,7 +1079,7 @@ export default function App() {
     onMoveToInbox: moveToInbox, onDelete: requestDeleteTask, onEdit: setEditingTask, onAssignTask: assignTask,
     onAddTask: () => setShowAdd(true), onAddTaskForDay: openAddForDay, onAddTaskForBucket: openAddForBucket, onCreateTask: addTask, onRollover: rolloverOverdue,
     rolloverMode, onRolloverModeChange: mode => { setRolloverMode(mode); localStorage.setItem('rolloverMode', mode) },
-    onAddGoal: addGoal, onEditGoal: editGoal, onDeleteGoal: deleteGoal, onDuplicateGoal: duplicateGoal, onPauseGoal: pauseGoal, onBulkDeleteGoals: bulkDeleteGoals, onBulkDeleteTasks: bulkDeleteTasks, onUnlockTask: unlockTask, onUnlockGoal: unlockGoal,
+    onAddGoal: addGoal, onEditGoal: editGoal, onDeleteGoal: deleteGoal, onDuplicateGoal: duplicateGoal, onPauseGoal: pauseGoal, onBulkDeleteGoals: bulkDeleteGoals, onBulkDeleteTasks: bulkDeleteTasks, onUnlockTask: unlockTask, onUnlockGoal: unlockGoal, onLockTask: lockTask, onLockGoal: lockGoal,
     onDuplicateTask: duplicateTask,
     onPrevWeek: () => setWeekStart(w => subWeeks(w, 1)),
     onNextWeek: () => setWeekStart(w => addWeeks(w, 1)),
@@ -1131,7 +1144,7 @@ export default function App() {
           </header>
           <div className="mx-3 mt-3 shrink-0">
             <div className={showGoals ? 'rounded-xl border border-gray-200 shadow-sm overflow-hidden' : ''}>
-              <GoalsBar goals={visibleGoals} goalTasks={visibleGoalTasks} allTasks={visibleTasks} collabMap={collabMap} collaborations={collaborations} collabMembersMap={collabMembersMap} defaultCollaborationId={defaultCollaborationId} onAddGoal={addGoal} onEditGoal={editGoal} onDeleteGoal={deleteGoal} onDuplicateGoal={duplicateGoal} onPauseGoal={pauseGoal} onMarkDone={markDone} onDelete={requestDeleteTask} onDuplicateTask={duplicateTask} onCreateTask={addTask} onEditTask={setEditingTask} activeView={activeView} onChangeView={setActiveView} hidden={!showGoals} onBulkDeleteGoals={bulkDeleteGoals} onUnlockGoal={unlockGoal} onUnlockTask={unlockTask} lockedTaskIds={lockedTaskIds} />
+              <GoalsBar goals={visibleGoals} goalTasks={visibleGoalTasks} allTasks={visibleTasks} collabMap={collabMap} collaborations={collaborations} collabMembersMap={collabMembersMap} defaultCollaborationId={defaultCollaborationId} onAddGoal={addGoal} onEditGoal={editGoal} onDeleteGoal={deleteGoal} onDuplicateGoal={duplicateGoal} onPauseGoal={pauseGoal} onMarkDone={markDone} onDelete={requestDeleteTask} onDuplicateTask={duplicateTask} onCreateTask={addTask} onEditTask={setEditingTask} activeView={activeView} onChangeView={setActiveView} hidden={!showGoals} onBulkDeleteGoals={bulkDeleteGoals} onUnlockGoal={unlockGoal} onUnlockTask={unlockTask} lockedTaskIds={lockedTaskIds} onLockGoal={lockGoal} onLockTask={lockTask} />
             </div>
             <button
               onClick={() => { setShowGoals(v => { localStorage.setItem('showGoals', !v); return !v }) }}
@@ -1165,7 +1178,7 @@ export default function App() {
               </button>
               {showSidebar && (
                 <div className="rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-                  <Sidebar tasks={inboxTasks} goalMap={goalMap} collabMap={collabMap} collabMembersMap={collabMembersMap} profileMap={profileMap} onAssignTask={assignTask} onMarkDone={markDone} goals={visibleGoals} allTasks={visibleTasks} onAddTask={() => setShowAdd(true)} onCreateTask={addTask} onAddGoal={addGoal} onEdit={setEditingTask} onDelete={requestDeleteTask} onDuplicate={duplicateTask} onBulkDeleteTasks={bulkDeleteTasks} lockedGoalIds={lockedGoalIds} lockedTaskIds={lockedTaskIds} onUnlockTask={unlockTask} onUnlockGoal={unlockGoal} />
+                  <Sidebar tasks={inboxTasks} goalMap={goalMap} collabMap={collabMap} collabMembersMap={collabMembersMap} profileMap={profileMap} onAssignTask={assignTask} onMarkDone={markDone} goals={visibleGoals} allTasks={visibleTasks} onAddTask={() => setShowAdd(true)} onCreateTask={addTask} onAddGoal={addGoal} onEdit={setEditingTask} onDelete={requestDeleteTask} onDuplicate={duplicateTask} onBulkDeleteTasks={bulkDeleteTasks} lockedGoalIds={lockedGoalIds} lockedTaskIds={lockedTaskIds} onUnlockTask={unlockTask} onUnlockGoal={unlockGoal} onLockTask={lockTask} />
                 </div>
               )}
             </div>
