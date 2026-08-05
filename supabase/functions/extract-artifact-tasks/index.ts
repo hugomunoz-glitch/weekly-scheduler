@@ -1,6 +1,6 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 
-const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY') ?? ''
+const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY') ?? ''
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -70,34 +70,30 @@ Return ONLY valid JSON in this exact format, no other text:
   ]
 }`
 
-    const claudeRes = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key': ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 2048,
-        messages: [{ role: 'user', content: prompt }],
-      }),
-    })
+    const geminiRes = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        }),
+      }
+    )
 
-    if (!claudeRes.ok) {
-      const err = await claudeRes.text()
-      console.error('Claude error:', err)
+    if (!geminiRes.ok) {
+      const err = await geminiRes.text()
+      console.error('Gemini error:', err)
       return new Response(JSON.stringify({ error: 'extraction failed' }), { status: 500, headers: corsHeaders })
     }
 
-    const claudeData = await claudeRes.json()
-    const raw = claudeData.content?.[0]?.text ?? ''
+    const geminiData = await geminiRes.json()
+    const raw = geminiData.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
 
     let parsed
     try {
       parsed = JSON.parse(raw)
     } catch {
-      // Try to extract JSON from the response if it has surrounding text
       const match = raw.match(/\{[\s\S]*\}/)
       parsed = match ? JSON.parse(match[0]) : { items: [] }
     }
