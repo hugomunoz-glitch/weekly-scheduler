@@ -94,8 +94,18 @@ export default function ArtifactExtractModal({ artifact, version, onClose, onDon
     extracted.forEach((item, i) => {
       if (item.type === 'goal' && item.prerequisiteTitle) prereqs[i] = item.prerequisiteTitle
     })
+    // If coach defined a sequence or AI returned prerequisites, apply them
+    // Otherwise in sequential mode, auto-wire by position
+    const goalsList = extracted.filter(it => it.type === 'goal')
+    if (Object.keys(prereqs).length === 0 && goalsList.length > 1) {
+      // Auto-wire sequential: each goal unlocks after the previous
+      goalsList.forEach((g, idx) => {
+        if (idx === 0) return
+        const gIndex = extracted.indexOf(g)
+        prereqs[gIndex] = goalsList[idx - 1].title
+      })
+    }
     setPrerequisites(prereqs)
-    // If coach defined a sequence, default to sequential mode
     if (coachGoalSequence && coachGoalSequence.length > 1) setUnlockMode('sequential')
 
     setStep('review')
@@ -234,13 +244,21 @@ export default function ArtifactExtractModal({ artifact, version, onClose, onDon
                   {/* Unlock mode toggle */}
                   <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-0.5">
                     <button
-                      onClick={() => setUnlockMode('all')}
+                      onClick={() => { setUnlockMode('all'); setPrerequisites({}) }}
                       className={`text-xs px-2 py-0.5 rounded-md transition-colors ${unlockMode === 'all' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-500'}`}
                     >
                       All at once
                     </button>
                     <button
-                      onClick={() => setUnlockMode('sequential')}
+                      onClick={() => {
+                        setUnlockMode('sequential')
+                        const newPrereqs = {}
+                        goalChain.forEach((goal, idx) => {
+                          if (idx === 0) return
+                          newPrereqs[goal.index] = goalChain[idx - 1].title
+                        })
+                        setPrerequisites(newPrereqs)
+                      }}
                       className={`text-xs px-2 py-0.5 rounded-md transition-colors ${unlockMode === 'sequential' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-500'}`}
                     >
                       Sequential
