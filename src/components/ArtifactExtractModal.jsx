@@ -7,7 +7,7 @@ export default function ArtifactExtractModal({ artifact, version, onClose, onDon
   const [step, setStep] = useState('idle')
   const [items, setItems] = useState([])
   const [selected, setSelected] = useState({})
-  const [goalAssignments, setGoalAssignments] = useState({}) // taskIndex -> goalId
+  const [goalAssignments, setGoalAssignments] = useState({}) // taskIndex -> 'new:<goalTitle>' or existing goal UUID
   const [existingGoals, setExistingGoals] = useState([])
   const [error, setError] = useState('')
 
@@ -17,25 +17,50 @@ export default function ArtifactExtractModal({ artifact, version, onClose, onDon
     })
   }, [user.id])
 
+  function updateItem(index, field, value) {
+    setItems(prev => prev.map((item, i) => i === index ? { ...item, [field]: value } : item))
+  }
+
   async function extract() {
     setStep('loading')
     setError('')
-    console.log('Invoking extract with:', { title: version.title, hasContent: !!version.content, hasUrl: !!version.url })
     const { data, error: fnErr } = await supabase.functions.invoke('extract-artifact-tasks', {
       body: { url: version.url || null, title: version.title || 'Untitled', notes: version.notes || null, content: version.content || null },
       headers: { 'Content-Type': 'application/json' },
     })
     if (fnErr || data?.error) {
-      setError(fnErr?.message || data?.error || JSON.stringify(fnErr) || 'Extraction failed')
-      console.error('Extract error:', fnErr, data)
+      setError(fnErr?.message || data?.error || 'Extraction failed')
       setStep('idle')
       return
     }
     const extracted = data?.items || []
     setItems(extracted)
+
     const sel = {}
     extracted.forEach((_, i) => { sel[i] = true })
     setSelected(sel)
+
+    // Auto-assign tasks to goals based on goalTitle returned by AI
+    const extractedGoalTitles = extracted.filter(it => it.type === 'goal').map(g => g.title)
+    const assignments = {}
+    extracted.forEach((item, i) => {
+      if (item.type !== 'task' || !item.goalTitle) return
+      const match = extractedGoalTitles.find(t => t === item.goalTitle)
+        || extractedGoalTitles.find(t =>
+          t.toLowerCase().includes(item.goalTitle.toLowerCase()) ||
+          item.goalTitle.toLowerCase().includes(t.toLowerCase())
+        )
+      if (match) {
+        assignments[i] = 'new:' + match
+      } else {
+        const existing = existingGoals.find(g =>
+          g.title === item.goalTitle ||
+          g.title.toLowerCase().includes(item.goalTitle.toLowerCase())
+        )
+        if (existing) assignments[i] = existing.id
+      }
+    })
+    setGoalAssignments(assignments)
     setStep('review')
   }
 
@@ -46,7 +71,6 @@ export default function ArtifactExtractModal({ artifact, version, onClose, onDon
     const goals = toAdd.filter(i => i.type === 'goal')
     const tasks = toAdd.filter(i => i.type === 'task')
 
-    // Insert goals and collect their new IDs so tasks can reference them by title
     const newGoalIdsByTitle = {}
     if (goals.length) {
       const { data: insertedGoals, error: goalsErr } = await supabase.from('goals').insert(goals.map(g => ({
@@ -61,8 +85,16 @@ export default function ArtifactExtractModal({ artifact, version, onClose, onDon
 
     if (tasks.length) {
       const { error: tasksErr } = await supabase.from('tasks').insert(tasks.map(t => {
-        // Use manually assigned goal, or match by title to a newly created goal
-        const assignedGoalId = goalAssignments[t.index] || newGoalIdsByTitle[t.goalTitle] || null
+        const assignment = goalAssignments[t.index]
+        let goalId = null
+        if (assignment) {
+          if (assignment.startsWith('new:')) {
+            goalId = newGoalIdsByTitle[assignment.slice(4)] || null
+          } else {
+            goalId = assignment // existing goal UUID
+          }
+        }
+        if (!goalId && t.goalTitle) goalId = newGoalIdsByTitle[t.goalTitle] || null
         return {
           owner_id: user.id,
           title: t.title,
@@ -70,7 +102,7 @@ export default function ArtifactExtractModal({ artifact, version, onClose, onDon
           scheduled_date: null,
           bucket: null,
           status: 'inbox',
-          goal_id: assignedGoalId,
+          goal_id: goalId,
           source_artifact_version_id: version.id,
         }
       }))
@@ -85,11 +117,8 @@ export default function ArtifactExtractModal({ artifact, version, onClose, onDon
   const taskItems = items.filter(i => i.type === 'task')
   const selectedCount = Object.values(selected).filter(Boolean).length
 
-  // All goals available to assign: existing + ones being created in this extraction
-  const allGoalOptions = [
-    ...existingGoals,
-    ...goalItems.map((g, i) => ({ id: `new-${i}`, title: g.title + ' (new)' }))
-  ]
+  const newGoalOptions = goalItems.map(g => ({ value: 'new:' + g.title, label: g.title + ' (from this artifact)' }))
+  const existingGoalOptions = existingGoals.map(g => ({ value: g.id, label: g.title }))
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[4000] p-4" onClick={onClose}>
@@ -123,7 +152,7 @@ export default function ArtifactExtractModal({ artifact, version, onClose, onDon
         {step === 'review' && (
           <>
             <div className="flex items-center justify-between mb-3">
-              <p className="text-sm text-gray-700">Found <strong>{items.length}</strong> items. Select what to add:</p>
+              <p className="text-sm text-gray-700">Found <strong>{items.length}</strong> items. Edit and select what to add:</p>
               <div className="flex gap-2">
                 <button onClick={() => setSelected(Object.fromEntries(items.map((_, i) => [i, true])))}
                   className="text-xs text-indigo-600 hover:underline">All</button>
@@ -137,15 +166,28 @@ export default function ArtifactExtractModal({ artifact, version, onClose, onDon
                 <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Goals</p>
                 <div className="space-y-1.5">
                   {items.map((item, i) => item.type !== 'goal' ? null : (
-                    <label key={i} className={`flex items-start gap-2.5 p-2.5 rounded-lg border cursor-pointer transition-colors ${selected[i] ? 'border-indigo-200 bg-indigo-50' : 'border-gray-200 bg-white'}`}>
-                      <input type="checkbox" checked={!!selected[i]} onChange={() => setSelected(s => ({ ...s, [i]: !s[i] }))}
-                        className="mt-0.5 accent-indigo-600" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-800">{item.title}</p>
-                        {item.description && <p className="text-xs text-gray-500 mt-0.5">{item.description}</p>}
-                        {item.dueDate && <p className="text-xs text-indigo-500 mt-0.5">Due {item.dueDate}</p>}
+                    <div key={i} className={`p-2.5 rounded-lg border transition-colors ${selected[i] ? 'border-indigo-200 bg-indigo-50' : 'border-gray-200 bg-white'}`}>
+                      <div className="flex items-start gap-2.5">
+                        <input type="checkbox" checked={!!selected[i]} onChange={() => setSelected(s => ({ ...s, [i]: !s[i] }))}
+                          className="mt-2 accent-indigo-600 shrink-0" />
+                        <div className="flex-1 min-w-0 space-y-1">
+                          <input
+                            type="text"
+                            value={item.title}
+                            onChange={e => updateItem(i, 'title', e.target.value)}
+                            className="w-full text-sm font-medium text-gray-800 bg-transparent border-b border-transparent focus:border-indigo-300 focus:outline-none pb-0.5"
+                          />
+                          <input
+                            type="text"
+                            value={item.description || ''}
+                            onChange={e => updateItem(i, 'description', e.target.value)}
+                            placeholder="Add description…"
+                            className="w-full text-xs text-gray-500 bg-transparent border-b border-transparent focus:border-indigo-300 focus:outline-none pb-0.5"
+                          />
+                          {item.dueDate && <p className="text-xs text-indigo-500">Due {item.dueDate}</p>}
+                        </div>
                       </div>
-                    </label>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -157,30 +199,43 @@ export default function ArtifactExtractModal({ artifact, version, onClose, onDon
                 <div className="space-y-1.5">
                   {items.map((item, i) => item.type !== 'task' ? null : (
                     <div key={i} className={`p-2.5 rounded-lg border transition-colors ${selected[i] ? 'border-indigo-200 bg-indigo-50' : 'border-gray-200 bg-white'}`}>
-                      <label className="flex items-start gap-2.5 cursor-pointer">
+                      <div className="flex items-start gap-2.5">
                         <input type="checkbox" checked={!!selected[i]} onChange={() => setSelected(s => ({ ...s, [i]: !s[i] }))}
-                          className="mt-0.5 accent-indigo-600" />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-800">{item.title}</p>
-                          {item.description && <p className="text-xs text-gray-500 mt-0.5">{item.description}</p>}
-                          {item.dueDate && <p className="text-xs text-indigo-500 mt-0.5">{item.dueDate}</p>}
+                          className="mt-2 accent-indigo-600 shrink-0" />
+                        <div className="flex-1 min-w-0 space-y-1">
+                          <input
+                            type="text"
+                            value={item.title}
+                            onChange={e => updateItem(i, 'title', e.target.value)}
+                            className="w-full text-sm font-medium text-gray-800 bg-transparent border-b border-transparent focus:border-indigo-300 focus:outline-none pb-0.5"
+                          />
+                          <input
+                            type="text"
+                            value={item.description || ''}
+                            onChange={e => updateItem(i, 'description', e.target.value)}
+                            placeholder="Add description…"
+                            className="w-full text-xs text-gray-500 bg-transparent border-b border-transparent focus:border-indigo-300 focus:outline-none pb-0.5"
+                          />
+                          {(newGoalOptions.length > 0 || existingGoalOptions.length > 0) && (
+                            <select
+                              value={goalAssignments[i] || ''}
+                              onChange={e => setGoalAssignments(g => ({ ...g, [i]: e.target.value || null }))}
+                              className="w-full text-xs px-2 py-1 border border-gray-200 rounded-lg bg-white text-gray-600 mt-1"
+                            >
+                              <option value="">No goal</option>
+                              {newGoalOptions.map(opt => (
+                                <option key={opt.value} value={opt.value}>{opt.label}</option>
+                              ))}
+                              {existingGoalOptions.length > 0 && newGoalOptions.length > 0 && (
+                                <option disabled>──────────</option>
+                              )}
+                              {existingGoalOptions.map(opt => (
+                                <option key={opt.value} value={opt.value}>{opt.label}</option>
+                              ))}
+                            </select>
+                          )}
                         </div>
-                      </label>
-                      {selected[i] && allGoalOptions.length > 0 && (
-                        <div className="mt-1.5 ml-6">
-                          <select
-                            value={goalAssignments[i] || ''}
-                            onChange={e => setGoalAssignments(g => ({ ...g, [i]: e.target.value || null }))}
-                            className="w-full text-xs px-2 py-1 border border-gray-200 rounded-lg bg-white text-gray-600"
-                          >
-                            <option value="">No goal</option>
-                            {existingGoals.map(g => <option key={g.id} value={g.id}>{g.title}</option>)}
-                            {goalItems.filter((_, gi) => selected[items.indexOf(goalItems[gi])]).map((g, gi) => (
-                              <option key={`new-${gi}`} value={`new-${gi}`}>{g.title} (being added)</option>
-                            ))}
-                          </select>
-                        </div>
-                      )}
+                      </div>
                     </div>
                   ))}
                 </div>

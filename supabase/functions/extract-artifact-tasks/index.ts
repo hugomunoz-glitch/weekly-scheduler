@@ -50,6 +50,7 @@ Extract all actionable tasks and goals from this content. For each item:
 - Add a brief description if helpful (1 sentence max)
 - Suggest a due date if one is mentioned or implied (ISO format YYYY-MM-DD), otherwise null
 - For tasks, suggest a bucket: "morning", "afternoon", or "evening" if time of day is implied, otherwise null
+- For tasks, set "goalTitle" to the exact title of the goal from this document that the task belongs to (must match a goal title you extracted), or null if there is no corresponding goal
 
 Return ONLY valid JSON in this exact format, no other text:
 {
@@ -65,7 +66,8 @@ Return ONLY valid JSON in this exact format, no other text:
       "title": "string",
       "description": "string or null",
       "dueDate": "YYYY-MM-DD or null",
-      "bucket": "morning | afternoon | evening | null"
+      "bucket": "morning | afternoon | evening | null",
+      "goalTitle": "exact goal title string or null"
     }
   ]
 }`
