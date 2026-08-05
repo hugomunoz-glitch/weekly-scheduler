@@ -307,7 +307,7 @@ function ArtifactCard({ artifact, versions, unreadCount, onDelete, onToggleMain,
                   {loadingSequence ? (
                     <p className="text-xs text-gray-400 py-2 text-center">Loading goals…</p>
                   ) : sequenceDraft.length === 0 ? (
-                    <p className="text-xs text-gray-400 py-2 text-center">No goals found. Extract tasks & goals from this artifact first.</p>
+                    <p className="text-xs text-gray-400 py-2 text-center">No goals found ({allGoals?.length ?? 0} in app). Extract tasks & goals from this artifact first.</p>
                   ) : (
                     <div className="space-y-1.5">
                       {sequenceDraft.map((goal, idx) => (
