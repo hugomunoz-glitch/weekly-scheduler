@@ -51,6 +51,7 @@ Extract all actionable tasks and goals from this content. For each item:
 - Suggest a due date if one is mentioned or implied (ISO format YYYY-MM-DD), otherwise null
 - For tasks, suggest a bucket: "morning", "afternoon", or "evening" if time of day is implied, otherwise null
 - For tasks, set "goalTitle" to the exact title of the goal from this document that the task belongs to (must match a goal title you extracted), or null if there is no corresponding goal
+- For goals, identify if there is a natural sequence where one goal must be completed before another can begin. Set "prerequisiteTitle" to the exact title of the goal that must be completed first, or null if this goal has no prerequisite. List goals in the order they should be unlocked.
 
 Return ONLY valid JSON in this exact format, no other text:
 {
@@ -59,7 +60,8 @@ Return ONLY valid JSON in this exact format, no other text:
       "type": "goal",
       "title": "string",
       "description": "string or null",
-      "dueDate": "YYYY-MM-DD or null"
+      "dueDate": "YYYY-MM-DD or null",
+      "prerequisiteTitle": "exact title of the goal that unlocks this one, or null"
     },
     {
       "type": "task",

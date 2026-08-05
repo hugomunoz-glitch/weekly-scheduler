@@ -7,7 +7,9 @@ export default function ArtifactExtractModal({ artifact, version, onClose, onDon
   const [step, setStep] = useState('idle')
   const [items, setItems] = useState([])
   const [selected, setSelected] = useState({})
-  const [goalAssignments, setGoalAssignments] = useState({}) // taskIndex -> 'new:<goalTitle>' or existing goal UUID
+  const [goalAssignments, setGoalAssignments] = useState({})
+  const [prerequisites, setPrerequisites] = useState({}) // goalIndex -> prerequisiteTitle
+  const [unlockMode, setUnlockMode] = useState('sequential') // 'sequential' | 'all'
   const [existingGoals, setExistingGoals] = useState([])
   const [error, setError] = useState('')
 
@@ -40,7 +42,7 @@ export default function ArtifactExtractModal({ artifact, version, onClose, onDon
     extracted.forEach((_, i) => { sel[i] = true })
     setSelected(sel)
 
-    // Auto-assign tasks to goals based on goalTitle returned by AI
+    // Auto-assign tasks to goals
     const extractedGoalTitles = extracted.filter(it => it.type === 'goal').map(g => g.title)
     const assignments = {}
     extracted.forEach((item, i) => {
@@ -50,24 +52,29 @@ export default function ArtifactExtractModal({ artifact, version, onClose, onDon
           t.toLowerCase().includes(item.goalTitle.toLowerCase()) ||
           item.goalTitle.toLowerCase().includes(t.toLowerCase())
         )
-      if (match) {
-        assignments[i] = 'new:' + match
-      } else {
+      if (match) assignments[i] = 'new:' + match
+      else {
         const existing = existingGoals.find(g =>
-          g.title === item.goalTitle ||
-          g.title.toLowerCase().includes(item.goalTitle.toLowerCase())
+          g.title === item.goalTitle || g.title.toLowerCase().includes(item.goalTitle.toLowerCase())
         )
         if (existing) assignments[i] = existing.id
       }
     })
     setGoalAssignments(assignments)
+
+    // Auto-populate prerequisites from AI
+    const prereqs = {}
+    extracted.forEach((item, i) => {
+      if (item.type === 'goal' && item.prerequisiteTitle) prereqs[i] = item.prerequisiteTitle
+    })
+    setPrerequisites(prereqs)
+
     setStep('review')
   }
 
   async function addToSchedule() {
     setStep('saving')
     const toAdd = items.map((item, i) => ({ ...item, index: i })).filter((_, i) => selected[i])
-
     const goals = toAdd.filter(i => i.type === 'goal')
     const tasks = toAdd.filter(i => i.type === 'task')
 
@@ -81,6 +88,22 @@ export default function ArtifactExtractModal({ artifact, version, onClose, onDon
       }))).select('id, title')
       if (goalsErr) { setError('Failed to save goals: ' + goalsErr.message); setStep('review'); return }
       insertedGoals?.forEach(g => { newGoalIdsByTitle[g.title] = g.id })
+
+      // Wire up prerequisites in sequential or custom mode
+      if (unlockMode === 'sequential' || unlockMode === 'custom') {
+        const prereqUpdates = goals
+          .map(g => {
+            const prereqTitle = prerequisites[g.index]
+            if (!prereqTitle) return null
+            const prereqId = newGoalIdsByTitle[prereqTitle] || null
+            if (!prereqId) return null
+            return { id: newGoalIdsByTitle[g.title], prerequisite_goal_id: prereqId }
+          })
+          .filter(Boolean)
+        for (const upd of prereqUpdates) {
+          await supabase.from('goals').update({ prerequisite_goal_id: upd.prerequisite_goal_id }).eq('id', upd.id)
+        }
+      }
     }
 
     if (tasks.length) {
@@ -88,11 +111,7 @@ export default function ArtifactExtractModal({ artifact, version, onClose, onDon
         const assignment = goalAssignments[t.index]
         let goalId = null
         if (assignment) {
-          if (assignment.startsWith('new:')) {
-            goalId = newGoalIdsByTitle[assignment.slice(4)] || null
-          } else {
-            goalId = assignment // existing goal UUID
-          }
+          goalId = assignment.startsWith('new:') ? (newGoalIdsByTitle[assignment.slice(4)] || null) : assignment
         }
         if (!goalId && t.goalTitle) goalId = newGoalIdsByTitle[t.goalTitle] || null
         return {
@@ -113,12 +132,30 @@ export default function ArtifactExtractModal({ artifact, version, onClose, onDon
     setTimeout(() => { onDone?.(); onClose() }, 1200)
   }
 
-  const goalItems = items.filter(i => i.type === 'goal')
-  const taskItems = items.filter(i => i.type === 'task')
+  const goalItems = items.map((item, i) => ({ ...item, index: i })).filter(i => i.type === 'goal')
+  const taskItems = items.map((item, i) => ({ ...item, index: i })).filter(i => i.type === 'task')
   const selectedCount = Object.values(selected).filter(Boolean).length
 
   const newGoalOptions = goalItems.map(g => ({ value: 'new:' + g.title, label: g.title + ' (from this artifact)' }))
   const existingGoalOptions = existingGoals.map(g => ({ value: g.id, label: g.title }))
+
+  // Build ordered chain for display
+  function buildChain() {
+    const visited = new Set()
+    const chain = []
+    const roots = goalItems.filter(g => !prerequisites[g.index] || !goalItems.some(o => o.title === prerequisites[g.index]))
+    function walk(g) {
+      if (!g || visited.has(g.title)) return
+      visited.add(g.title)
+      chain.push(g)
+      const next = goalItems.find(other => prerequisites[other.index] === g.title)
+      if (next) walk(next)
+    }
+    roots.forEach(walk)
+    goalItems.forEach(g => { if (!visited.has(g.title)) chain.push(g) })
+    return chain
+  }
+  const goalChain = buildChain()
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[4000] p-4" onClick={onClose}>
@@ -163,32 +200,89 @@ export default function ArtifactExtractModal({ artifact, version, onClose, onDon
 
             {goalItems.length > 0 && (
               <div className="mb-3">
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Goals</p>
-                <div className="space-y-1.5">
-                  {items.map((item, i) => item.type !== 'goal' ? null : (
-                    <div key={i} className={`p-2.5 rounded-lg border transition-colors ${selected[i] ? 'border-indigo-200 bg-indigo-50' : 'border-gray-200 bg-white'}`}>
-                      <div className="flex items-start gap-2.5">
-                        <input type="checkbox" checked={!!selected[i]} onChange={() => setSelected(s => ({ ...s, [i]: !s[i] }))}
-                          className="mt-2 accent-indigo-600 shrink-0" />
-                        <div className="flex-1 min-w-0 space-y-1">
-                          <input
-                            type="text"
-                            value={item.title}
-                            onChange={e => updateItem(i, 'title', e.target.value)}
-                            className="w-full text-sm font-medium text-gray-800 bg-transparent border-b border-transparent focus:border-indigo-300 focus:outline-none pb-0.5"
-                          />
-                          <input
-                            type="text"
-                            value={item.description || ''}
-                            onChange={e => updateItem(i, 'description', e.target.value)}
-                            placeholder="Add description…"
-                            className="w-full text-xs text-gray-500 bg-transparent border-b border-transparent focus:border-indigo-300 focus:outline-none pb-0.5"
-                          />
-                          {item.dueDate && <p className="text-xs text-indigo-500">Due {item.dueDate}</p>}
+                <div className="flex items-center justify-between mb-1.5">
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Goals</p>
+                  {/* Unlock mode toggle */}
+                  <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-0.5">
+                    <button
+                      onClick={() => setUnlockMode('all')}
+                      className={`text-xs px-2 py-0.5 rounded-md transition-colors ${unlockMode === 'all' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-500'}`}
+                    >
+                      All at once
+                    </button>
+                    <button
+                      onClick={() => setUnlockMode('sequential')}
+                      className={`text-xs px-2 py-0.5 rounded-md transition-colors ${unlockMode === 'sequential' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-500'}`}
+                    >
+                      Sequential
+                    </button>
+                    <button
+                      onClick={() => setUnlockMode('custom')}
+                      className={`text-xs px-2 py-0.5 rounded-md transition-colors ${unlockMode === 'custom' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-500'}`}
+                    >
+                      Custom
+                    </button>
+                  </div>
+                </div>
+                {unlockMode === 'all' && (
+                  <p className="text-xs text-gray-400 mb-2">All goals start available immediately — no prerequisites.</p>
+                )}
+                {unlockMode === 'sequential' && (
+                  <p className="text-xs text-gray-400 mb-2">Goals unlock in order. Adjust any prerequisite below.</p>
+                )}
+                {unlockMode === 'custom' && (
+                  <p className="text-xs text-gray-400 mb-2">Choose which goal each one unlocks after — or none.</p>
+                )}
+
+                <div className="space-y-0">
+                  {goalChain.map((goal, chainIdx) => {
+                    const i = goal.index
+                    const prereqTitle = (unlockMode === 'sequential' || unlockMode === 'custom') ? prerequisites[i] : null
+                    const isChained = unlockMode === 'sequential' && !!prereqTitle && goalItems.some(g => g.title === prereqTitle)
+                    return (
+                      <div key={i}>
+                        {isChained && (
+                          <div className="flex items-center gap-1.5 pl-4 py-0.5">
+                            <div className="w-px h-3 bg-indigo-300 ml-1" />
+                            <span className="text-[10px] text-indigo-400">unlocks after "{prereqTitle}"</span>
+                          </div>
+                        )}
+                        <div className={`p-2.5 rounded-lg border transition-colors mb-1.5 ${selected[i] ? 'border-indigo-200 bg-indigo-50' : 'border-gray-200 bg-white'}`}>
+                          <div className="flex items-start gap-2.5">
+                            <input type="checkbox" checked={!!selected[i]} onChange={() => setSelected(s => ({ ...s, [i]: !s[i] }))}
+                              className="mt-2 accent-indigo-600 shrink-0" />
+                            <div className="flex-1 min-w-0 space-y-1">
+                              <input
+                                type="text"
+                                value={goal.title}
+                                onChange={e => updateItem(i, 'title', e.target.value)}
+                                className="w-full text-sm font-medium text-gray-800 bg-transparent border-b border-transparent focus:border-indigo-300 focus:outline-none pb-0.5"
+                              />
+                              <input
+                                type="text"
+                                value={goal.description || ''}
+                                onChange={e => updateItem(i, 'description', e.target.value)}
+                                placeholder="Add description…"
+                                className="w-full text-xs text-gray-500 bg-transparent border-b border-transparent focus:border-indigo-300 focus:outline-none pb-0.5"
+                              />
+                              {(unlockMode === 'sequential' || unlockMode === 'custom') && (
+                                <select
+                                  value={prerequisites[i] || ''}
+                                  onChange={e => setPrerequisites(p => ({ ...p, [i]: e.target.value || null }))}
+                                  className="w-full text-xs px-2 py-1 border border-gray-200 rounded-lg bg-white text-gray-500 mt-1"
+                                >
+                                  <option value="">No prerequisite (starts immediately)</option>
+                                  {goalItems.filter(g => g.index !== i).map(g => (
+                                    <option key={g.index} value={g.title}>Unlocks after: {g.title}</option>
+                                  ))}
+                                </select>
+                              )}
+                            </div>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               </div>
             )}
@@ -197,47 +291,50 @@ export default function ArtifactExtractModal({ artifact, version, onClose, onDon
               <div className="mb-4">
                 <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Tasks</p>
                 <div className="space-y-1.5">
-                  {items.map((item, i) => item.type !== 'task' ? null : (
-                    <div key={i} className={`p-2.5 rounded-lg border transition-colors ${selected[i] ? 'border-indigo-200 bg-indigo-50' : 'border-gray-200 bg-white'}`}>
-                      <div className="flex items-start gap-2.5">
-                        <input type="checkbox" checked={!!selected[i]} onChange={() => setSelected(s => ({ ...s, [i]: !s[i] }))}
-                          className="mt-2 accent-indigo-600 shrink-0" />
-                        <div className="flex-1 min-w-0 space-y-1">
-                          <input
-                            type="text"
-                            value={item.title}
-                            onChange={e => updateItem(i, 'title', e.target.value)}
-                            className="w-full text-sm font-medium text-gray-800 bg-transparent border-b border-transparent focus:border-indigo-300 focus:outline-none pb-0.5"
-                          />
-                          <input
-                            type="text"
-                            value={item.description || ''}
-                            onChange={e => updateItem(i, 'description', e.target.value)}
-                            placeholder="Add description…"
-                            className="w-full text-xs text-gray-500 bg-transparent border-b border-transparent focus:border-indigo-300 focus:outline-none pb-0.5"
-                          />
-                          {(newGoalOptions.length > 0 || existingGoalOptions.length > 0) && (
-                            <select
-                              value={goalAssignments[i] || ''}
-                              onChange={e => setGoalAssignments(g => ({ ...g, [i]: e.target.value || null }))}
-                              className="w-full text-xs px-2 py-1 border border-gray-200 rounded-lg bg-white text-gray-600 mt-1"
-                            >
-                              <option value="">No goal</option>
-                              {newGoalOptions.map(opt => (
-                                <option key={opt.value} value={opt.value}>{opt.label}</option>
-                              ))}
-                              {existingGoalOptions.length > 0 && newGoalOptions.length > 0 && (
-                                <option disabled>──────────</option>
-                              )}
-                              {existingGoalOptions.map(opt => (
-                                <option key={opt.value} value={opt.value}>{opt.label}</option>
-                              ))}
-                            </select>
-                          )}
+                  {taskItems.map(item => {
+                    const i = item.index
+                    return (
+                      <div key={i} className={`p-2.5 rounded-lg border transition-colors ${selected[i] ? 'border-indigo-200 bg-indigo-50' : 'border-gray-200 bg-white'}`}>
+                        <div className="flex items-start gap-2.5">
+                          <input type="checkbox" checked={!!selected[i]} onChange={() => setSelected(s => ({ ...s, [i]: !s[i] }))}
+                            className="mt-2 accent-indigo-600 shrink-0" />
+                          <div className="flex-1 min-w-0 space-y-1">
+                            <input
+                              type="text"
+                              value={item.title}
+                              onChange={e => updateItem(i, 'title', e.target.value)}
+                              className="w-full text-sm font-medium text-gray-800 bg-transparent border-b border-transparent focus:border-indigo-300 focus:outline-none pb-0.5"
+                            />
+                            <input
+                              type="text"
+                              value={item.description || ''}
+                              onChange={e => updateItem(i, 'description', e.target.value)}
+                              placeholder="Add description…"
+                              className="w-full text-xs text-gray-500 bg-transparent border-b border-transparent focus:border-indigo-300 focus:outline-none pb-0.5"
+                            />
+                            {(newGoalOptions.length > 0 || existingGoalOptions.length > 0) && (
+                              <select
+                                value={goalAssignments[i] || ''}
+                                onChange={e => setGoalAssignments(g => ({ ...g, [i]: e.target.value || null }))}
+                                className="w-full text-xs px-2 py-1 border border-gray-200 rounded-lg bg-white text-gray-600 mt-1"
+                              >
+                                <option value="">No goal</option>
+                                {newGoalOptions.map(opt => (
+                                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                ))}
+                                {existingGoalOptions.length > 0 && newGoalOptions.length > 0 && (
+                                  <option disabled>──────────</option>
+                                )}
+                                {existingGoalOptions.map(opt => (
+                                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                ))}
+                              </select>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               </div>
             )}

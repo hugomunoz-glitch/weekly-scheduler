@@ -33,8 +33,18 @@ function PriorityBadge({ priority }) {
   )
 }
 
-function goalStatus(goal, goalTasks) {
+function isGoalCompleted(goal, goalTasks) {
+  const linked = goalTasks.filter(t => t.goal_id === goal.id)
+  return linked.length > 0 && linked.every(t => t.status === 'done')
+}
+
+function goalStatus(goal, goalTasks, allGoals) {
   if (goal.status === 'paused') return 'paused'
+  // Locked if prerequisite exists and isn't fully completed
+  if (goal.prerequisite_goal_id) {
+    const prereq = allGoals?.find(g => g.id === goal.prerequisite_goal_id)
+    if (prereq && !isGoalCompleted(prereq, goalTasks)) return 'locked'
+  }
   const linked = goalTasks.filter(t => t.goal_id === goal.id)
   if (linked.length > 0 && linked.every(t => t.status === 'done')) return 'completed'
   if (linked.some(t => t.status === 'done')) return 'in_progress'
@@ -45,6 +55,7 @@ const STATUS_BADGE = {
   in_progress: { label: 'In Progress', color: '#4338ca', bg: '#eef2ff', dot: '#6366f1' },
   paused:      { label: 'Paused',      color: '#6b7280', bg: '#f3f4f6', dot: '#9ca3af' },
   completed:   { label: 'Completed',   color: '#059669', bg: '#d1fae5', dot: '#10b981' },
+  locked:      { label: 'Locked',      color: '#9ca3af', bg: '#f3f4f6', dot: '#d1d5db' },
   not_started: null,
 }
 
@@ -167,9 +178,9 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
       const bRank = b.priority in PRIORITY_RANK ? PRIORITY_RANK[b.priority] : 3
       result = aRank !== bRank ? aRank - bRank : a.title.localeCompare(b.title)
     } else if (sortMode === 'progress') {
-      const statusRank = { completed: 0, in_progress: 1, paused: 2, not_started: 3 }
-      const aR = statusRank[goalStatus(a, goalTasks)] ?? 2
-      const bR = statusRank[goalStatus(b, goalTasks)] ?? 2
+      const statusRank = { completed: 0, in_progress: 1, paused: 2, not_started: 3, locked: 4 }
+      const aR = statusRank[goalStatus(a, goalTasks, goals)] ?? 2
+      const bR = statusRank[goalStatus(b, goalTasks, goals)] ?? 2
       result = aR !== bR ? aR - bR : a.title.localeCompare(b.title)
     } else if (sortMode === 'term') {
       const termRank = { long: 0, short: 1 }
@@ -848,13 +859,14 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
         const done = linked.filter(t => t.status === 'done')
         const pct = linked.length > 0 ? Math.round((done.length / linked.length) * 100) : 0
         const isFullyCompleted = linked.length > 0 && linked.every(t => t.status === 'done')
-        const status = goalStatus(goal, goalTasks)
+        const status = goalStatus(goal, goalTasks, goals)
         const statusBadge = STATUS_BADGE[status]
+        const isLocked = status === 'locked'
         const goalDisplayColor = (goal.category ? categoryBadge(goal.category)?.color : null) || goal.color
         return (
           <div
             key={goal.id}
-            className={'flex items-start gap-2 border rounded-lg px-3 py-1.5 shrink-0 min-w-[160px] group cursor-pointer relative ' + (isFullyCompleted ? 'border-emerald-100 bg-white' : status === 'paused' ? 'border-amber-200 bg-amber-50' : 'border-gray-200 bg-white')}
+            className={'flex items-start gap-2 border rounded-lg px-3 py-1.5 shrink-0 min-w-[160px] group cursor-pointer relative ' + (isFullyCompleted ? 'border-emerald-100 bg-white' : isLocked ? 'border-gray-200 bg-gray-50 opacity-60' : status === 'paused' ? 'border-amber-200 bg-amber-50' : 'border-gray-200 bg-white')}
             style={goal.priority && PRIORITY_BORDER[goal.priority] ? { borderLeft: '4px solid ' + PRIORITY_BORDER[goal.priority] } : undefined}
             title={goal.priority ? PRIORITY_LABELS[goal.priority] + ' priority' : undefined}
             onClick={(e) => openPopup(goal.id, e)}
