@@ -667,11 +667,11 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
             <div onClick={e => e.stopPropagation()} style={{ display: 'flex', alignItems: 'center', gap: '14px', marginTop: '8px', paddingTop: '8px', borderTop: '1px solid #f3f4f6' }}>
               <button onClick={(e) => { e.stopPropagation(); setPressedGoalId(null); startEditGoal(goal) }} style={{ fontSize: '24px', color: '#6b7280', background: 'none', border: 'none', padding: 0, cursor: 'pointer', lineHeight: 1 }} title="Edit goal">&#9998;</button>
               {onDuplicateGoal && <button onClick={(e) => { e.stopPropagation(); setPressedGoalId(null); onDuplicateGoal(goal.id) }} style={{ fontSize: '20px', color: '#6b7280', background: 'none', border: 'none', padding: 0, cursor: 'pointer', lineHeight: 1 }} title="Duplicate goal">&#10697;</button>}
-              {goal.prerequisite_goal_id && (
+              {(goal.prerequisite_goal_id || goal.is_unlocked) && (
                 isLocked ? (
                   onUnlockGoal && <button onClick={(e) => { e.stopPropagation(); setPressedGoalId(null); onUnlockGoal(goal.id) }} style={{ fontSize: '12px', fontWeight: 600, color: '#d97706', background: 'none', border: '1px solid #fcd34d', borderRadius: '6px', padding: '3px 8px', cursor: 'pointer', lineHeight: 1 }} title="Unlock this goal and all its tasks">🔓 Unlock</button>
                 ) : (
-                  !isFullyCompleted && onLockGoal && <button onClick={(e) => { e.stopPropagation(); setPressedGoalId(null); onLockGoal(goal.id) }} style={{ fontSize: '12px', fontWeight: 600, color: '#6b7280', background: 'none', border: '1px solid #d1d5db', borderRadius: '6px', padding: '3px 8px', cursor: 'pointer', lineHeight: 1 }} title="Re-lock this goal (restore sequential order)">🔒 Lock</button>
+                  goal.is_unlocked && !isFullyCompleted && onLockGoal && <button onClick={(e) => { e.stopPropagation(); setPressedGoalId(null); onLockGoal(goal.id) }} style={{ fontSize: '12px', fontWeight: 600, color: '#6b7280', background: 'none', border: '1px solid #d1d5db', borderRadius: '6px', padding: '3px 8px', cursor: 'pointer', lineHeight: 1 }} title="Re-lock this goal (restore sequential order)">🔒 Lock</button>
                 )
               )}
               {isFullyCompleted && (

@@ -1119,7 +1119,7 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
                       title="Duplicate goal"
                     >&#10697;</button>
                   )}
-                  {goal.prerequisite_goal_id && (
+                  {(goal.prerequisite_goal_id || goal.is_unlocked) && (
                     isLocked ? (
                       onUnlockGoal && (
                         <button
@@ -1129,7 +1129,7 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
                         >🔓 Unlock</button>
                       )
                     ) : (
-                      onLockGoal && !isFullyCompleted && (
+                      goal.is_unlocked && onLockGoal && !isFullyCompleted && (
                         <button
                           onClick={(e) => { e.stopPropagation(); onLockGoal(goal.id) }}
                           className="text-[11px] font-semibold text-gray-500 hover:text-gray-700 px-1.5 py-0.5 rounded border border-gray-300 hover:border-gray-400 transition-colors leading-none"
