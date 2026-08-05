@@ -257,8 +257,8 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
   visibleGoals = [...visibleGoals].sort((a, b) => {
     let result
     if (sortMode === 'locked') {
-      const aLocked = isMobileGoalLocked(a) ? 0 : 1
-      const bLocked = isMobileGoalLocked(b) ? 0 : 1
+      const aLocked = isMobileGoalLocked(a) ? 1 : 0
+      const bLocked = isMobileGoalLocked(b) ? 1 : 0
       result = aLocked !== bLocked ? aLocked - bLocked : a.title.localeCompare(b.title)
     } else if (sortMode === 'created') result = new Date(b.created_at || 0) - new Date(a.created_at || 0)
     else if (sortMode === 'alpha') result = a.title.localeCompare(b.title)
@@ -981,13 +981,14 @@ function MobileInbox({ tasks, goalMap, collabMap, collabMembersMap, profileMap, 
     const aDone = a.status === 'done', bDone = b.status === 'done'
     if (sortMode === 'completed') return (aDone === bDone ? 0 : aDone ? -1 : 1) * sortDir
     if (sortMode === 'locked') {
-      const aRank = aDone ? 2 : isMobileTaskLocked(a) ? 0 : 1
-      const bRank = bDone ? 2 : isMobileTaskLocked(b) ? 0 : 1
+      // unlocked-active(0) → locked(1) → done(2)
+      const aRank = aDone ? 2 : isMobileTaskLocked(a) ? 1 : 0
+      const bRank = bDone ? 2 : isMobileTaskLocked(b) ? 1 : 0
       return aRank !== bRank ? (aRank - bRank) * sortDir : a.title.localeCompare(b.title)
     }
     if (aDone !== bDone) return aDone ? 1 : -1
     const aLocked = isMobileTaskLocked(a), bLocked = isMobileTaskLocked(b)
-    if (aLocked !== bLocked) return aLocked ? -1 : 1
+    if (aLocked !== bLocked) return aLocked ? 1 : -1
     let result
     if (sortMode === 'manual') result = (a.position || 0) - (b.position || 0)
     else if (sortMode === 'created') result = new Date(b.created_at || 0) - new Date(a.created_at || 0)

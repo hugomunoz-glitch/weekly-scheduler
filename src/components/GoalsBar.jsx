@@ -178,8 +178,9 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
   visibleGoals = [...visibleGoals].sort((a, b) => {
     let result
     if (sortMode === 'locked') {
-      const aLocked = isGoalLocked(a) ? 0 : 1
-      const bLocked = isGoalLocked(b) ? 0 : 1
+      // unlocked-active(0) → locked(1); completed handled by partition
+      const aLocked = isGoalLocked(a) ? 1 : 0
+      const bLocked = isGoalLocked(b) ? 1 : 0
       result = aLocked !== bLocked ? aLocked - bLocked : a.title.localeCompare(b.title)
     } else if (sortMode === 'created') result = new Date(b.created_at || 0) - new Date(a.created_at || 0)
     else if (sortMode === 'alpha') result = a.title.localeCompare(b.title)

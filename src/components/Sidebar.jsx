@@ -20,15 +20,15 @@ function Inbox({ tasks, goalMap, collabMap, collabMembersMap, profileMap, onAssi
     const aDone = a.status === 'done', bDone = b.status === 'done'
     if (sortMode === 'completed') return (aDone === bDone ? 0 : aDone ? -1 : 1) * sortDir
     if (sortMode === 'locked') {
-      // locked > unlocked-active > done
-      const aRank = aDone ? 2 : isTaskLocked(a) ? 0 : 1
-      const bRank = bDone ? 2 : isTaskLocked(b) ? 0 : 1
+      // unlocked-active(0) → locked(1) → done(2)
+      const aRank = aDone ? 2 : isTaskLocked(a) ? 1 : 0
+      const bRank = bDone ? 2 : isTaskLocked(b) ? 1 : 0
       return aRank !== bRank ? (aRank - bRank) * sortDir : a.title.localeCompare(b.title)
     }
     // All other modes: done sinks last, locked goes above done
     if (aDone !== bDone) return aDone ? 1 : -1
     const aLocked = isTaskLocked(a), bLocked = isTaskLocked(b)
-    if (aLocked !== bLocked) return aLocked ? -1 : 1
+    if (aLocked !== bLocked) return aLocked ? 1 : -1
     let result
     if (sortMode === 'manual') result = (a.position || 0) - (b.position || 0)
     else if (sortMode === 'created') result = new Date(b.created_at || 0) - new Date(a.created_at || 0)
