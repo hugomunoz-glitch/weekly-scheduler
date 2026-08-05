@@ -10,7 +10,93 @@ function randomCode() {
   return code
 }
 
-function ArtifactForm({ title, setTitle, notes, setNotes, content, setContent, saving, error, onSubmit, onCancel, label = 'Push artifact' }) {
+function GoalSequenceEditor({ goalSequence, setGoalSequence }) {
+  const [newTitle, setNewTitle] = useState('')
+
+  function addGoal() {
+    const t = newTitle.trim()
+    if (!t) return
+    setGoalSequence(prev => [...prev, { title: t, description: '' }])
+    setNewTitle('')
+  }
+
+  function removeGoal(idx) {
+    setGoalSequence(prev => prev.filter((_, i) => i !== idx))
+  }
+
+  function moveGoal(idx, dir) {
+    setGoalSequence(prev => {
+      const next = [...prev]
+      const target = idx + dir
+      if (target < 0 || target >= next.length) return prev
+      ;[next[idx], next[target]] = [next[target], next[idx]]
+      return next
+    })
+  }
+
+  function updateGoal(idx, field, value) {
+    setGoalSequence(prev => prev.map((g, i) => i === idx ? { ...g, [field]: value } : g))
+  }
+
+  return (
+    <div className="mt-1 space-y-1.5">
+      {goalSequence.length > 0 && (
+        <div className="space-y-1">
+          {goalSequence.map((goal, idx) => (
+            <div key={idx} className="flex items-start gap-1.5">
+              <div className="flex flex-col gap-0.5 pt-1 shrink-0">
+                <button onClick={() => moveGoal(idx, -1)} disabled={idx === 0}
+                  className="text-gray-300 hover:text-gray-500 disabled:opacity-20 leading-none text-xs">▲</button>
+                <button onClick={() => moveGoal(idx, 1)} disabled={idx === goalSequence.length - 1}
+                  className="text-gray-300 hover:text-gray-500 disabled:opacity-20 leading-none text-xs">▼</button>
+              </div>
+              <div className="flex-1 bg-white border border-gray-200 rounded-lg px-2 py-1.5 space-y-0.5">
+                <div className="flex items-center gap-1">
+                  <span className="text-[10px] font-semibold text-indigo-400 shrink-0">#{idx + 1}</span>
+                  <input
+                    type="text" value={goal.title}
+                    onChange={e => updateGoal(idx, 'title', e.target.value)}
+                    className="flex-1 text-xs font-medium text-gray-800 outline-none border-b border-transparent focus:border-indigo-300"
+                    style={{ fontSize: 13 }}
+                  />
+                </div>
+                <input
+                  type="text" value={goal.description || ''}
+                  onChange={e => updateGoal(idx, 'description', e.target.value)}
+                  placeholder="Description (optional)"
+                  className="w-full text-xs text-gray-500 outline-none border-b border-transparent focus:border-indigo-300"
+                  style={{ fontSize: 12 }}
+                />
+              </div>
+              <button onClick={() => removeGoal(idx)} className="text-gray-300 hover:text-red-400 text-xs pt-1 shrink-0">✕</button>
+            </div>
+          ))}
+        </div>
+      )}
+      {goalSequence.length > 1 && (
+        <p className="text-[10px] text-indigo-400">Goals will unlock in this order — each one becomes available after the previous is completed.</p>
+      )}
+      <div className="flex gap-1.5">
+        <input
+          type="text" value={newTitle}
+          onChange={e => setNewTitle(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addGoal() } }}
+          placeholder="Add a goal…"
+          className="flex-1 px-2 py-1 border border-gray-200 rounded-lg text-xs outline-none focus:border-indigo-400"
+          style={{ fontSize: 13 }}
+        />
+        <button onClick={addGoal} disabled={!newTitle.trim()}
+          className="px-2.5 py-1 text-xs bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-40">
+          Add
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function ArtifactForm({ title, setTitle, notes, setNotes, content, setContent, goalSequence, setGoalSequence, saving, error, onSubmit, onCancel, label = 'Push artifact' }) {
+  const [showGoalEditor, setShowGoalEditor] = useState(false)
+
   return (
     <div className="bg-gray-50 rounded-lg p-3 space-y-2 mt-2">
       {error && <p className="text-xs text-red-600">{error}</p>}
@@ -34,6 +120,40 @@ function ArtifactForm({ title, setTitle, notes, setNotes, content, setContent, s
         className="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-sm outline-none focus:border-indigo-400 resize-none"
         style={{ fontSize: 16 }}
       />
+
+      {/* Goal sequence editor */}
+      <div className="border border-dashed border-gray-200 rounded-lg p-2.5">
+        <button
+          onClick={() => setShowGoalEditor(v => !v)}
+          className="flex items-center justify-between w-full text-left"
+        >
+          <div>
+            <span className="text-xs font-medium text-gray-700">Goal sequence</span>
+            {goalSequence.length > 0 && (
+              <span className="ml-1.5 text-[10px] bg-indigo-100 text-indigo-600 rounded-full px-1.5 py-0.5">{goalSequence.length} goals</span>
+            )}
+          </div>
+          <span className="text-xs text-gray-400">{showGoalEditor ? '▲ hide' : '▼ define order'}</span>
+        </button>
+        {!showGoalEditor && goalSequence.length === 0 && (
+          <p className="text-[11px] text-gray-400 mt-1">Optional — define goals and their unlock order so users see a pre-set sequence when they extract.</p>
+        )}
+        {showGoalEditor && (
+          <GoalSequenceEditor goalSequence={goalSequence} setGoalSequence={setGoalSequence} />
+        )}
+        {!showGoalEditor && goalSequence.length > 0 && (
+          <div className="mt-1.5 space-y-0.5">
+            {goalSequence.map((g, i) => (
+              <div key={i} className="flex items-center gap-1.5 text-xs text-gray-600">
+                <span className="text-indigo-400 font-medium shrink-0">#{i + 1}</span>
+                <span className="truncate">{g.title}</span>
+                {i < goalSequence.length - 1 && <span className="text-gray-300 text-[10px]">→</span>}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       <div className="flex gap-2">
         <button
           onClick={onSubmit}
@@ -117,10 +237,10 @@ function ArtifactCard({ artifact, versions, unreadCount, onDelete, onToggleMain,
 
           {isPushingVersion && (
             <ArtifactForm
-
               title={artifactTitle} setTitle={setArtifactTitle}
               notes={artifactNotes} setNotes={setArtifactNotes}
               content={artifactContent} setContent={setArtifactContent}
+              goalSequence={artifactGoalSequence} setGoalSequence={setArtifactGoalSequence}
               saving={savingArtifact} error={artifactError}
               onSubmit={() => pushNewVersion(artifact.id)}
               onCancel={() => setPushingArtifact(null)}
@@ -174,6 +294,7 @@ export default function CollaborationPanel({ onClose }) {
   const [artifactTitle, setArtifactTitle] = useState('')
   const [artifactNotes, setArtifactNotes] = useState('')
   const [artifactContent, setArtifactContent] = useState('')
+  const [artifactGoalSequence, setArtifactGoalSequence] = useState([])
   const [savingArtifact, setSavingArtifact] = useState(false)
   const [artifactError, setArtifactError] = useState('')
   const [expandedArtifact, setExpandedArtifact] = useState(null)
@@ -336,6 +457,7 @@ export default function CollaborationPanel({ onClose }) {
       title: artifactTitle.trim(),
       notes: artifactNotes.trim() || null,
       content: artifactContent.trim() || null,
+      goal_sequence: artifactGoalSequence.length > 0 ? artifactGoalSequence : null,
       pushed_by: user.id,
     })
     if (verErr) { setArtifactError(verErr.message); setSavingArtifact(false); return }
@@ -345,6 +467,7 @@ export default function CollaborationPanel({ onClose }) {
     setArtifactTitle('')
     setArtifactNotes('')
     setArtifactContent('')
+    setArtifactGoalSequence([])
     setPushingArtifact(null)
     fetchArtifacts()
   }
@@ -358,6 +481,7 @@ export default function CollaborationPanel({ onClose }) {
       title: artifactTitle.trim(),
       notes: artifactNotes.trim() || null,
       content: artifactContent.trim() || null,
+      goal_sequence: artifactGoalSequence.length > 0 ? artifactGoalSequence : null,
       pushed_by: user.id,
     })
     if (error) { setArtifactError(error.message); setSavingArtifact(false); return }
@@ -366,6 +490,7 @@ export default function CollaborationPanel({ onClose }) {
     setArtifactTitle('')
     setArtifactNotes('')
     setArtifactContent('')
+    setArtifactGoalSequence([])
     setPushingArtifact(null)
     fetchArtifacts()
   }
@@ -543,10 +668,10 @@ export default function CollaborationPanel({ onClose }) {
               </div>
               {isPushingPersonal && (
                 <ArtifactForm
-    
                   title={artifactTitle} setTitle={setArtifactTitle}
                   notes={artifactNotes} setNotes={setArtifactNotes}
                   content={artifactContent} setContent={setArtifactContent}
+                  goalSequence={artifactGoalSequence} setGoalSequence={setArtifactGoalSequence}
                   saving={savingArtifact} error={artifactError}
                   onSubmit={() => pushArtifact({ scope: 'personal', recipientId: user.id })}
                   onCancel={() => setPushingArtifact(null)}
@@ -694,10 +819,10 @@ export default function CollaborationPanel({ onClose }) {
                             </div>
                             {isPushingNew && (
                               <ArtifactForm
-                  
                                 title={artifactTitle} setTitle={setArtifactTitle}
                                 notes={artifactNotes} setNotes={setArtifactNotes}
                                 content={artifactContent} setContent={setArtifactContent}
+                                goalSequence={artifactGoalSequence} setGoalSequence={setArtifactGoalSequence}
                                 saving={savingArtifact} error={artifactError}
                                 onSubmit={() => pushArtifact({ scope: 'personal', recipientId: isCoach ? partnerId : user.id })}
                                 onCancel={() => setPushingArtifact(null)}
@@ -867,10 +992,10 @@ export default function CollaborationPanel({ onClose }) {
                   </div>
                   {pushingArtifact === `collab-${collab.id}` && (
                     <ArtifactForm
-        
                       title={artifactTitle} setTitle={setArtifactTitle}
                       notes={artifactNotes} setNotes={setArtifactNotes}
                       content={artifactContent} setContent={setArtifactContent}
+                      goalSequence={artifactGoalSequence} setGoalSequence={setArtifactGoalSequence}
                       saving={savingArtifact} error={artifactError}
                       onSubmit={() => pushArtifact({ scope: 'collaboration', collaborationId: collab.id })}
                       onCancel={() => setPushingArtifact(null)}

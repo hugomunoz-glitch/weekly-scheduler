@@ -26,8 +26,19 @@ export default function ArtifactExtractModal({ artifact, version, onClose, onDon
   async function extract() {
     setStep('loading')
     setError('')
+
+    // If the coach pre-defined a goal sequence, inject those goals into the extraction
+    const coachGoalSequence = version.goal_sequence || null
+    const coachGoalTitles = coachGoalSequence ? coachGoalSequence.map(g => g.title) : null
+
     const { data, error: fnErr } = await supabase.functions.invoke('extract-artifact-tasks', {
-      body: { url: version.url || null, title: version.title || 'Untitled', notes: version.notes || null, content: version.content || null },
+      body: {
+        url: version.url || null,
+        title: version.title || 'Untitled',
+        notes: version.notes || null,
+        content: version.content || null,
+        goalTitles: coachGoalTitles,
+      },
       headers: { 'Content-Type': 'application/json' },
     })
     if (fnErr || data?.error) {
@@ -35,7 +46,23 @@ export default function ArtifactExtractModal({ artifact, version, onClose, onDon
       setStep('idle')
       return
     }
-    const extracted = data?.items || []
+
+    // Merge: if coach defined goals, use those; otherwise use AI-extracted goals
+    let extracted = data?.items || []
+    if (coachGoalSequence && coachGoalSequence.length > 0) {
+      // Replace AI goals with coach-defined goals, keep AI tasks
+      const aiTasks = extracted.filter(it => it.type === 'task')
+      const coachGoals = coachGoalSequence.map((g, idx) => ({
+        type: 'goal',
+        title: g.title,
+        description: g.description || null,
+        dueDate: null,
+        // Sequential: each goal after the first gets the previous as prerequisite
+        prerequisiteTitle: idx > 0 ? coachGoalSequence[idx - 1].title : null,
+      }))
+      extracted = [...coachGoals, ...aiTasks]
+    }
+
     setItems(extracted)
 
     const sel = {}
@@ -62,12 +89,14 @@ export default function ArtifactExtractModal({ artifact, version, onClose, onDon
     })
     setGoalAssignments(assignments)
 
-    // Auto-populate prerequisites from AI
+    // Auto-populate prerequisites
     const prereqs = {}
     extracted.forEach((item, i) => {
       if (item.type === 'goal' && item.prerequisiteTitle) prereqs[i] = item.prerequisiteTitle
     })
     setPrerequisites(prereqs)
+    // If coach defined a sequence, default to sequential mode
+    if (coachGoalSequence && coachGoalSequence.length > 1) setUnlockMode('sequential')
 
     setStep('review')
   }
