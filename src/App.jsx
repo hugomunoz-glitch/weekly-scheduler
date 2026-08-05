@@ -219,19 +219,18 @@ export default function App() {
   const goalMap = Object.fromEntries(goals.map(g => [g.id, g]))
   const lockedGoalIds = new Set(
     goals.filter(g => {
-      if (g.is_locked) return true
       if (!g.prerequisite_goal_id) return false
+      if (g.is_unlocked) return false
       const prereq = goalMap[g.prerequisite_goal_id]
       if (!prereq) return false
       const prereqTasks = goalTasks.filter(t => t.goal_id === prereq.id)
       return !(prereqTasks.length > 0 && prereqTasks.every(t => t.status === 'done'))
     }).map(g => g.id)
   )
-  // A task is locked if its goal is locked, OR it has an individual is_locked override
-  const lockedTaskIds = new Set([
-    ...goalTasks.filter(t => lockedGoalIds.has(t.goal_id) && !t.is_unlocked).map(t => t.id),
-    ...[...tasks, ...goalTasks].filter(t => t.is_locked).map(t => t.id),
-  ])
+  // A task is locked if its goal is locked and the task hasn't been individually unlocked
+  const lockedTaskIds = new Set(
+    goalTasks.filter(t => lockedGoalIds.has(t.goal_id) && !t.is_unlocked).map(t => t.id)
+  )
 
   const visibleTasks = useMemo(() => {
     if (activeView === 'all') return tasks
@@ -816,48 +815,43 @@ export default function App() {
   const UNDO_MS = 6000
 
   async function lockTask(taskId) {
-    await supabase.from('tasks').update({ is_locked: true }).eq('id', taskId)
-    setTasks(prev => prev.map(t => t.id === taskId ? { ...t, is_locked: true } : t))
-    setGoalTasks(prev => prev.map(t => t.id === taskId ? { ...t, is_locked: true } : t))
+    // Clear the task's unlock override — it returns to its sequential lock state
+    await supabase.from('tasks').update({ is_unlocked: false }).eq('id', taskId)
+    setGoalTasks(prev => prev.map(t => t.id === taskId ? { ...t, is_unlocked: false } : t))
   }
 
   async function lockGoal(goalId) {
-    await supabase.from('goals').update({ is_locked: true }).eq('id', goalId)
-    setGoals(prev => prev.map(g => g.id === goalId ? { ...g, is_locked: true } : g))
+    // Clear unlock overrides on goal and all its tasks — everything returns to sequential order
+    await supabase.from('goals').update({ is_unlocked: false }).eq('id', goalId)
+    setGoals(prev => prev.map(g => g.id === goalId ? { ...g, is_unlocked: false } : g))
     const goalTaskIds = goalTasks.filter(t => t.goal_id === goalId).map(t => t.id)
     if (goalTaskIds.length > 0) {
-      await supabase.from('tasks').update({ is_locked: true }).in('id', goalTaskIds)
-      setGoalTasks(prev => prev.map(t => goalTaskIds.includes(t.id) ? { ...t, is_locked: true } : t))
+      await supabase.from('tasks').update({ is_unlocked: false }).in('id', goalTaskIds)
+      setGoalTasks(prev => prev.map(t => goalTaskIds.includes(t.id) ? { ...t, is_unlocked: false } : t))
     }
   }
 
   async function unlockTask(taskId) {
-    const task = [...tasks, ...goalTasks].find(t => t.id === taskId)
+    const task = goalTasks.find(t => t.id === taskId)
     if (!task) return
-    const goalId = task.goal_id
-    await supabase.from('tasks').update({ is_locked: false }).eq('id', taskId)
-    setTasks(prev => prev.map(t => t.id === taskId ? { ...t, is_locked: false } : t))
-    setGoalTasks(prev => prev.map(t => t.id === taskId ? { ...t, is_locked: false } : t))
-    if (goalId) {
-      // Unlock the goal itself
-      await supabase.from('goals').update({ prerequisite_goal_id: null, is_locked: false }).eq('id', goalId)
-      setGoals(prev => prev.map(g => g.id === goalId ? { ...g, prerequisite_goal_id: null, is_locked: false } : g))
-      // Individually lock all OTHER tasks in the goal so they stay locked
-      const otherTaskIds = goalTasks.filter(t => t.goal_id === goalId && t.id !== taskId).map(t => t.id)
-      if (otherTaskIds.length > 0) {
-        await supabase.from('tasks').update({ is_locked: true }).in('id', otherTaskIds)
-        setGoalTasks(prev => prev.map(t => otherTaskIds.includes(t.id) ? { ...t, is_locked: true } : t))
-      }
+    // Mark this task as individually unlocked
+    await supabase.from('tasks').update({ is_unlocked: true }).eq('id', taskId)
+    setGoalTasks(prev => prev.map(t => t.id === taskId ? { ...t, is_unlocked: true } : t))
+    // Also mark the goal as unlocked so it appears accessible
+    if (task.goal_id) {
+      await supabase.from('goals').update({ is_unlocked: true }).eq('id', task.goal_id)
+      setGoals(prev => prev.map(g => g.id === task.goal_id ? { ...g, is_unlocked: true } : g))
     }
   }
 
   async function unlockGoal(goalId) {
-    await supabase.from('goals').update({ prerequisite_goal_id: null, is_locked: false }).eq('id', goalId)
-    setGoals(prev => prev.map(g => g.id === goalId ? { ...g, prerequisite_goal_id: null, is_locked: false } : g))
+    // Mark goal and all its tasks as unlocked
+    await supabase.from('goals').update({ is_unlocked: true }).eq('id', goalId)
+    setGoals(prev => prev.map(g => g.id === goalId ? { ...g, is_unlocked: true } : g))
     const goalTaskIds = goalTasks.filter(t => t.goal_id === goalId).map(t => t.id)
     if (goalTaskIds.length > 0) {
-      await supabase.from('tasks').update({ is_locked: false }).in('id', goalTaskIds)
-      setGoalTasks(prev => prev.map(t => goalTaskIds.includes(t.id) ? { ...t, is_locked: false } : t))
+      await supabase.from('tasks').update({ is_unlocked: true }).in('id', goalTaskIds)
+      setGoalTasks(prev => prev.map(t => goalTaskIds.includes(t.id) ? { ...t, is_unlocked: true } : t))
     }
   }
 

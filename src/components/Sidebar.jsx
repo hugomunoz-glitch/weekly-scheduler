@@ -142,10 +142,12 @@ function Inbox({ tasks, goalMap, collabMap, collabMembersMap, profileMap, onAssi
                       <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                         <button onClick={() => onEdit(task)} className="text-[27px] text-indigo-400 hover:text-indigo-600 leading-none" title="Edit">&#9998;</button>
                         {onDuplicate && <button onClick={() => onDuplicate(task.id)} className="text-[20px] text-gray-400 hover:text-indigo-600 leading-none" title="Duplicate">&#10697;</button>}
-                        {(lockedTaskIds?.has(task.id) || task.is_locked) ? (
-                          onUnlockTask && <button onClick={() => onUnlockTask(task.id)} className="text-[11px] font-semibold text-amber-600 hover:text-amber-700 leading-none px-1.5 py-0.5 rounded border border-amber-300 hover:border-amber-400" title="Unlock this task">🔓 Unlock</button>
-                        ) : (
-                          onLockTask && <button onClick={() => onLockTask(task.id)} className="text-[11px] font-semibold text-gray-500 hover:text-gray-700 leading-none px-1.5 py-0.5 rounded border border-gray-300 hover:border-gray-400" title="Lock this task">🔒 Lock</button>
+                        {task.goal_id && goalMap?.[task.goal_id]?.prerequisite_goal_id && (
+                          lockedTaskIds?.has(task.id) ? (
+                            onUnlockTask && <button onClick={() => onUnlockTask(task.id)} className="text-[11px] font-semibold text-amber-600 hover:text-amber-700 leading-none px-1.5 py-0.5 rounded border border-amber-300 hover:border-amber-400" title="Unlock this task">🔓 Unlock</button>
+                          ) : (
+                            onLockTask && task.is_unlocked && <button onClick={() => onLockTask(task.id)} className="text-[11px] font-semibold text-gray-500 hover:text-gray-700 leading-none px-1.5 py-0.5 rounded border border-gray-300 hover:border-gray-400" title="Re-lock this task">🔒 Lock</button>
+                          )
                         )}
                         {task.scheduled_date && (
                           <span className="text-xs text-gray-400">Scheduled: {format(parseISO(task.scheduled_date), 'MMM d')}</span>

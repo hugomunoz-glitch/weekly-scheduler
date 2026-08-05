@@ -520,21 +520,23 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
                                         &#10697;
                                       </button>
                                     )}
-                                    {(viewingIsLocked || lockedTaskIds?.has(t.id) || t.is_locked) ? (
-                                      onUnlockTask && (
-                                        <button
-                                          onClick={(e) => { e.stopPropagation(); onUnlockTask(t.id) }}
-                                          className="text-[10px] font-semibold text-amber-600 hover:text-amber-700 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 leading-none px-0.5"
-                                          title="Unlock this task"
-                                        >🔓</button>
-                                      )
-                                    ) : (
-                                      onLockTask && (
-                                        <button
-                                          onClick={(e) => { e.stopPropagation(); onLockTask(t.id) }}
-                                          className="text-[10px] font-semibold text-gray-400 hover:text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 leading-none px-0.5"
-                                          title="Lock this task"
-                                        >🔒</button>
+                                    {viewingGoal.prerequisite_goal_id && (
+                                      (viewingIsLocked || lockedTaskIds?.has(t.id)) ? (
+                                        onUnlockTask && (
+                                          <button
+                                            onClick={(e) => { e.stopPropagation(); onUnlockTask(t.id) }}
+                                            className="text-[10px] font-semibold text-amber-600 hover:text-amber-700 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 leading-none px-0.5"
+                                            title="Unlock this task"
+                                          >🔓</button>
+                                        )
+                                      ) : (
+                                        onLockTask && t.is_unlocked && (
+                                          <button
+                                            onClick={(e) => { e.stopPropagation(); onLockTask(t.id) }}
+                                            className="text-[10px] font-semibold text-gray-400 hover:text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 leading-none px-0.5"
+                                            title="Re-lock this task (restore sequential order)"
+                                          >🔒</button>
+                                        )
                                       )
                                     )}
                                     <button
@@ -1117,21 +1119,23 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
                       title="Duplicate goal"
                     >&#10697;</button>
                   )}
-                  {isLocked ? (
-                    onUnlockGoal && (
-                      <button
-                        onClick={(e) => { e.stopPropagation(); onUnlockGoal(goal.id) }}
-                        className="text-[11px] font-semibold text-amber-600 hover:text-amber-700 px-1.5 py-0.5 rounded border border-amber-300 hover:border-amber-400 transition-colors leading-none"
-                        title="Unlock this goal and all its tasks"
-                      >🔓 Unlock</button>
-                    )
-                  ) : (
-                    onLockGoal && !isFullyCompleted && (
-                      <button
-                        onClick={(e) => { e.stopPropagation(); onLockGoal(goal.id) }}
-                        className="text-[11px] font-semibold text-gray-500 hover:text-gray-700 px-1.5 py-0.5 rounded border border-gray-300 hover:border-gray-400 transition-colors leading-none"
-                        title="Lock this goal and all its tasks"
-                      >🔒 Lock</button>
+                  {goal.prerequisite_goal_id && (
+                    isLocked ? (
+                      onUnlockGoal && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); onUnlockGoal(goal.id) }}
+                          className="text-[11px] font-semibold text-amber-600 hover:text-amber-700 px-1.5 py-0.5 rounded border border-amber-300 hover:border-amber-400 transition-colors leading-none"
+                          title="Unlock this goal and all its tasks"
+                        >🔓 Unlock</button>
+                      )
+                    ) : (
+                      onLockGoal && !isFullyCompleted && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); onLockGoal(goal.id) }}
+                          className="text-[11px] font-semibold text-gray-500 hover:text-gray-700 px-1.5 py-0.5 rounded border border-gray-300 hover:border-gray-400 transition-colors leading-none"
+                          title="Re-lock this goal (restore sequential order)"
+                        >🔒 Lock</button>
+                      )
                     )
                   )}
                   {!isFullyCompleted && onPauseGoal && (
