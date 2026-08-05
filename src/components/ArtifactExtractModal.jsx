@@ -122,7 +122,6 @@ export default function ArtifactExtractModal({ artifact, version, onClose, onDon
       const { data: insertedGoals, error: goalsErr } = await supabase.from('goals').insert(goals.map(g => ({
         owner_id: user.id,
         title: g.title,
-        due_date: g.dueDate || null,
         source_artifact_version_id: version.id,
       }))).select('id, title')
       if (goalsErr) { setError('Failed to save goals: ' + goalsErr.message); setStep('review'); return }
