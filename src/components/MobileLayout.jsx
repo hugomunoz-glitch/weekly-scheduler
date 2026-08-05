@@ -248,9 +248,19 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
 
   let visibleGoals = goalSearch.trim() ? goals.filter(g => g.title.toLowerCase().includes(goalSearch.trim().toLowerCase())) : goals
   if (categoryFilter !== 'all') visibleGoals = visibleGoals.filter(g => g.category === categoryFilter)
+  const isMobileGoalLocked = (g) => lockedGoalIds?.has(g.id)
+  const isMobileGoalFullyDone = (g) => {
+    const linked = goalTasks.filter(t => t.goal_id === g.id)
+    return linked.length > 0 && linked.every(t => t.status === 'done')
+  }
+
   visibleGoals = [...visibleGoals].sort((a, b) => {
     let result
-    if (sortMode === 'created') result = new Date(b.created_at || 0) - new Date(a.created_at || 0)
+    if (sortMode === 'locked') {
+      const aLocked = isMobileGoalLocked(a) ? 0 : 1
+      const bLocked = isMobileGoalLocked(b) ? 0 : 1
+      result = aLocked !== bLocked ? aLocked - bLocked : a.title.localeCompare(b.title)
+    } else if (sortMode === 'created') result = new Date(b.created_at || 0) - new Date(a.created_at || 0)
     else if (sortMode === 'alpha') result = a.title.localeCompare(b.title)
     else if (sortMode === 'percentage') result = pctCompleted(b.id) - pctCompleted(a.id)
     else if (sortMode === 'taskCount') result = completedCount(b.id) - completedCount(a.id)
@@ -259,8 +269,9 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
       const bRank = b.priority in PRIORITY_RANK ? PRIORITY_RANK[b.priority] : 3
       result = aRank !== bRank ? aRank - bRank : a.title.localeCompare(b.title)
     } else if (sortMode === 'progress') {
-      const statusRank = { completed: 0, in_progress: 1, paused: 2, not_started: 3 }
+      const statusRank = { completed: 0, in_progress: 1, paused: 2, not_started: 3, locked: 4 }
       function mobileGoalStatus(g) {
+        if (isMobileGoalLocked(g)) return 'locked'
         if (g.status === 'paused') return 'paused'
         const lnk = goalTasks.filter(t => t.goal_id === g.id)
         if (lnk.length > 0 && lnk.every(t => t.status === 'done')) return 'completed'
@@ -284,13 +295,14 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
     }
     return result * sortDir
   })
-  // Partition: fully completed goals go to bottom
-  const [mobileActiveGoals, mobileCompletedGoals] = visibleGoals.reduce(([a, c], g) => {
-    const linked = goalTasks.filter(t => t.goal_id === g.id)
-    const isFullyDone = linked.length > 0 && linked.every(t => t.status === 'done')
-    return isFullyDone ? [a, [...c, g]] : [[...a, g], c]
-  }, [[], []])
-  visibleGoals = [...mobileActiveGoals, ...mobileCompletedGoals]
+  // Partition: locked goals above completed, completed goes to bottom
+  const mobileActiveGoals = [], mobileLockedGoals = [], mobileCompletedGoals = []
+  for (const g of visibleGoals) {
+    if (isMobileGoalFullyDone(g)) mobileCompletedGoals.push(g)
+    else if (isMobileGoalLocked(g)) mobileLockedGoals.push(g)
+    else mobileActiveGoals.push(g)
+  }
+  visibleGoals = [...mobileActiveGoals, ...mobileLockedGoals, ...mobileCompletedGoals]
 
   function handleEditTask(taskId) {
     const full = (allTasks || []).find(t => t.id === taskId)
@@ -429,6 +441,7 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
               <option value="alpha">A-Z</option>
               <option value="created">Date Created</option>
               <option value="deadline">Deadline</option>
+              <option value="locked">Locked/Unlocked</option>
               <option value="priority">Priority</option>
               <option value="progress">Progress</option>
               <option value="term">Long/Short Term</option>
@@ -963,10 +976,18 @@ function MobileInbox({ tasks, goalMap, collabMap, collabMembersMap, profileMap, 
   function exitSelectMode() { if (onExitSelectMode) onExitSelectMode(); setSelectedIds(new Set()) }
   const searched = search && search.trim() ? tasks.filter(t => t.title.toLowerCase().includes(search.trim().toLowerCase())) : tasks
   const filteredTasks = categoryFilter && categoryFilter !== 'all' ? searched.filter(t => t.category === categoryFilter) : searched
+  const isMobileTaskLocked = (t) => lockedTaskIds?.has(t.id)
   const visibleTasks = [...filteredTasks].sort((a, b) => {
     const aDone = a.status === 'done', bDone = b.status === 'done'
     if (sortMode === 'completed') return (aDone === bDone ? 0 : aDone ? -1 : 1) * sortDir
+    if (sortMode === 'locked') {
+      const aRank = aDone ? 2 : isMobileTaskLocked(a) ? 0 : 1
+      const bRank = bDone ? 2 : isMobileTaskLocked(b) ? 0 : 1
+      return aRank !== bRank ? (aRank - bRank) * sortDir : a.title.localeCompare(b.title)
+    }
     if (aDone !== bDone) return aDone ? 1 : -1
+    const aLocked = isMobileTaskLocked(a), bLocked = isMobileTaskLocked(b)
+    if (aLocked !== bLocked) return aLocked ? -1 : 1
     let result
     if (sortMode === 'manual') result = (a.position || 0) - (b.position || 0)
     else if (sortMode === 'created') result = new Date(b.created_at || 0) - new Date(a.created_at || 0)
@@ -1763,6 +1784,7 @@ export default function MobileLayout({
                   <option value="completed">Completed</option>
                   <option value="created">Date Created</option>
                   <option value="deadline">Deadline</option>
+                  <option value="locked">Locked/Unlocked</option>
                   <option value="manual">Manual</option>
                   <option value="priority">Priority</option>
                 </select>

@@ -169,9 +169,19 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
   let visibleGoals = goalSearch.trim() ? goalsWithTerm.filter(g => g.title.toLowerCase().includes(goalSearch.trim().toLowerCase())) : goalsWithTerm
   if (categoryFilter !== 'all') visibleGoals = visibleGoals.filter(g => g.category === categoryFilter)
 
+  const isGoalLocked = (g) => lockedGoalIds?.has(g.id)
+  const isGoalFullyDone = (g) => {
+    const linked = goalTasks.filter(t => t.goal_id === g.id)
+    return linked.length > 0 && linked.every(t => t.status === 'done')
+  }
+
   visibleGoals = [...visibleGoals].sort((a, b) => {
     let result
-    if (sortMode === 'created') result = new Date(b.created_at || 0) - new Date(a.created_at || 0)
+    if (sortMode === 'locked') {
+      const aLocked = isGoalLocked(a) ? 0 : 1
+      const bLocked = isGoalLocked(b) ? 0 : 1
+      result = aLocked !== bLocked ? aLocked - bLocked : a.title.localeCompare(b.title)
+    } else if (sortMode === 'created') result = new Date(b.created_at || 0) - new Date(a.created_at || 0)
     else if (sortMode === 'alpha') result = a.title.localeCompare(b.title)
     else if (sortMode === 'percentage') result = pctCompleted(b.id) - pctCompleted(a.id)
     else if (sortMode === 'taskCount') result = completedCount(b.id) - completedCount(a.id)
@@ -198,13 +208,14 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
     }
     return result * sortDir
   })
-  // Partition: fully completed goals go to bottom
-  const [activeGoals, completedGoalsPartition] = visibleGoals.reduce(([a, c], g) => {
-    const linked = goalTasks.filter(t => t.goal_id === g.id)
-    const isFullyDone = linked.length > 0 && linked.every(t => t.status === 'done')
-    return isFullyDone ? [a, [...c, g]] : [[...a, g], c]
-  }, [[], []])
-  visibleGoals = [...activeGoals, ...completedGoalsPartition]
+  // Partition: locked goals above completed, completed goes to bottom
+  const activeGoals = [], lockedGoalsPartition = [], completedGoalsPartition = []
+  for (const g of visibleGoals) {
+    if (isGoalFullyDone(g)) completedGoalsPartition.push(g)
+    else if (isGoalLocked(g)) lockedGoalsPartition.push(g)
+    else activeGoals.push(g)
+  }
+  visibleGoals = [...activeGoals, ...lockedGoalsPartition, ...completedGoalsPartition]
 
   function handleEditTask(taskId) {
     const full = (allTasks || []).find(t => t.id === taskId)
@@ -1198,6 +1209,7 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
               <option value="alpha">A-Z</option>
               <option value="created">Date Created</option>
               <option value="deadline">Deadline</option>
+              <option value="locked">Locked/Unlocked</option>
               <option value="priority">Priority</option>
               <option value="progress">Progress</option>
               <option value="term">Long/Short Term</option>
