@@ -306,7 +306,24 @@ export default function ArtifactExtractModal({ artifact, version, onClose, onDon
                         )}
                         <div className={`p-2.5 rounded-lg border transition-colors mb-1.5 ${selected[i] ? 'border-indigo-200 bg-indigo-50' : 'border-gray-200 bg-white'}`}>
                           <div className="flex items-start gap-2.5">
-                            <input type="checkbox" checked={!!selected[i]} onChange={() => setSelected(s => ({ ...s, [i]: !s[i] }))}
+                            <input type="checkbox" checked={!!selected[i]} onChange={() => {
+                              const nowSelected = !selected[i]
+                              setSelected(s => {
+                                const next = { ...s, [i]: nowSelected }
+                                // When unchecking a goal, also uncheck its tasks
+                                if (!nowSelected) {
+                                  const goalTitle = items[i]?.title
+                                  items.forEach((it, idx) => {
+                                    if (it.type !== 'task') return
+                                    // Match by initial goalTitle or by goalAssignments pointing to this goal
+                                    const assigned = goalAssignments[idx]
+                                    const assignedToThis = assigned === 'new:' + goalTitle || it.goalTitle === goalTitle
+                                    if (assignedToThis) next[idx] = false
+                                  })
+                                }
+                                return next
+                              })
+                            }}
                               className="mt-2 accent-indigo-600 shrink-0" />
                             <div className="flex-1 min-w-0 space-y-1">
                               <input
