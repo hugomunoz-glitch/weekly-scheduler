@@ -189,9 +189,10 @@ function ArtifactCard({ artifact, versions, unreadCount, onDelete, onToggleMain,
     setEditingSequence(true)
     setLoadingSequence(false)
 
-    // Filter to only goals linked to this artifact's versions
+    // Prefer goals linked to this artifact's versions; fall back to all user goals
     const versionIds = new Set((versions || []).map(v => v.id))
-    const artifactGoals = (allGoals || []).filter(g => versionIds.has(g.source_artifact_version_id))
+    const linked = (allGoals || []).filter(g => versionIds.has(g.source_artifact_version_id))
+    const artifactGoals = linked.length > 0 ? linked : (allGoals || [])
 
     const tasksByGoal = {}
     ;(allGoalTasks || []).forEach(t => {
@@ -310,7 +311,7 @@ function ArtifactCard({ artifact, versions, unreadCount, onDelete, onToggleMain,
                   {loadingSequence ? (
                     <p className="text-xs text-gray-400 py-2 text-center">Loading goals…</p>
                   ) : sequenceDraft.length === 0 ? (
-                    <p className="text-xs text-gray-400 py-2 text-center">No goals found for this artifact. Extract first, then edit the sequence.</p>
+                    <p className="text-xs text-gray-400 py-2 text-center">No goals found. Extract tasks & goals from this artifact first.</p>
                   ) : (
                     <div className="space-y-1.5">
                       {sequenceDraft.map((goal, idx) => (
@@ -325,7 +326,10 @@ function ArtifactCard({ artifact, versions, unreadCount, onDelete, onToggleMain,
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-1.5">
                                 <span className="text-[10px] font-bold text-indigo-400 shrink-0">#{idx + 1}</span>
-                                <p className="text-xs font-medium text-gray-800 truncate">{goal.title}</p>
+                                <p className="text-xs font-medium text-gray-800 truncate flex-1">{goal.title}</p>
+                                <button
+                                  onClick={() => setSequenceDraft(prev => prev.filter((_, i) => i !== idx))}
+                                  className="text-gray-300 hover:text-red-400 text-xs shrink-0 ml-1">✕</button>
                               </div>
                               {goal.tasks?.length > 0 && (
                                 <div className="mt-1 pl-3 space-y-0.5">
