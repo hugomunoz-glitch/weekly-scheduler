@@ -801,6 +801,10 @@ export default function App() {
   const UNDO_MS = 6000
 
   async function performDeleteGoal(goalId) {
+    // Clear prerequisite references from other goals pointing to this one
+    await supabase.from('goals').update({ prerequisite_goal_id: null }).eq('prerequisite_goal_id', goalId)
+    // Unlink tasks from this goal (don't delete tasks, just orphan them)
+    await supabase.from('tasks').update({ goal_id: null }).eq('goal_id', goalId)
     const { error } = await supabase.from('goals').delete().eq('id', goalId)
     if (error) console.error('deleteGoal failed:', error)
   }
