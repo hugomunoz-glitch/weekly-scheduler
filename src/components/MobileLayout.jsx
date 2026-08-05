@@ -575,7 +575,7 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
         const pct = linked.length > 0 ? Math.round((done.length / linked.length) * 100) : 0
         const goalDisplayColor = (goal.category ? categoryBadge(goal.category)?.color : null) || goal.color
         const isFullyCompleted = linked.length > 0 && linked.every(t => t.status === 'done')
-        const prereq = goal.prerequisite_goal_id ? goals.find(g => g.id === goal.prerequisite_goal_id) : null
+        const prereq = (goal.prerequisite_goal_id && !goal.is_unlocked) ? goals.find(g => g.id === goal.prerequisite_goal_id) : null
         const isLocked = prereq && !(goalTasks.filter(t => t.goal_id === prereq.id).length > 0 && goalTasks.filter(t => t.goal_id === prereq.id).every(t => t.status === 'done'))
         const mobileStatus = goal.status === 'paused' ? 'paused' : isLocked ? 'locked' : isFullyCompleted ? 'completed' : linked.some(t => t.status === 'done') ? 'in_progress' : 'not_started'
         const MOBILE_STATUS_BADGE = {

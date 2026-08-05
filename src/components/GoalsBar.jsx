@@ -40,8 +40,8 @@ function isGoalCompleted(goal, goalTasks) {
 
 function goalStatus(goal, goalTasks, allGoals) {
   if (goal.status === 'paused') return 'paused'
-  // Locked if prerequisite exists and isn't fully completed
-  if (goal.prerequisite_goal_id) {
+  // Locked if prerequisite exists, isn't fully completed, and hasn't been manually unlocked
+  if (goal.prerequisite_goal_id && !goal.is_unlocked) {
     const prereq = allGoals?.find(g => g.id === goal.prerequisite_goal_id)
     if (prereq && !isGoalCompleted(prereq, goalTasks)) return 'locked'
   }
@@ -420,7 +420,7 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
           <div className="p-4 max-h-[70vh] overflow-y-auto">
             {(() => {
               const goal = viewingGoal
-              const viewingPrereq = goal.prerequisite_goal_id ? goals.find(g => g.id === goal.prerequisite_goal_id) : null
+              const viewingPrereq = (goal.prerequisite_goal_id && !goal.is_unlocked) ? goals.find(g => g.id === goal.prerequisite_goal_id) : null
               const viewingIsLocked = viewingPrereq && !isGoalCompleted(viewingPrereq, goalTasks)
               const linked = goalTasks.filter(t => t.goal_id === goal.id)
               const sortedLinked = [...linked].sort((a, b) => {
