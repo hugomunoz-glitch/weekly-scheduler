@@ -1,20 +1,29 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 
 export default function ArtifactExtractModal({ artifact, version, onClose, onDone }) {
   const { user } = useAuth()
-  const [step, setStep] = useState('idle') // idle | loading | review | saving | done
+  const [step, setStep] = useState('idle')
   const [items, setItems] = useState([])
   const [selected, setSelected] = useState({})
+  const [goalAssignments, setGoalAssignments] = useState({}) // taskIndex -> goalId
+  const [existingGoals, setExistingGoals] = useState([])
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    supabase.from('goals').select('id, title').eq('owner_id', user.id).order('created_at').then(({ data }) => {
+      setExistingGoals(data || [])
+    })
+  }, [user.id])
 
   async function extract() {
     setStep('loading')
     setError('')
     console.log('Invoking extract with:', { title: version.title, hasContent: !!version.content, hasUrl: !!version.url })
     const { data, error: fnErr } = await supabase.functions.invoke('extract-artifact-tasks', {
-      body: { url: version.url || null, title: version.title || 'Untitled', notes: version.notes || null, content: version.content || null }
+      body: { url: version.url || null, title: version.title || 'Untitled', notes: version.notes || null, content: version.content || null },
+      headers: { 'Content-Type': 'application/json' },
     })
     if (fnErr || data?.error) {
       setError(fnErr?.message || data?.error || JSON.stringify(fnErr) || 'Extraction failed')
@@ -32,30 +41,40 @@ export default function ArtifactExtractModal({ artifact, version, onClose, onDon
 
   async function addToSchedule() {
     setStep('saving')
-    const toAdd = items.filter((_, i) => selected[i])
+    const toAdd = items.map((item, i) => ({ ...item, index: i })).filter((_, i) => selected[i])
 
     const goals = toAdd.filter(i => i.type === 'goal')
     const tasks = toAdd.filter(i => i.type === 'task')
 
+    // Insert goals and collect their new IDs so tasks can reference them by title
+    const newGoalIdsByTitle = {}
     if (goals.length) {
-      await supabase.from('goals').insert(goals.map(g => ({
+      const { data: insertedGoals, error: goalsErr } = await supabase.from('goals').insert(goals.map(g => ({
         owner_id: user.id,
         title: g.title,
         due_date: g.dueDate || null,
         source_artifact_version_id: version.id,
-      })))
+      }))).select('id, title')
+      if (goalsErr) { setError('Failed to save goals: ' + goalsErr.message); setStep('review'); return }
+      insertedGoals?.forEach(g => { newGoalIdsByTitle[g.title] = g.id })
     }
 
     if (tasks.length) {
-      await supabase.from('tasks').insert(tasks.map(t => ({
-        owner_id: user.id,
-        title: t.title,
-        notes: t.description || null,
-        scheduled_date: null,
-        bucket: null,
-        status: 'inbox',
-        source_artifact_version_id: version.id,
-      })))
+      const { error: tasksErr } = await supabase.from('tasks').insert(tasks.map(t => {
+        // Use manually assigned goal, or match by title to a newly created goal
+        const assignedGoalId = goalAssignments[t.index] || newGoalIdsByTitle[t.goalTitle] || null
+        return {
+          owner_id: user.id,
+          title: t.title,
+          notes: t.description || null,
+          scheduled_date: null,
+          bucket: null,
+          status: 'inbox',
+          goal_id: assignedGoalId,
+          source_artifact_version_id: version.id,
+        }
+      }))
+      if (tasksErr) { setError('Failed to save tasks: ' + tasksErr.message); setStep('review'); return }
     }
 
     setStep('done')
@@ -65,6 +84,12 @@ export default function ArtifactExtractModal({ artifact, version, onClose, onDon
   const goalItems = items.filter(i => i.type === 'goal')
   const taskItems = items.filter(i => i.type === 'task')
   const selectedCount = Object.values(selected).filter(Boolean).length
+
+  // All goals available to assign: existing + ones being created in this extraction
+  const allGoalOptions = [
+    ...existingGoals,
+    ...goalItems.map((g, i) => ({ id: `new-${i}`, title: g.title + ' (new)' }))
+  ]
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[4000] p-4" onClick={onClose}>
@@ -131,18 +156,32 @@ export default function ArtifactExtractModal({ artifact, version, onClose, onDon
                 <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Tasks</p>
                 <div className="space-y-1.5">
                   {items.map((item, i) => item.type !== 'task' ? null : (
-                    <label key={i} className={`flex items-start gap-2.5 p-2.5 rounded-lg border cursor-pointer transition-colors ${selected[i] ? 'border-indigo-200 bg-indigo-50' : 'border-gray-200 bg-white'}`}>
-                      <input type="checkbox" checked={!!selected[i]} onChange={() => setSelected(s => ({ ...s, [i]: !s[i] }))}
-                        className="mt-0.5 accent-indigo-600" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-800">{item.title}</p>
-                        {item.description && <p className="text-xs text-gray-500 mt-0.5">{item.description}</p>}
-                        <div className="flex gap-2 mt-0.5">
-                          {item.dueDate && <p className="text-xs text-indigo-500">{item.dueDate}</p>}
-                          {item.bucket && <p className="text-xs text-gray-400 capitalize">{item.bucket}</p>}
+                    <div key={i} className={`p-2.5 rounded-lg border transition-colors ${selected[i] ? 'border-indigo-200 bg-indigo-50' : 'border-gray-200 bg-white'}`}>
+                      <label className="flex items-start gap-2.5 cursor-pointer">
+                        <input type="checkbox" checked={!!selected[i]} onChange={() => setSelected(s => ({ ...s, [i]: !s[i] }))}
+                          className="mt-0.5 accent-indigo-600" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-800">{item.title}</p>
+                          {item.description && <p className="text-xs text-gray-500 mt-0.5">{item.description}</p>}
+                          {item.dueDate && <p className="text-xs text-indigo-500 mt-0.5">{item.dueDate}</p>}
                         </div>
-                      </div>
-                    </label>
+                      </label>
+                      {selected[i] && allGoalOptions.length > 0 && (
+                        <div className="mt-1.5 ml-6">
+                          <select
+                            value={goalAssignments[i] || ''}
+                            onChange={e => setGoalAssignments(g => ({ ...g, [i]: e.target.value || null }))}
+                            className="w-full text-xs px-2 py-1 border border-gray-200 rounded-lg bg-white text-gray-600"
+                          >
+                            <option value="">No goal</option>
+                            {existingGoals.map(g => <option key={g.id} value={g.id}>{g.title}</option>)}
+                            {goalItems.filter((_, gi) => selected[items.indexOf(goalItems[gi])]).map((g, gi) => (
+                              <option key={`new-${gi}`} value={`new-${gi}`}>{g.title} (being added)</option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+                    </div>
                   ))}
                 </div>
               </div>
