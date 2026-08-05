@@ -875,7 +875,7 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
         return (
           <div
             key={goal.id}
-            className={'flex items-start gap-2 border rounded-lg px-3 py-1.5 shrink-0 min-w-[160px] group cursor-pointer relative ' + (isGoalSelected ? 'border-indigo-400 bg-indigo-50' : isFullyCompleted ? 'border-emerald-100 bg-white' : isLocked ? 'border-gray-200 bg-gray-50 opacity-60' : status === 'paused' ? 'border-amber-200 bg-amber-50' : 'border-gray-200 bg-white')}
+            className={'flex items-start gap-2 border rounded-lg px-3 py-1.5 shrink-0 min-w-[160px] group cursor-pointer relative ' + (isGoalSelected ? 'border-indigo-400 bg-indigo-50' : isFullyCompleted ? 'border-emerald-100 bg-white' : isLocked ? 'border-gray-200 bg-gray-50' : status === 'paused' ? 'border-amber-200 bg-amber-50' : 'border-gray-200 bg-white')}
             style={goal.priority && PRIORITY_BORDER[goal.priority] ? { borderLeft: '4px solid ' + PRIORITY_BORDER[goal.priority] } : undefined}
             title={goal.priority ? PRIORITY_LABELS[goal.priority] + ' priority' : undefined}
             onClick={(e) => {
@@ -993,7 +993,7 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
               ) : (
                 <div className="flex items-center justify-between gap-1">
                   <p
-                    className={'text-sm font-medium truncate cursor-pointer hover:text-indigo-600 ' + (isFullyCompleted ? 'line-through text-gray-400' : 'text-gray-700')}
+                    className={'text-sm font-medium truncate cursor-pointer hover:text-indigo-600 ' + (isFullyCompleted ? 'line-through text-gray-400' : isLocked ? 'text-gray-400' : 'text-gray-700')}
                     onClick={(e) => { e.stopPropagation(); startEdit(goal) }}
                     title="Click to edit"
                   >
@@ -1028,7 +1028,7 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
                 <div className="flex items-center gap-1 mt-0.5">
                   <span
                     className="text-[10px] font-medium px-1.5 py-0.5 rounded cursor-pointer hover:opacity-75"
-                    style={{ color: categoryBadge(goal.category).color, background: categoryBadge(goal.category).color + '1a' }}
+                    style={{ color: isLocked ? '#9ca3af' : categoryBadge(goal.category).color, background: isLocked ? '#f3f4f6' : categoryBadge(goal.category).color + '1a' }}
                     onClick={e => { e.stopPropagation(); setInlineCategoryGoalId(goal.id) }}
                     title="Click to change category"
                   >
@@ -1060,7 +1060,7 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
               {!isFullyCompleted && (
                 <div className="flex items-center gap-1.5 mt-1">
                   <div className="flex-1 h-1 bg-gray-100 rounded-full overflow-hidden">
-                    <div className="h-full rounded-full transition-all" style={{ width: pct + '%', background: goalDisplayColor }} />
+                    <div className="h-full rounded-full transition-all" style={{ width: pct + '%', background: isLocked ? '#d1d5db' : goalDisplayColor }} />
                   </div>
                   <span className="text-xs text-gray-400 shrink-0">{pct}%</span>
                 </div>

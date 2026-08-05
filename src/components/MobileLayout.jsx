@@ -597,9 +597,9 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
               setViewingGoalId(goal.id)
             }
           }}
-          style={{ border: cardBorder, borderLeft: goal.priority && PRIORITY_BORDER[goal.priority] ? '4px solid ' + PRIORITY_BORDER[goal.priority] : cardBorder, borderRadius: '10px', padding: '10px 12px', marginBottom: '8px', background: cardBg, position: 'relative', cursor: 'pointer', opacity: isLocked ? 0.6 : 1 }}>
+          style={{ border: cardBorder, borderLeft: goal.priority && PRIORITY_BORDER[goal.priority] ? '4px solid ' + PRIORITY_BORDER[goal.priority] : cardBorder, borderRadius: '10px', padding: '10px 12px', marginBottom: '8px', background: cardBg, position: 'relative', cursor: 'pointer' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-            <span style={{ fontSize: "15px", fontWeight: 600, color: isFullyCompleted || isLocked ? "#9ca3af" : "#1f2937", flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textDecoration: isFullyCompleted ? 'line-through' : 'none' }}>{goal.title}</span>
+            <span style={{ fontSize: "15px", fontWeight: 600, color: isFullyCompleted ? "#9ca3af" : isLocked ? "#9ca3af" : "#1f2937", flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textDecoration: isFullyCompleted ? 'line-through' : 'none' }}>{goal.title}</span>
             {goal.collaboration_id && collabMap && collabMap[goal.collaboration_id] && (
               <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', flexShrink: 0, background: collabMap[goal.collaboration_id].color }} />
             )}
@@ -635,7 +635,7 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
             ) : categoryBadge(goal.category) ? (
               <span
                 onClick={e => { e.stopPropagation(); setInlineCategoryGoalId(goal.id) }}
-                style={{ fontSize: '10px', fontWeight: 500, padding: '2px 6px', borderRadius: '4px', color: categoryBadge(goal.category).color, background: categoryBadge(goal.category).color + '1a', cursor: 'pointer' }}
+                style={{ fontSize: '10px', fontWeight: 500, padding: '2px 6px', borderRadius: '4px', color: isLocked ? '#9ca3af' : categoryBadge(goal.category).color, background: isLocked ? '#f3f4f6' : categoryBadge(goal.category).color + '1a', cursor: 'pointer' }}
                 title="Tap to change category"
               >{categoryBadge(goal.category).name}</span>
             ) : (
@@ -658,7 +658,7 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingLeft: '2px' }}>
             <div style={{ flex: 1, height: '4px', background: '#f3f4f6', borderRadius: '2px', overflow: 'hidden' }}>
-              <div style={{ height: '100%', width: pct + '%', background: goalDisplayColor, borderRadius: '2px' }} />
+              <div style={{ height: '100%', width: pct + '%', background: isLocked ? '#d1d5db' : goalDisplayColor, borderRadius: '2px' }} />
             </div>
             <span style={{ fontSize: "11px", color: "#9ca3af", flexShrink: 0 }}>{pct}%</span>
             <span style={{ fontSize: "11px", color: "#9ca3af", flexShrink: 0 }}>{done.length}/{linked.length}</span>
