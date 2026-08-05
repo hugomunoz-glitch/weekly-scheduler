@@ -84,7 +84,7 @@ Return ONLY valid JSON in this exact format, no other text:
     if (!geminiRes.ok) {
       const err = await geminiRes.text()
       console.error('Gemini error:', err)
-      return new Response(JSON.stringify({ error: 'extraction failed' }), { status: 500, headers: corsHeaders })
+      return new Response(JSON.stringify({ error: `Gemini error ${geminiRes.status}: ${err}` }), { status: 500, headers: corsHeaders })
     }
 
     const geminiData = await geminiRes.json()
