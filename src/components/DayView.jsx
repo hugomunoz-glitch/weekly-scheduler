@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { format, addDays, subDays, isToday } from 'date-fns'
+import { Droppable, Draggable } from '@hello-pangea/dnd'
 import TaskCard from './TaskCard'
 
 const BUCKETS = [
@@ -47,6 +48,7 @@ export default function DayView({ tasks, goalMap, collabMap, profileMap, onMarkD
           </div>
         )}
         {BUCKETS.map(bucket => {
+          const droppableId = bucket.id + '-' + dateStr
           const bucketTasks = dayTasks
             .filter(t => (t.bucket || 'morning') === bucket.id)
             .sort((a, b) => {
@@ -62,27 +64,47 @@ export default function DayView({ tasks, goalMap, collabMap, profileMap, onMarkD
                   style={{ fontSize: '11px', color: '#6366f1', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 500 }}
                 >+ Add</button>
               </div>
-              {bucketTasks.length === 0 ? (
-                <div style={{ fontSize: '12px', color: '#e5e7eb', padding: '6px 0' }}>Nothing yet</div>
-              ) : (
-                bucketTasks.map((task, idx) => (
-                  <TaskCard
-                    key={task.id}
-                    task={task}
-                    index={idx}
-                    isDone={task.status === 'done'}
-                    goalMap={goalMap}
-                    collabMap={collabMap}
-                    profileMap={profileMap}
-                    onMarkDone={onMarkDone}
-                    onRescheduleToTomorrow={onRescheduleToTomorrow}
-                    onMoveToInbox={onMoveToInbox}
-                    onDelete={onDelete}
-                    onEdit={onEdit}
-                    onDuplicate={onDuplicate}
-                  />
-                ))
-              )}
+              <Droppable droppableId={droppableId}>
+                {(provided, snapshot) => (
+                  <div
+                    ref={provided.innerRef}
+                    {...provided.droppableProps}
+                    style={{ minHeight: '32px', background: snapshot.isDraggingOver ? '#f0f0ff' : 'transparent', borderRadius: '6px', transition: 'background 0.15s' }}
+                  >
+                    {bucketTasks.length === 0 && !snapshot.isDraggingOver && (
+                      <div style={{ fontSize: '12px', color: '#e5e7eb', padding: '6px 0' }}>Nothing yet</div>
+                    )}
+                    {bucketTasks.map((task, idx) => (
+                      <Draggable key={task.id} draggableId={task.id} index={idx} isDragDisabled={task.status === 'done'}>
+                        {(dragProvided, dragSnapshot) => (
+                          <div
+                            ref={dragProvided.innerRef}
+                            {...dragProvided.draggableProps}
+                            {...dragProvided.dragHandleProps}
+                            style={{ ...dragProvided.draggableProps.style, opacity: dragSnapshot.isDragging ? 0.85 : 1 }}
+                          >
+                            <TaskCard
+                              task={task}
+                              index={idx}
+                              isDone={task.status === 'done'}
+                              goalMap={goalMap}
+                              collabMap={collabMap}
+                              profileMap={profileMap}
+                              onMarkDone={onMarkDone}
+                              onRescheduleToTomorrow={onRescheduleToTomorrow}
+                              onMoveToInbox={onMoveToInbox}
+                              onDelete={onDelete}
+                              onEdit={onEdit}
+                              onDuplicate={onDuplicate}
+                            />
+                          </div>
+                        )}
+                      </Draggable>
+                    ))}
+                    {provided.placeholder}
+                  </div>
+                )}
+              </Droppable>
             </div>
           )
         })}

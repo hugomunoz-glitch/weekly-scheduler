@@ -263,9 +263,14 @@ export default function App() {
         standalone.push(t)
       }
     }
+    const todayStr = format(new Date(), 'yyyy-MM-dd')
     const representatives = Object.values(groups).map(occurrences => {
       const notDone = occurrences.filter(t => t.status !== 'done').sort((a, b) => (a.scheduled_date || '').localeCompare(b.scheduled_date || ''))
-      if (notDone.length > 0) return notDone[0]
+      if (notDone.length > 0) {
+        // Prefer today's or the next upcoming occurrence over past ones
+        const todayOrFuture = notDone.filter(t => (t.scheduled_date || '') >= todayStr)
+        return todayOrFuture.length > 0 ? todayOrFuture[0] : notDone[notDone.length - 1]
+      }
       return [...occurrences].sort((a, b) => (b.scheduled_date || '').localeCompare(a.scheduled_date || ''))[0]
     })
     return [...standalone, ...representatives].sort((a, b) => (a.position || 0) - (b.position || 0))
@@ -1082,8 +1087,6 @@ export default function App() {
     onThisWeek: () => setWeekStart(startOfWeek(new Date(), { weekStartsOn: 0 }))
   }
 
-  const dndSensors = useMemo(() => [useWarmupSensor], [])
-
   if (authLoading) {
     return <div className="h-screen flex items-center justify-center text-sm text-gray-400">Loading...</div>
   }
@@ -1092,7 +1095,7 @@ export default function App() {
   }
 
   return (
-    <DragDropContext onDragEnd={onDragEnd} sensors={dndSensors}>
+    <DragDropContext onDragEnd={onDragEnd}>
       {isMobile ? (
         <MobileLayout {...sharedProps} onRefresh={fetchTasks} />
       ) : (
