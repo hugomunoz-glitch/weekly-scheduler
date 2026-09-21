@@ -96,31 +96,32 @@ export default function AIAssistant({ goals = [], tasks = [], open, onClose, tri
     setInput('')
     setLoading(true)
     try {
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': import.meta.env.VITE_ANTHROPIC_API_KEY,
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true',
-        },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-6',
-          max_tokens: 1024,
-          system: buildSystemPrompt(goals, tasks, mode),
-          messages: contextMessages,
-        }),
-      })
+      const systemPrompt = buildSystemPrompt(goals, tasks, mode)
+      const geminiMessages = contextMessages.map(m => ({
+        role: m.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text: m.content }],
+      }))
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${import.meta.env.VITE_GEMINI_API_KEY}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            systemInstruction: { parts: [{ text: systemPrompt }] },
+            contents: geminiMessages,
+          }),
+        }
+      )
       const data = await response.json()
       if (!response.ok) {
         const msg = data?.error?.message || `API error ${response.status}`
         await addMessage('assistant', `⚠️ ${msg}`)
       } else {
-        const reply = data.content?.[0]?.text || 'No response from assistant.'
+        const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response from assistant.'
         await addMessage('assistant', reply)
       }
     } catch (err) {
-      await addMessage('assistant', `⚠️ Could not reach the assistant: ${err?.message || 'network error'}. Make sure VITE_ANTHROPIC_API_KEY is set in your Vercel environment.`)
+      await addMessage('assistant', `⚠️ Could not reach the assistant: ${err?.message || 'network error'}. Make sure VITE_GEMINI_API_KEY is set in your Vercel environment.`)
     }
     setLoading(false)
   }, [input, loading, messages, addMessage, goals, tasks, mode])
