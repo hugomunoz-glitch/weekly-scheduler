@@ -112,10 +112,15 @@ export default function AIAssistant({ goals = [], tasks = [], open, onClose, tri
         }),
       })
       const data = await response.json()
-      const reply = data.content?.[0]?.text || 'Sorry, something went wrong.'
-      await addMessage('assistant', reply)
-    } catch {
-      await addMessage('assistant', 'Could not reach the assistant. Check your API key.')
+      if (!response.ok) {
+        const msg = data?.error?.message || `API error ${response.status}`
+        await addMessage('assistant', `⚠️ ${msg}`)
+      } else {
+        const reply = data.content?.[0]?.text || 'No response from assistant.'
+        await addMessage('assistant', reply)
+      }
+    } catch (err) {
+      await addMessage('assistant', `⚠️ Could not reach the assistant: ${err?.message || 'network error'}. Make sure VITE_ANTHROPIC_API_KEY is set in your Vercel environment.`)
     }
     setLoading(false)
   }, [input, loading, messages, addMessage, goals, tasks, mode])

@@ -1822,28 +1822,7 @@ export default function MobileLayout({
       )}
 
       {activeTab === 'assistant' && (
-        <>
-          <div style={{ padding: '10px 16px 6px', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '15px', fontWeight: 500, color: '#111827' }}>🤖 A&A</span>
-            <div style={{ display: 'flex', background: '#f3f4f6', borderRadius: '8px', padding: '2px' }}>
-              {[['assistant', '🤖 Assistant'], ['artifacts', '✨ Artifacts']].map(([id, label]) => (
-                <button key={id} onClick={() => setAaSubTab(id)}
-                  style={{ fontSize: '12px', fontWeight: 500, padding: '4px 10px', borderRadius: '6px', border: 'none', cursor: 'pointer',
-                    background: aaSubTab === id ? 'white' : 'transparent',
-                    color: aaSubTab === id ? '#6366f1' : '#6b7280',
-                    boxShadow: aaSubTab === id ? '0 1px 3px rgba(0,0,0,0.1)' : 'none' }}>
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
-          {aaSubTab === 'assistant' && (
-            <MobileAssistant goals={goals} tasks={tasks} onCreateTask={onCreateTask} onAddGoal={onAddGoal} />
-          )}
-          {aaSubTab === 'artifacts' && (
-            <MobileArtifacts user={user} goals={goals} tasks={tasks} />
-          )}
-        </>
+        <MobileArtifacts user={user} goals={goals} tasks={tasks} />
       )}
 
       {activeTab === 'settings' && (
@@ -2009,7 +1988,7 @@ export default function MobileLayout({
           { id: 'goals', label: 'Goals', emoji: '🎯' },
           { id: 'inbox', label: 'Task List', emoji: '📝' },
           { id: 'dashboard', label: 'Dashboard', emoji: '📊' },
-          { id: 'assistant', label: 'A&A', emoji: '🤖' },
+          { id: 'assistant', label: 'Artifacts', emoji: '✨' },
           { id: 'settings', label: 'Settings', emoji: '⚙️' }
         ].map(tab => (
           <button key={tab.id} onClick={() => { if (tab.id === 'dashboard') { setShowDashboard(true) } else { setActiveTab(tab.id); setMobileCalView('week') } }}

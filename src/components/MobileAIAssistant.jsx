@@ -35,6 +35,43 @@ export default function MobileAIAssistant({ goals = [], tasks = [], bottomOffset
   const inputRef = useRef(null)
   const seededRef = useRef(false)
 
+  // Draggable FAB position
+  const [fabPos, setFabPos] = useState(() => {
+    try {
+      const saved = localStorage.getItem('ai_fab_pos')
+      return saved ? JSON.parse(saved) : { right: 16, bottom: bottomOffset + 16 }
+    } catch { return { right: 16, bottom: bottomOffset + 16 } }
+  })
+  const dragRef = useRef(null)
+  const isDragging = useRef(false)
+  const dragStart = useRef(null)
+
+  function onFabPointerDown(e) {
+    isDragging.current = false
+    dragStart.current = { x: e.clientX, y: e.clientY, right: fabPos.right, bottom: fabPos.bottom }
+    dragRef.current = { pointerId: e.pointerId }
+    e.currentTarget.setPointerCapture(e.pointerId)
+  }
+  function onFabPointerMove(e) {
+    if (!dragStart.current) return
+    const dx = e.clientX - dragStart.current.x
+    const dy = e.clientY - dragStart.current.y
+    if (!isDragging.current && Math.abs(dx) < 5 && Math.abs(dy) < 5) return
+    isDragging.current = true
+    const newRight = Math.max(8, Math.min(window.innerWidth - 60, dragStart.current.right - dx))
+    const newBottom = Math.max(bottomOffset + 8, Math.min(window.innerHeight - 60, dragStart.current.bottom - dy))
+    const pos = { right: newRight, bottom: newBottom }
+    setFabPos(pos)
+    try { localStorage.setItem('ai_fab_pos', JSON.stringify(pos)) } catch {}
+  }
+  function onFabPointerUp(e) {
+    if (!isDragging.current) {
+      setOpen(true)
+    }
+    dragStart.current = null
+    isDragging.current = false
+  }
+
   useEffect(() => {
     if (open) bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, open])
@@ -86,10 +123,15 @@ export default function MobileAIAssistant({ goals = [], tasks = [], bottomOffset
         }),
       })
       const data = await response.json()
-      const reply = data.content?.[0]?.text || 'Sorry, something went wrong.'
-      await addMessage('assistant', reply)
-    } catch {
-      await addMessage('assistant', 'Could not reach the assistant. Check your API key.')
+      if (!response.ok) {
+        const msg = data?.error?.message || `API error ${response.status}`
+        await addMessage('assistant', `⚠️ ${msg}`)
+      } else {
+        const reply = data.content?.[0]?.text || 'No response from assistant.'
+        await addMessage('assistant', reply)
+      }
+    } catch (err) {
+      await addMessage('assistant', `⚠️ Could not reach the assistant: ${err?.message || 'network error'}. Make sure VITE_ANTHROPIC_API_KEY is set in your Vercel environment.`)
     }
     setLoading(false)
   }, [input, loading, messages, addMessage, goals, tasks])
@@ -103,32 +145,34 @@ export default function MobileAIAssistant({ goals = [], tasks = [], bottomOffset
 
   const ui = (
     <>
-      {/* FAB */}
-      <button
-        onClick={() => setOpen(true)}
+      {/* Draggable FAB */}
+      <div
+        onPointerDown={onFabPointerDown}
+        onPointerMove={onFabPointerMove}
+        onPointerUp={onFabPointerUp}
         style={{
           position: 'fixed',
-          bottom: bottomOffset + 16,
-          right: 16,
+          bottom: fabPos.bottom,
+          right: fabPos.right,
           zIndex: 8000,
           width: 52,
           height: 52,
           borderRadius: '50%',
           background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
           color: 'white',
-          border: 'none',
           boxShadow: '0 4px 16px rgba(79,70,229,0.45)',
-          cursor: 'pointer',
+          cursor: 'grab',
           fontSize: 22,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          transition: 'transform 0.15s',
+          userSelect: 'none',
+          touchAction: 'none',
         }}
         aria-label="Open AI Assistant"
       >
         ✦
-      </button>
+      </div>
 
       {/* Bottom sheet */}
       {open && createPortal(
