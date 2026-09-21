@@ -59,7 +59,7 @@ const STATUS_BADGE = {
   not_started: null,
 }
 
-export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations, collabMembersMap, defaultCollaborationId, onAddGoal, onEditGoal, onDeleteGoal, onDuplicateGoal, onPauseGoal, onMarkDone, onDelete, onDuplicateTask, onCreateTask, onEditTask, activeView, onChangeView, hidden, onBulkDeleteGoals, onUnlockGoal, onUnlockTask, lockedGoalIds, lockedTaskIds, onLockGoal, onLockTask }) {
+export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations, collabMembersMap, defaultCollaborationId, onAddGoal, onEditGoal, onDeleteGoal, onDuplicateGoal, onPauseGoal, onMarkDone, onDelete, onDuplicateTask, onCreateTask, onEditTask, activeView, onChangeView, hidden, onBulkDeleteGoals, onUnlockGoal, onUnlockTask, lockedGoalIds, lockedTaskIds, onLockGoal, onLockTask, onAskAI }) {
   const [adding, setAdding] = useState(false)
   const [selectMode, setSelectMode] = useState(false)
   const [selectedGoalIds, setSelectedGoalIds] = useState(new Set())
@@ -1175,6 +1175,13 @@ export default function GoalsBar({ goals, goalTasks, allTasks, collabMap, collab
                       className="text-xs text-indigo-500 hover:text-indigo-700 px-1.5 py-0.5 rounded transition-colors"
                       title="Add tasks to revive goal"
                     >+ Tasks</button>
+                  )}
+                  {onAskAI && !isFullyCompleted && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onAskAI(`Tell me how to make progress on my goal: "${goal.title}". What should I focus on?`) }}
+                      className="text-[11px] font-medium text-indigo-500 hover:text-indigo-700 hover:bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-200 hover:border-indigo-400 transition-colors leading-none flex items-center gap-0.5"
+                      title="Ask AI about this goal"
+                    >✦ Ask AI</button>
                   )}
                   <button
                     onClick={() => onDeleteGoal(goal.id)}

@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { usePullToRefresh } from '../hooks/usePullToRefresh'
 import { createPortal } from 'react-dom'
 import { useAssistantHistory } from '../hooks/useAssistantHistory'
+import MobileAIAssistant from './MobileAIAssistant'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
 import ArtifactExtractModal from './ArtifactExtractModal'
@@ -110,7 +111,7 @@ function longPressHandlers(timerRef, firedRef, onLongPress, ms = 550) {
 }
 
 
-function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations, defaultCollaborationId, onAddGoal, onEditGoal, onDeleteGoal, onDuplicateGoal, onPauseGoal, onMarkDone, onDelete, onCreateTask, onEditTask, onBulkDeleteGoals, onUnlockGoal, onUnlockTask, lockedGoalIds, lockedTaskIds, onLockGoal, onLockTask }) {
+function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations, defaultCollaborationId, onAddGoal, onEditGoal, onDeleteGoal, onDuplicateGoal, onPauseGoal, onMarkDone, onDelete, onCreateTask, onEditTask, onBulkDeleteGoals, onUnlockGoal, onUnlockTask, lockedGoalIds, lockedTaskIds, onLockGoal, onLockTask, onAskAI }) {
   const [adding, setAdding] = useState(false)
   const [selectMode, setSelectMode] = useState(false)
   const [selectedGoalIds, setSelectedGoalIds] = useState(new Set())
@@ -700,6 +701,12 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="#6b7280"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
                   </button>
                 )
+              )}
+              {onAskAI && !isFullyCompleted && (
+                <button onClick={(e) => { e.stopPropagation(); setPressedGoalId(null); onAskAI(`Tell me how to make progress on my goal: "${goal.title}". What should I focus on?`) }}
+                  style={{ fontSize: '12px', fontWeight: 600, color: '#6366f1', border: '1px solid #e0e7ff', borderRadius: 20, padding: '3px 10px', background: '#f5f3ff', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                  ✦ Ask AI
+                </button>
               )}
               <button onClick={(e) => { e.stopPropagation(); setPressedGoalId(null); onDeleteGoal(goal.id) }} style={{ fontSize: '18px', color: '#ef4444', background: 'none', border: 'none', padding: 0, cursor: 'pointer', lineHeight: 1, marginLeft: 'auto' }} title="Delete goal">&#128465;</button>
             </div>
@@ -1575,6 +1582,11 @@ export default function MobileLayout({
   const [reflectDay, setReflectDay] = useState(null)
   const [showDashboard, setShowDashboard] = useState(false)
   const [showVisionMission, setShowVisionMission] = useState(false)
+  const [mobileAITrigger, setMobileAITrigger] = useState(null)
+
+  function openMobileAI(msg) {
+    setMobileAITrigger({ msg: msg || null, id: Date.now() })
+  }
 
   async function handleUsernameSubmit(e) {
     e.preventDefault()
@@ -1742,7 +1754,7 @@ export default function MobileLayout({
       )}
 
       {(mobileCalView === 'week' || mobileCalView === 'workweek') && activeTab === 'goals' && (
-        <MobileGoalsBar goals={goals} goalTasks={goalTasks} allTasks={tasks} collabMap={collabMap} collaborations={collaborations} defaultCollaborationId={defaultCollaborationId} onAddGoal={onAddGoal} onEditGoal={onEditGoal} onDeleteGoal={onDeleteGoal} onDuplicateGoal={onDuplicateGoal} onPauseGoal={onPauseGoal} onMarkDone={onMarkDone} onDelete={onDelete} onCreateTask={onCreateTask} onEditTask={onEdit} onBulkDeleteGoals={onBulkDeleteGoals} onUnlockGoal={onUnlockGoal} onUnlockTask={onUnlockTask} lockedGoalIds={lockedGoalIds} lockedTaskIds={lockedTaskIds} onLockGoal={onLockGoal} onLockTask={onLockTask} />
+        <MobileGoalsBar goals={goals} goalTasks={goalTasks} allTasks={tasks} collabMap={collabMap} collaborations={collaborations} defaultCollaborationId={defaultCollaborationId} onAddGoal={onAddGoal} onEditGoal={onEditGoal} onDeleteGoal={onDeleteGoal} onDuplicateGoal={onDuplicateGoal} onPauseGoal={onPauseGoal} onMarkDone={onMarkDone} onDelete={onDelete} onCreateTask={onCreateTask} onEditTask={onEdit} onBulkDeleteGoals={onBulkDeleteGoals} onUnlockGoal={onUnlockGoal} onUnlockTask={onUnlockTask} lockedGoalIds={lockedGoalIds} lockedTaskIds={lockedTaskIds} onLockGoal={onLockGoal} onLockTask={onLockTask} onAskAI={openMobileAI} />
       )}
 
       {(mobileCalView === 'week' || mobileCalView === 'workweek') && activeTab === 'inbox' && (
@@ -1988,6 +2000,8 @@ export default function MobileLayout({
       )}
 
       {showVisionMission && <VisionMission onClose={() => setShowVisionMission(false)} />}
+
+      <MobileAIAssistant goals={goals} tasks={tasks} bottomOffset={72} trigger={mobileAITrigger} />
 
       <div style={{ background: 'white', borderTop: '1px solid #e5e7eb', paddingTop: '6px', paddingBottom: '8px', display: 'flex', flexShrink: 0 }}>
         {[

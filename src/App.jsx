@@ -18,6 +18,7 @@ import Dashboard from './components/Dashboard'
 import VisionMission from './components/VisionMission'
 import ExportMenu from './components/ExportMenu'
 import NotificationBell from './components/NotificationBell'
+import AIAssistant from './components/AIAssistant'
 import MonthView from './components/MonthView'
 import DayView from './components/DayView'
 import YearView from './components/YearView'
@@ -151,6 +152,13 @@ export default function App() {
   const [showReflect, setShowReflect] = useState(false)
   const [showDashboard, setShowDashboard] = useState(false)
   const [showVisionMission, setShowVisionMission] = useState(false)
+  const [showAI, setShowAI] = useState(false)
+  const [aiTrigger, setAiTrigger] = useState(null)
+
+  function openAI(message) {
+    setAiTrigger({ msg: message || null, id: Date.now() })
+    setShowAI(true)
+  }
   const [collaborations, setCollaborations] = useState([])
   const [collabMembersMap, setCollabMembersMap] = useState({})
   const [activeView, setActiveView] = useState(() => localStorage.getItem('activeView') || 'personal')
@@ -1136,6 +1144,7 @@ export default function App() {
               <button onClick={() => setShowDashboard(true)} className="px-3 py-1.5 text-sm font-medium text-indigo-600 border border-indigo-200 rounded-lg hover:bg-indigo-50">Dashboard</button>
               <button onClick={() => setShowReflect(true)} className="px-3 py-1.5 text-sm font-medium text-indigo-600 border border-indigo-200 rounded-lg hover:bg-indigo-50">Reflect</button>
               <button onClick={() => setShowVisionMission(true)} className="px-3 py-1.5 text-sm font-medium text-indigo-600 border border-indigo-200 rounded-lg hover:bg-indigo-50">Vision and Mission</button>
+              <button onClick={() => openAI()} className="px-3 py-1.5 text-sm font-medium text-white bg-indigo-600 border border-indigo-600 rounded-lg hover:bg-indigo-700 flex items-center gap-1.5">✦ AI</button>
               <button onClick={() => setShowAdd(true)} className="px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700">+ Add task</button>
               <NotificationBell tasks={tasks} />
               <SettingsDropdown onOpenCollaborations={() => setShowCollab(true)} tasks={tasks} rolloverMode={rolloverMode} onRolloverModeChange={mode => { setRolloverMode(mode); localStorage.setItem('rolloverMode', mode) }} calView={calView} onCalViewChange={(v) => { setCalView(v); localStorage.setItem('calView', v) }} activeView={activeView} onActiveViewChange={(v) => { setActiveView(v); localStorage.setItem('activeView', v) }} collaborations={collaborations} showGoals={showGoals} onShowGoalsChange={v => { setShowGoals(v); localStorage.setItem('showGoals', v) }} showSidebar={showSidebar} onShowSidebarChange={v => { setShowSidebar(v); localStorage.setItem('showSidebar', v) }} />
@@ -1143,7 +1152,7 @@ export default function App() {
           </header>
           <div className="mx-3 mt-3 shrink-0">
             <div className={showGoals ? 'rounded-xl border border-gray-200 shadow-sm overflow-hidden' : ''}>
-              <GoalsBar goals={visibleGoals} goalTasks={visibleGoalTasks} allTasks={visibleTasks} collabMap={collabMap} collaborations={collaborations} collabMembersMap={collabMembersMap} defaultCollaborationId={defaultCollaborationId} onAddGoal={addGoal} onEditGoal={editGoal} onDeleteGoal={deleteGoal} onDuplicateGoal={duplicateGoal} onPauseGoal={pauseGoal} onMarkDone={markDone} onDelete={requestDeleteTask} onDuplicateTask={duplicateTask} onCreateTask={addTask} onEditTask={setEditingTask} activeView={activeView} onChangeView={setActiveView} hidden={!showGoals} onBulkDeleteGoals={bulkDeleteGoals} onUnlockGoal={unlockGoal} onUnlockTask={unlockTask} lockedTaskIds={lockedTaskIds} onLockGoal={lockGoal} onLockTask={lockTask} />
+              <GoalsBar goals={visibleGoals} goalTasks={visibleGoalTasks} allTasks={visibleTasks} collabMap={collabMap} collaborations={collaborations} collabMembersMap={collabMembersMap} defaultCollaborationId={defaultCollaborationId} onAddGoal={addGoal} onEditGoal={editGoal} onDeleteGoal={deleteGoal} onDuplicateGoal={duplicateGoal} onPauseGoal={pauseGoal} onMarkDone={markDone} onDelete={requestDeleteTask} onDuplicateTask={duplicateTask} onCreateTask={addTask} onEditTask={setEditingTask} activeView={activeView} onChangeView={setActiveView} hidden={!showGoals} onBulkDeleteGoals={bulkDeleteGoals} onUnlockGoal={unlockGoal} onUnlockTask={unlockTask} lockedTaskIds={lockedTaskIds} onLockGoal={lockGoal} onLockTask={lockTask} onAskAI={openAI} />
             </div>
             <button
               onClick={() => { setShowGoals(v => { localStorage.setItem('showGoals', !v); return !v }) }}
@@ -1190,6 +1199,7 @@ export default function App() {
       {showReflect && <DailyReflection onClose={() => setShowReflect(false)} />}
       {showDashboard && <Dashboard tasks={tasks} goals={visibleGoals} goalTasks={goalTasks} collaborations={collaborations} collabMap={collabMap} collabMembersMap={collabMembersMap} profileMap={profileMap} weekStart={weekStart} onClose={() => setShowDashboard(false)} onEditGoal={editGoal} />}
       {showVisionMission && <VisionMission onClose={() => setShowVisionMission(false)} />}
+      {!isMobile && <AIAssistant goals={visibleGoals} tasks={visibleTasks} open={showAI} onClose={() => setShowAI(false)} trigger={aiTrigger} />}
       {deleteScopePrompt && (
         <>
           <div className="fixed inset-0 z-[1999]" onClick={() => setDeleteScopePrompt(null)} />
