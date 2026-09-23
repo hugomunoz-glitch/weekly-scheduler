@@ -1003,6 +1003,14 @@ export default function App() {
     if (error) fetchTasks()
   }
 
+  async function moveTaskToDate(taskId, dateStr) {
+    const status = dateStr ? 'scheduled' : 'inbox'
+    const updates = dateStr ? { scheduled_date: dateStr, status: 'scheduled' } : { scheduled_date: null, status: 'inbox', bucket: null }
+    setTasks(prev => prev.map(t => t.id === taskId ? { ...t, ...updates } : t))
+    const { error } = await supabase.from('tasks').update(updates).eq('id', taskId)
+    if (error) fetchTasks()
+  }
+
   async function moveToInbox(taskId) {
     setTasks(prev => prev.map(t => t.id === taskId ? { ...t, scheduled_date: null, status: 'inbox', bucket: null } : t))
     const { error } = await supabase.from('tasks').update({ scheduled_date: null, status: 'inbox', bucket: null }).eq('id', taskId)
@@ -1199,7 +1207,7 @@ export default function App() {
       {showReflect && <DailyReflection onClose={() => setShowReflect(false)} />}
       {showDashboard && <Dashboard tasks={tasks} goals={visibleGoals} goalTasks={goalTasks} collaborations={collaborations} collabMap={collabMap} collabMembersMap={collabMembersMap} profileMap={profileMap} weekStart={weekStart} onClose={() => setShowDashboard(false)} onEditGoal={editGoal} />}
       {showVisionMission && <VisionMission onClose={() => setShowVisionMission(false)} />}
-      {!isMobile && <AIAssistant goals={visibleGoals} tasks={visibleTasks} open={showAI} onClose={() => setShowAI(false)} trigger={aiTrigger} />}
+      {!isMobile && <AIAssistant goals={visibleGoals} tasks={visibleTasks} open={showAI} onClose={() => setShowAI(false)} trigger={aiTrigger} onMoveTask={moveTaskToDate} />}
       {deleteScopePrompt && (
         <>
           <div className="fixed inset-0 z-[1999]" onClick={() => setDeleteScopePrompt(null)} />

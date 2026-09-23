@@ -18,6 +18,7 @@ const AUTO_PROMPTS = {
 
 const CHAT_STARTERS = [
   'What should I focus on today?',
+  'Move all overdue tasks to tomorrow',
   'Help me break down a big goal',
   "I don't know where to start",
 ]
@@ -42,10 +43,48 @@ function buildContext(goals, tasks) {
   if (mission) ctx += `Mission:\n${mission}\n\n`
   ctx += `Goals (${activeGoals.length} active):\n`
   ctx += activeGoals.map(g => `- ${g.title}${g.prerequisite_goal_id && !g.is_unlocked ? ' [LOCKED]' : ''}`).join('\n') || 'No active goals.'
-  ctx += `\n\nActive Tasks (${activeTasks.length}):\n`
-  ctx += activeTasks.map(t => `- ${t.title}${t.scheduled_date ? ` (${t.scheduled_date})` : ' (inbox)'}`).join('\n') || 'No active tasks.'
+  ctx += `\n\nActive Tasks (${activeTasks.length}) — format: [id] title (date or inbox):\n`
+  ctx += activeTasks.map(t => `- [${t.id}] ${t.title}${t.scheduled_date ? ` (${t.scheduled_date})` : ' (inbox)'}`).join('\n') || 'No active tasks.'
   return ctx
 }
+
+const TASK_TOOLS = [
+  {
+    name: 'move_task',
+    description: 'Move a task to a specific date or to the inbox (no date). Use this when the user asks to reschedule, move, or push a task.',
+    parameters: {
+      type: 'object',
+      properties: {
+        task_id: { type: 'string', description: 'The task ID from the task list' },
+        task_title: { type: 'string', description: 'The task title (for confirmation display)' },
+        new_date: { type: 'string', description: 'Target date as yyyy-MM-dd, or "inbox" to remove the date' },
+      },
+      required: ['task_id', 'task_title', 'new_date'],
+    },
+  },
+  {
+    name: 'batch_move_tasks',
+    description: 'Move multiple tasks to new dates in one operation. Use when the user asks to rearrange, reorganize, or schedule multiple tasks at once.',
+    parameters: {
+      type: 'object',
+      properties: {
+        moves: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              task_id: { type: 'string' },
+              task_title: { type: 'string' },
+              new_date: { type: 'string', description: 'yyyy-MM-dd or "inbox"' },
+            },
+            required: ['task_id', 'task_title', 'new_date'],
+          },
+        },
+      },
+      required: ['moves'],
+    },
+  },
+]
 
 function buildSystemPrompt(goals, tasks, mode) {
   const context = buildContext(goals, tasks)
@@ -93,25 +132,28 @@ function parseJSON(text) {
   }
 }
 
-async function callGemini(systemPrompt, messages) {
-  const geminiMessages = messages.map(m => ({
-    role: m.role === 'assistant' ? 'model' : 'user',
-    parts: [{ text: m.content }],
-  }))
+async function callGemini(systemPrompt, messages, tools) {
+  const geminiMessages = messages.map(m => {
+    if (m._geminiRaw) return m._geminiRaw
+    return {
+      role: m.role === 'assistant' ? 'model' : 'user',
+      parts: [{ text: m.content }],
+    }
+  })
+  const body = {
+    systemInstruction: { parts: [{ text: systemPrompt }] },
+    contents: geminiMessages,
+  }
+  if (tools?.length) {
+    body.tools = [{ functionDeclarations: tools }]
+  }
   const response = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${import.meta.env.VITE_GEMINI_API_KEY}`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: systemPrompt }] },
-        contents: geminiMessages,
-      }),
-    }
+    { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }
   )
   const data = await response.json()
   if (!response.ok) throw new Error(data?.error?.message || `API error ${response.status}`)
-  return data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response.'
+  return data.candidates?.[0]?.content || { parts: [{ text: 'No response.' }] }
 }
 
 // ── Structured renderers ──────────────────────────────────────────────────────
@@ -196,7 +238,7 @@ function InsightCards({ data }) {
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export default function AIAssistant({ goals = [], tasks = [], open, onClose, trigger }) {
+export default function AIAssistant({ goals = [], tasks = [], open, onClose, trigger, onMoveTask }) {
   const { messages: chatMessages, loading: historyLoading, addMessage: addChatMessage, clearHistory } = useAssistantHistory()
   const [mode, setMode] = useState('chat')
   const [tabMessages, setTabMessages] = useState({ brief: [], insights: [], reflect: [] })
@@ -204,6 +246,7 @@ export default function AIAssistant({ goals = [], tasks = [], open, onClose, tri
   const [tabLoading, setTabLoading] = useState({ brief: false, insights: false, reflect: false })
   const [input, setInput] = useState('')
   const [chatLoading, setChatLoading] = useState(false)
+  const [pendingActions, setPendingActions] = useState(null) // { moves: [{task_id, task_title, new_date}], rawContent, contextMessages }
   const bottomRef = useRef(null)
   const inputRef = useRef(null)
   const seededRef = useRef(null)
@@ -242,7 +285,8 @@ export default function AIAssistant({ goals = [], tasks = [], open, onClose, tri
     setTabMessages(prev => ({ ...prev, [targetMode]: [userMsg] }))
     setTabLoading(prev => ({ ...prev, [targetMode]: true }))
     try {
-      const reply = await callGemini(buildSystemPrompt(goals, tasks, targetMode), [userMsg])
+      const resultContent = await callGemini(buildSystemPrompt(goals, tasks, targetMode), [userMsg])
+      const reply = resultContent.parts?.map(p => p.text).filter(Boolean).join('') || 'No response.'
       setTabMessages(prev => ({ ...prev, [targetMode]: [...prev[targetMode], { role: 'assistant', content: reply }] }))
       if (targetMode === 'brief' || targetMode === 'insights') {
         const parsed = parseJSON(reply)
@@ -262,6 +306,45 @@ export default function AIAssistant({ goals = [], tasks = [], open, onClose, tri
     autoGenerate(mode)
   }
 
+  async function confirmActions() {
+    if (!pendingActions || !onMoveTask) return
+    const { moves, rawContent, contextMessages } = pendingActions
+    setPendingActions(null)
+    setChatLoading(true)
+    // Execute all moves
+    for (const move of moves) {
+      const date = move.new_date === 'inbox' ? null : move.new_date
+      await onMoveTask(move.task_id, date)
+    }
+    // Send function responses back to Gemini for a confirmation message
+    try {
+      const modelTurn = { _geminiRaw: { role: 'model', parts: rawContent.parts } }
+      const funcResponseParts = rawContent.parts
+        .filter(p => p.functionCall)
+        .map(p => ({
+          functionResponse: {
+            name: p.functionCall.name,
+            response: { success: true },
+          },
+        }))
+      const funcResponseTurn = { _geminiRaw: { role: 'user', parts: funcResponseParts } }
+      const confirmContent = await callGemini(
+        buildSystemPrompt(goals, tasks, 'chat'),
+        [...contextMessages, modelTurn, funcResponseTurn]
+      )
+      const text = confirmContent.parts?.map(p => p.text).filter(Boolean).join('') || 'Done! Tasks have been updated.'
+      await addChatMessage('assistant', text)
+    } catch {
+      const summary = moves.map(m => `"${m.task_title}" → ${m.new_date === 'inbox' ? 'inbox' : m.new_date}`).join(', ')
+      await addChatMessage('assistant', `Done! Moved: ${summary}.`)
+    }
+    setChatLoading(false)
+  }
+
+  function cancelActions() {
+    setPendingActions(null)
+  }
+
   const sendMessage = useCallback(async (text) => {
     const content = (text || input).trim()
     if (!content || loading) return
@@ -273,8 +356,27 @@ export default function AIAssistant({ goals = [], tasks = [], open, onClose, tri
       await addChatMessage('user', content)
       setChatLoading(true)
       try {
-        const reply = await callGemini(buildSystemPrompt(goals, tasks, 'chat'), contextMessages)
-        await addChatMessage('assistant', reply)
+        const resultContent = await callGemini(buildSystemPrompt(goals, tasks, 'chat'), contextMessages, onMoveTask ? TASK_TOOLS : undefined)
+        // Check for function calls
+        const funcCallParts = resultContent.parts?.filter(p => p.functionCall)
+        if (funcCallParts?.length && onMoveTask) {
+          // Collect all moves from all function calls
+          const moves = []
+          for (const part of funcCallParts) {
+            const { name, args } = part.functionCall
+            if (name === 'move_task') {
+              moves.push({ task_id: args.task_id, task_title: args.task_title, new_date: args.new_date })
+            } else if (name === 'batch_move_tasks') {
+              moves.push(...(args.moves || []))
+            }
+          }
+          if (moves.length) {
+            setPendingActions({ moves, rawContent: resultContent, contextMessages })
+          }
+        } else {
+          const text = resultContent.parts?.map(p => p.text).filter(Boolean).join('') || 'No response.'
+          await addChatMessage('assistant', text)
+        }
       } catch (err) {
         await addChatMessage('assistant', `⚠️ ${err.message}`)
       }
@@ -285,14 +387,15 @@ export default function AIAssistant({ goals = [], tasks = [], open, onClose, tri
       setTabMessages(prev => ({ ...prev, [mode]: newMsgs }))
       setTabLoading(prev => ({ ...prev, [mode]: true }))
       try {
-        const reply = await callGemini(buildSystemPrompt(goals, tasks, mode), newMsgs)
+        const resultContent = await callGemini(buildSystemPrompt(goals, tasks, mode), newMsgs)
+        const reply = resultContent.parts?.map(p => p.text).filter(Boolean).join('') || 'No response.'
         setTabMessages(prev => ({ ...prev, [mode]: [...newMsgs, { role: 'assistant', content: reply }] }))
       } catch (err) {
         setTabMessages(prev => ({ ...prev, [mode]: [...newMsgs, { role: 'assistant', content: `⚠️ ${err.message}` }] }))
       }
       setTabLoading(prev => ({ ...prev, [mode]: false }))
     }
-  }, [input, loading, mode, chatMessages, tabMessages, addChatMessage, goals, tasks])
+  }, [input, loading, mode, chatMessages, tabMessages, addChatMessage, goals, tasks, onMoveTask])
 
   function handleKey(e) {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage() }
@@ -376,6 +479,30 @@ export default function AIAssistant({ goals = [], tasks = [], open, onClose, tri
                   {s}
                 </button>
               ))}
+            </div>
+          )}
+
+          {/* Pending action confirmation card */}
+          {mode === 'chat' && pendingActions && (
+            <div style={{ background: '#eef2ff', border: '1px solid #c7d2fe', borderRadius: 12, padding: '12px 14px' }}>
+              <p style={{ margin: '0 0 8px', fontSize: 13, fontWeight: 600, color: '#4338ca' }}>
+                {pendingActions.moves.length === 1 ? 'Move task?' : `Move ${pendingActions.moves.length} tasks?`}
+              </p>
+              {pendingActions.moves.map((m, i) => (
+                <p key={i} style={{ margin: '0 0 4px', fontSize: 12, color: '#374151' }}>
+                  <span style={{ fontWeight: 500 }}>"{m.task_title}"</span>
+                  {' → '}
+                  <span style={{ color: '#4f46e5' }}>{m.new_date === 'inbox' ? 'Inbox (no date)' : m.new_date}</span>
+                </p>
+              ))}
+              <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                <button onClick={confirmActions} style={{ flex: 1, padding: '7px 12px', background: '#4f46e5', color: 'white', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                  Confirm
+                </button>
+                <button onClick={cancelActions} style={{ flex: 1, padding: '7px 12px', background: 'white', color: '#6b7280', border: '1px solid #e5e7eb', borderRadius: 8, fontSize: 13, cursor: 'pointer' }}>
+                  Cancel
+                </button>
+              </div>
             </div>
           )}
 
