@@ -6,6 +6,7 @@ import MobileAIAssistant from './MobileAIAssistant'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
 import ArtifactExtractModal from './ArtifactExtractModal'
+import ArtifactsPanel from './ArtifactsPanel'
 import CollaborationPanel from './CollaborationPanel'
 import DailyReflection from './DailyReflection'
 import Dashboard from './Dashboard'
@@ -1822,7 +1823,7 @@ export default function MobileLayout({
       )}
 
       {activeTab === 'assistant' && (
-        <MobileArtifacts user={user} goals={goals} tasks={tasks} />
+        <ArtifactsPanel user={user} />
       )}
 
       {activeTab === 'settings' && (

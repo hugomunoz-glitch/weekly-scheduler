@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { Droppable, Draggable } from '@hello-pangea/dnd'
-import { useAssistantHistory } from '../hooks/useAssistantHistory'
 import { categoryBadge } from './TaskCard'
 import { format, parseISO } from 'date-fns'
+import ArtifactsPanel from './ArtifactsPanel'
 
 const PRIORITY_RANK = { high: 0, medium: 1, low: 2 }
 const PRIORITY_COLORS = { high: '#ef4444', medium: '#f59e0b', low: '#9ca3af' }
@@ -341,7 +341,7 @@ function Assistant({ goals, tasks, onCreateTask, onAddGoal }) {
   )
 }
 
-export default function Sidebar({ tasks, goalMap, collabMap, collabMembersMap, profileMap, onAssignTask, onMarkDone, goals, allTasks, onAddTask, onCreateTask, onAddGoal, onEdit, onDelete, onDuplicate, onBulkDeleteTasks, lockedGoalIds, lockedTaskIds, onUnlockTask, onUnlockGoal, onLockTask }) {
+export default function Sidebar({ tasks, goalMap, collabMap, collabMembersMap, profileMap, onAssignTask, onMarkDone, goals, allTasks, onAddTask, onCreateTask, onAddGoal, onEdit, onDelete, onDuplicate, onBulkDeleteTasks, lockedGoalIds, lockedTaskIds, onUnlockTask, onUnlockGoal, onLockTask, user }) {
   const [tab, setTab] = useState('inbox')
   const [taskSearch, setTaskSearch] = useState('')
   const [showTaskSearch, setShowTaskSearch] = useState(false)
@@ -359,7 +359,7 @@ export default function Sidebar({ tasks, goalMap, collabMap, collabMembersMap, p
         </button>
         <button onClick={() => setTab('assistant')}
           className={'flex-1 py-2.5 text-xs font-medium transition-colors ' + (tab === 'assistant' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-600 hover:text-gray-800')}>
-          &#129302; Assistant
+          ✨ Artifacts
         </button>
       </div>
       <div className="flex-1 overflow-hidden flex flex-col">
@@ -422,7 +422,7 @@ export default function Sidebar({ tasks, goalMap, collabMap, collabMembersMap, p
             <Inbox tasks={tasks} goalMap={goalMap} collabMap={collabMap} collabMembersMap={collabMembersMap} profileMap={profileMap} onAssignTask={onAssignTask} onMarkDone={onMarkDone} onEdit={onEdit} onDelete={onDelete} onDuplicate={onDuplicate} onBulkDelete={ids => { if (onBulkDeleteTasks) onBulkDeleteTasks(ids); setInboxSelectMode(false) }} search={taskSearch} sortMode={taskSort} sortDir={taskSortDir} categoryFilter={taskCategoryFilter} externalSelectMode={inboxSelectMode} onExitSelectMode={() => setInboxSelectMode(false)} lockedGoalIds={lockedGoalIds} lockedTaskIds={lockedTaskIds} onUnlockTask={onUnlockTask} onLockTask={onLockTask} />
           </>
         ) : (
-          <Assistant goals={goals} tasks={allTasks} onCreateTask={onCreateTask} onAddGoal={onAddGoal} />
+          <ArtifactsPanel user={user} />
         )}
       </div>
     </div>
