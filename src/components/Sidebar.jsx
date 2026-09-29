@@ -342,7 +342,7 @@ function Assistant({ goals, tasks, onCreateTask, onAddGoal }) {
   )
 }
 
-export default function Sidebar({ tasks, goalMap, collabMap, collabMembersMap, profileMap, onAssignTask, onMarkDone, goals, allTasks, onAddTask, onCreateTask, onAddGoal, onEdit, onDelete, onDuplicate, onBulkDeleteTasks, lockedGoalIds, lockedTaskIds, onUnlockTask, onUnlockGoal, onLockTask, user }) {
+export default function Sidebar({ tasks, goalMap, collabMap, collabMembersMap, profileMap, onAssignTask, onMarkDone, goals, allTasks, onAddTask, onCreateTask, onAddGoal, onEdit, onDelete, onDuplicate, onBulkDeleteTasks, lockedGoalIds, lockedTaskIds, onUnlockTask, onUnlockGoal, onLockTask, user, onConvertTaskToGoal }) {
   const [tab, setTab] = useState('inbox')
   const [taskSearch, setTaskSearch] = useState('')
   const [showTaskSearch, setShowTaskSearch] = useState(false)
