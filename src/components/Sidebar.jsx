@@ -152,7 +152,7 @@ function Inbox({ tasks, goalMap, collabMap, collabMembersMap, profileMap, onAssi
                       <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                         <button onClick={() => onEdit(task)} className="text-[27px] text-indigo-400 hover:text-indigo-600 leading-none" title="Edit">&#9998;</button>
                         {onDuplicate && <button onClick={() => onDuplicate(task.id)} className="text-[20px] text-gray-400 hover:text-indigo-600 leading-none" title="Duplicate">&#10697;</button>}
-                        {onConvertTaskToGoal && <button onClick={() => onConvertTaskToGoal(task.id)} className="text-[20px] text-gray-400 hover:text-indigo-600 leading-none" title="Convert to goal">&#127919;</button>}
+                        {onConvertTaskToGoal && <button onClick={() => onConvertTaskToGoal(task.id)} className="text-[20px] text-gray-400 hover:text-indigo-600 leading-none" title="Convert to goal"><span style={{ filter: 'grayscale(1)', opacity: 0.6 }}>&#127919;</span></button>}
                         {task.goal_id && goalMap?.[task.goal_id]?.prerequisite_goal_id && (
                           lockedTaskIds?.has(task.id) ? (
                             onUnlockTask && <button onClick={() => onUnlockTask(task.id)} className="text-[11px] font-semibold text-amber-600 hover:text-amber-700 leading-none px-1.5 py-0.5 rounded border border-amber-300 hover:border-amber-400" title="Unlock this task">🔓 Unlock</button>
