@@ -145,7 +145,7 @@ export default function TaskCard({ task, isDone, isDragging, collabBadge, assign
       )}
       {!selectMode && !isDone && !isDragging && showActions && (
         <div className="flex flex-wrap items-center gap-2 mt-2 pt-1.5 border-t border-gray-100">
-          <button onClick={() => onEdit(task)} className="text-[27px] text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 px-1.5 py-0.5 rounded transition-colors leading-none" title="Edit">&#9998;</button>
+          <button onClick={() => onEdit(task)} className="text-[27px] text-gray-400 hover:text-gray-600 hover:bg-gray-50 px-1.5 py-0.5 rounded transition-colors leading-none" title="Edit">&#9998;</button>
           {onDuplicate && <button onClick={() => onDuplicate(task.id)} className="text-[20px] text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 px-1.5 py-0.5 rounded transition-colors leading-none" title="Duplicate">&#10697;</button>}
           {onConvertTaskToGoal && <button onClick={() => onConvertTaskToGoal(task.id)} className="text-[20px] text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 px-1.5 py-0.5 rounded transition-colors leading-none" title="Convert to goal"><span style={{ filter: 'grayscale(1)', opacity: 0.6 }}>&#127919;</span></button>}
           {!isDueCard && (
