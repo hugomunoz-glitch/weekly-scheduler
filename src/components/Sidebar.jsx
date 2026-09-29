@@ -150,7 +150,7 @@ function Inbox({ tasks, goalMap, collabMap, collabMembersMap, profileMap, onAssi
                     {task.notes && <p className="text-xs text-gray-400 mt-1 truncate">{task.notes}</p>}
                     {!selectMode && !snapshot.isDragging && hoverId === task.id && (
                       <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                        <button onClick={() => onEdit(task)} className="text-[27px] text-indigo-400 hover:text-indigo-600 leading-none" title="Edit">&#9998;</button>
+                        <button onClick={() => onEdit(task)} className="text-[27px] text-gray-400 hover:text-gray-600 leading-none" title="Edit">&#9998;</button>
                         {onDuplicate && <button onClick={() => onDuplicate(task.id)} className="text-[20px] text-gray-400 hover:text-indigo-600 leading-none" title="Duplicate">&#10697;</button>}
                         {onConvertTaskToGoal && <button onClick={() => onConvertTaskToGoal(task.id)} className="text-[20px] text-gray-400 hover:text-indigo-600 leading-none" title="Convert to goal"><span style={{ filter: 'grayscale(1)', opacity: 0.6 }}>&#127919;</span></button>}
                         {task.goal_id && goalMap?.[task.goal_id]?.prerequisite_goal_id && (
