@@ -11,7 +11,7 @@ const BUCKETS = [
 
 const OVERLOAD_CAP = 5
 
-export default function DayColumn({ date, tasks, dueCards, goalMap, collabMap, profileMap, onMarkDone, onRescheduleToTomorrow, onMoveToInbox, onDelete, onEdit, onDuplicate, onAddTaskForBucket }) {
+export default function DayColumn({ date, tasks, dueCards, goalMap, collabMap, profileMap, onMarkDone, onRescheduleToTomorrow, onMoveToInbox, onDelete, onEdit, onDuplicate, onAddTaskForBucket, onConvertTaskToGoal }) {
   const today = isToday(date)
   const isPast = isBefore(date, startOfDay(new Date())) && !today
   const dateStr = format(date, 'yyyy-MM-dd')
@@ -79,7 +79,7 @@ export default function DayColumn({ date, tasks, dueCards, goalMap, collabMap, p
                         {(provided, snapshot) => {
                           const card = (
                             <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps} className="mb-1.5" style={provided.draggableProps.style}>
-                              <TaskCard task={task} isDone={task.status === 'done'} isDragging={snapshot.isDragging} collabBadge={task.collaboration_id && collabMap ? collabMap[task.collaboration_id] : null} assigneeName={task.assigned_to && profileMap ? profileMap[task.assigned_to] : null} onMarkDone={onMarkDone} onRescheduleToTomorrow={onRescheduleToTomorrow} onMoveToInbox={onMoveToInbox} onDelete={onDelete} onEdit={onEdit} onDuplicate={onDuplicate} />
+                              <TaskCard task={task} isDone={task.status === 'done'} isDragging={snapshot.isDragging} collabBadge={task.collaboration_id && collabMap ? collabMap[task.collaboration_id] : null} assigneeName={task.assigned_to && profileMap ? profileMap[task.assigned_to] : null} onMarkDone={onMarkDone} onRescheduleToTomorrow={onRescheduleToTomorrow} onMoveToInbox={onMoveToInbox} onDelete={onDelete} onEdit={onEdit} onDuplicate={onDuplicate} onConvertTaskToGoal={onConvertTaskToGoal} />
                             </div>
                           )
                           return snapshot.isDragging ? createPortal(card, document.body) : card
@@ -91,7 +91,7 @@ export default function DayColumn({ date, tasks, dueCards, goalMap, collabMap, p
                         {(provided, snapshot) => {
                           const card = (
                             <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps} className="mb-1.5" style={provided.draggableProps.style}>
-                              <TaskCard task={task} isDone={task.status === 'done'} isDragging={snapshot.isDragging} isDueCard collabBadge={task.collaboration_id && collabMap ? collabMap[task.collaboration_id] : null} assigneeName={task.assigned_to && profileMap ? profileMap[task.assigned_to] : null} onMarkDone={onMarkDone} onRescheduleToTomorrow={onRescheduleToTomorrow} onMoveToInbox={onMoveToInbox} onDelete={onDelete} onEdit={onEdit} onDuplicate={onDuplicate} />
+                              <TaskCard task={task} isDone={task.status === 'done'} isDragging={snapshot.isDragging} isDueCard collabBadge={task.collaboration_id && collabMap ? collabMap[task.collaboration_id] : null} assigneeName={task.assigned_to && profileMap ? profileMap[task.assigned_to] : null} onMarkDone={onMarkDone} onRescheduleToTomorrow={onRescheduleToTomorrow} onMoveToInbox={onMoveToInbox} onDelete={onDelete} onEdit={onEdit} onDuplicate={onDuplicate} onConvertTaskToGoal={onConvertTaskToGoal} />
                             </div>
                           )
                           return snapshot.isDragging ? createPortal(card, document.body) : card

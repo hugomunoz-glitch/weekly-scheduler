@@ -908,7 +908,7 @@ function MobileGoalsBar({ goals, goalTasks, allTasks, collabMap, collaborations,
   )
 }
 
-function MobileDayView({ date, tasks, dueCards, goalMap, collabMap, profileMap, onMarkDone, onRescheduleToTomorrow, onMoveToInbox, onDelete, onEdit, onDuplicate, onAddTaskForBucket }) {
+function MobileDayView({ date, tasks, dueCards, goalMap, collabMap, profileMap, onMarkDone, onRescheduleToTomorrow, onMoveToInbox, onDelete, onEdit, onDuplicate, onConvertTaskToGoal, onAddTaskForBucket }) {
   const activeTasks = tasks.filter(t => t.status !== 'done')
   const doneTasks = tasks.filter(t => t.status === 'done')
   const dateStr = format(date, 'yyyy-MM-dd')
@@ -946,7 +946,7 @@ function MobileDayView({ date, tasks, dueCards, goalMap, collabMap, profileMap, 
                       {(provided, snapshot) => {
                         const card = (
                           <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps} style={{ ...provided.draggableProps.style, marginBottom: '6px', WebkitTouchCallout: 'none', WebkitUserSelect: 'none', userSelect: 'none', touchAction: 'manipulation' }}>
-                            <TaskCard task={task} isDone={task.status === 'done'} isDragging={snapshot.isDragging} collabBadge={task.collaboration_id && collabMap ? collabMap[task.collaboration_id] : null} assigneeName={task.assigned_to && profileMap ? profileMap[task.assigned_to] : null} onMarkDone={onMarkDone} onRescheduleToTomorrow={onRescheduleToTomorrow} onMoveToInbox={onMoveToInbox} onDelete={onDelete} onEdit={onEdit} onDuplicate={onDuplicate} />
+                            <TaskCard task={task} isDone={task.status === 'done'} isDragging={snapshot.isDragging} collabBadge={task.collaboration_id && collabMap ? collabMap[task.collaboration_id] : null} assigneeName={task.assigned_to && profileMap ? profileMap[task.assigned_to] : null} onMarkDone={onMarkDone} onRescheduleToTomorrow={onRescheduleToTomorrow} onMoveToInbox={onMoveToInbox} onDelete={onDelete} onEdit={onEdit} onDuplicate={onDuplicate} onConvertTaskToGoal={onConvertTaskToGoal} />
                           </div>
                         )
                         return snapshot.isDragging ? createPortal(card, document.body) : card
@@ -958,7 +958,7 @@ function MobileDayView({ date, tasks, dueCards, goalMap, collabMap, profileMap, 
                       {(provided, snapshot) => {
                         const card = (
                           <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps} style={{ ...provided.draggableProps.style, marginBottom: '6px', WebkitTouchCallout: 'none', WebkitUserSelect: 'none', userSelect: 'none', touchAction: 'manipulation' }}>
-                            <TaskCard task={task} isDone={task.status === 'done'} isDragging={snapshot.isDragging} isDueCard collabBadge={task.collaboration_id && collabMap ? collabMap[task.collaboration_id] : null} assigneeName={task.assigned_to && profileMap ? profileMap[task.assigned_to] : null} onMarkDone={onMarkDone} onRescheduleToTomorrow={onRescheduleToTomorrow} onMoveToInbox={onMoveToInbox} onDelete={onDelete} onEdit={onEdit} onDuplicate={onDuplicate} />
+                            <TaskCard task={task} isDone={task.status === 'done'} isDragging={snapshot.isDragging} isDueCard collabBadge={task.collaboration_id && collabMap ? collabMap[task.collaboration_id] : null} assigneeName={task.assigned_to && profileMap ? profileMap[task.assigned_to] : null} onMarkDone={onMarkDone} onRescheduleToTomorrow={onRescheduleToTomorrow} onMoveToInbox={onMoveToInbox} onDelete={onDelete} onEdit={onEdit} onDuplicate={onDuplicate} onConvertTaskToGoal={onConvertTaskToGoal} />
                           </div>
                         )
                         return snapshot.isDragging ? createPortal(card, document.body) : card
@@ -976,7 +976,7 @@ function MobileDayView({ date, tasks, dueCards, goalMap, collabMap, profileMap, 
   )
 }
 
-function MobileInbox({ tasks, goalMap, collabMap, collabMembersMap, profileMap, onAssignTask, onMarkDone, onAddTask, onEdit, onDelete, onDuplicate, onBulkDelete, search, sortMode, sortDir, categoryFilter, externalSelectMode, onExitSelectMode, lockedGoalIds, lockedTaskIds, onUnlockTask, onLockTask }) {
+function MobileInbox({ tasks, goalMap, collabMap, collabMembersMap, profileMap, onAssignTask, onMarkDone, onAddTask, onEdit, onDelete, onDuplicate, onConvertTaskToGoal, onBulkDelete, search, sortMode, sortDir, categoryFilter, externalSelectMode, onExitSelectMode, lockedGoalIds, lockedTaskIds, onUnlockTask, onLockTask }) {
   const [pressedTaskId, setPressedTaskId] = useState(null)
   const selectMode = externalSelectMode || false
   const [selectedIds, setSelectedIds] = useState(new Set())
@@ -1083,6 +1083,7 @@ function MobileInbox({ tasks, goalMap, collabMap, collabMembersMap, profileMap, 
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '8px' }}>
                         <button onClick={(e) => { e.stopPropagation(); onEdit(task) }} style={{ fontSize: '27px', color: '#6366f1', background: 'none', border: 'none', padding: 0, cursor: 'pointer', lineHeight: 1 }} title="Edit">&#9998;</button>
                         {onDuplicate && <button onClick={(e) => { e.stopPropagation(); setPressedTaskId(null); onDuplicate(task.id) }} style={{ fontSize: '20px', color: '#9ca3af', background: 'none', border: 'none', padding: 0, cursor: 'pointer', lineHeight: 1 }} title="Duplicate">&#10697;</button>}
+                        {onConvertTaskToGoal && <button onClick={(e) => { e.stopPropagation(); setPressedTaskId(null); onConvertTaskToGoal(task.id) }} style={{ fontSize: '20px', color: '#9ca3af', background: 'none', border: 'none', padding: 0, cursor: 'pointer', lineHeight: 1 }} title="Convert to goal">&#127919;</button>}
                         {task.goal_id && goalMap?.[task.goal_id]?.prerequisite_goal_id && (
                           lockedTaskIds?.has(task.id) ? (
                             onUnlockTask && <button onClick={(e) => { e.stopPropagation(); setPressedTaskId(null); onUnlockTask(task.id) }} style={{ fontSize: '12px', fontWeight: 600, color: '#d97706', background: 'none', border: '1px solid #fcd34d', borderRadius: '6px', padding: '3px 8px', cursor: 'pointer', lineHeight: 1 }} title="Unlock this task">🔓 Unlock</button>
@@ -1533,7 +1534,7 @@ export default function MobileLayout({
   overdueTasks, onPrevWeek, onNextWeek, onMarkDone,
   onRescheduleToTomorrow, onMoveToInbox, onDelete, onEdit, onAddTask, onAddTaskForBucket, onCreateTask,
   onRollover, onAddGoal, onEditGoal, onDeleteGoal, onPauseGoal, onAssignTask,
-  onDuplicateGoal, onDuplicateTask,
+  onDuplicateGoal, onDuplicateTask, onConvertTaskToGoal,
   rolloverMode, onRolloverModeChange, onRefresh,
   onBulkDeleteGoals, onBulkDeleteTasks, onUnlockTask, onUnlockGoal, lockedTaskIds, onLockTask, onLockGoal
 }) {
@@ -1749,7 +1750,7 @@ export default function MobileLayout({
           {loading ? (
             <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af', fontSize: '13px' }}>Loading</div>
           ) : (
-            <MobileDayView date={parseISO(selectedDay)} tasks={tasksForDay(parseISO(selectedDay))} dueCards={dueCardsForDay(parseISO(selectedDay))} goalMap={goalMap} collabMap={collabMap} profileMap={profileMap} onMarkDone={onMarkDone} onRescheduleToTomorrow={onRescheduleToTomorrow} onMoveToInbox={onMoveToInbox} onDelete={onDelete} onEdit={onEdit} onDuplicate={onDuplicateTask} onAddTaskForBucket={onAddTaskForBucket} />
+            <MobileDayView date={parseISO(selectedDay)} tasks={tasksForDay(parseISO(selectedDay))} dueCards={dueCardsForDay(parseISO(selectedDay))} goalMap={goalMap} collabMap={collabMap} profileMap={profileMap} onMarkDone={onMarkDone} onRescheduleToTomorrow={onRescheduleToTomorrow} onMoveToInbox={onMoveToInbox} onDelete={onDelete} onEdit={onEdit} onDuplicate={onDuplicateTask} onConvertTaskToGoal={onConvertTaskToGoal} onAddTaskForBucket={onAddTaskForBucket} />
           )}
         </>
       )}
@@ -1818,7 +1819,7 @@ export default function MobileLayout({
               {taskCategories.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
-          <MobileInbox tasks={loading ? [] : inboxTasks} goalMap={goalMap} collabMap={collabMap} collabMembersMap={collabMembersMap} profileMap={profileMap} onAssignTask={onAssignTask} onMarkDone={onMarkDone} onAddTask={onAddTask} onEdit={onEdit} onDelete={onDelete} onDuplicate={onDuplicateTask} onBulkDelete={ids => { if (onBulkDeleteTasks) onBulkDeleteTasks(ids); setInboxSelectMode(false) }} search={taskSearch} sortMode={taskSort} sortDir={taskSortDir} categoryFilter={taskCategoryFilter} externalSelectMode={inboxSelectMode} onExitSelectMode={() => setInboxSelectMode(false)} lockedGoalIds={lockedGoalIds} lockedTaskIds={lockedTaskIds} onUnlockTask={onUnlockTask} onLockTask={onLockTask} />
+          <MobileInbox tasks={loading ? [] : inboxTasks} goalMap={goalMap} collabMap={collabMap} collabMembersMap={collabMembersMap} profileMap={profileMap} onAssignTask={onAssignTask} onMarkDone={onMarkDone} onAddTask={onAddTask} onEdit={onEdit} onDelete={onDelete} onDuplicate={onDuplicateTask} onConvertTaskToGoal={onConvertTaskToGoal} onBulkDelete={ids => { if (onBulkDeleteTasks) onBulkDeleteTasks(ids); setInboxSelectMode(false) }} search={taskSearch} sortMode={taskSort} sortDir={taskSortDir} categoryFilter={taskCategoryFilter} externalSelectMode={inboxSelectMode} onExitSelectMode={() => setInboxSelectMode(false)} lockedGoalIds={lockedGoalIds} lockedTaskIds={lockedTaskIds} onUnlockTask={onUnlockTask} onLockTask={onLockTask} />
         </>
       )}
 

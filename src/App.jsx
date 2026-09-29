@@ -713,6 +713,13 @@ export default function App() {
     return data
   }
 
+  async function convertTaskToGoal(taskId) {
+    const task = tasks.find(t => t.id === taskId)
+    if (!task) return
+    await addGoal(task.title, null, task.notes ? { smartSpecific: task.notes } : null, task.collaboration_id || null)
+    deleteTask(taskId, null)
+  }
+
   async function duplicateGoal(goalId) {
     const src = goals.find(g => g.id === goalId)
     if (!src) return
@@ -1097,7 +1104,7 @@ export default function App() {
     onAddTask: () => setShowAdd(true), onAddTaskForDay: openAddForDay, onAddTaskForBucket: openAddForBucket, onCreateTask: addTask, onRollover: rolloverOverdue,
     rolloverMode, onRolloverModeChange: mode => { setRolloverMode(mode); localStorage.setItem('rolloverMode', mode) },
     onAddGoal: addGoal, onEditGoal: editGoal, onDeleteGoal: deleteGoal, onDuplicateGoal: duplicateGoal, onPauseGoal: pauseGoal, onBulkDeleteGoals: bulkDeleteGoals, onBulkDeleteTasks: bulkDeleteTasks, onUnlockTask: unlockTask, onUnlockGoal: unlockGoal, onLockTask: lockTask, onLockGoal: lockGoal,
-    onDuplicateTask: duplicateTask,
+    onDuplicateTask: duplicateTask, onConvertTaskToGoal: convertTaskToGoal,
     onPrevWeek: () => setWeekStart(w => subWeeks(w, 1)),
     onNextWeek: () => setWeekStart(w => addWeeks(w, 1)),
     onThisWeek: () => setWeekStart(startOfWeek(new Date(), { weekStartsOn: 0 }))
@@ -1175,10 +1182,10 @@ export default function App() {
             <main className="flex-1 overflow-x-auto overflow-y-auto rounded-xl border border-gray-200 shadow-sm bg-white p-4">
               {loading ? <div className="flex items-center justify-center h-full text-sm text-gray-400">Loading</div> : (
                 <>
-                  {calView === 'week' && <WeekGrid days={weekDays} tasksForDay={tasksForDay} dueCardsForDay={dueCardsForDay} goalMap={goalMap} collabMap={collabMap} profileMap={profileMap} onMarkDone={markDone} onRescheduleToTomorrow={rescheduleToTomorrow} onMoveToInbox={moveToInbox} onDelete={requestDeleteTask} onEdit={setEditingTask} onDuplicate={duplicateTask} onAddTaskForDay={openAddForDay} onAddTaskForBucket={openAddForBucket} />}
-                  {calView === 'workweek' && <WeekGrid days={weekDays.slice(1, 6)} tasksForDay={tasksForDay} dueCardsForDay={dueCardsForDay} goalMap={goalMap} collabMap={collabMap} profileMap={profileMap} onMarkDone={markDone} onRescheduleToTomorrow={rescheduleToTomorrow} onMoveToInbox={moveToInbox} onDelete={requestDeleteTask} onEdit={setEditingTask} onDuplicate={duplicateTask} onAddTaskForDay={openAddForDay} onAddTaskForBucket={openAddForBucket} />}
+                  {calView === 'week' && <WeekGrid days={weekDays} tasksForDay={tasksForDay} dueCardsForDay={dueCardsForDay} goalMap={goalMap} collabMap={collabMap} profileMap={profileMap} onMarkDone={markDone} onRescheduleToTomorrow={rescheduleToTomorrow} onMoveToInbox={moveToInbox} onDelete={requestDeleteTask} onEdit={setEditingTask} onDuplicate={duplicateTask} onAddTaskForDay={openAddForDay} onAddTaskForBucket={openAddForBucket} onConvertTaskToGoal={convertTaskToGoal} />}
+                  {calView === 'workweek' && <WeekGrid days={weekDays.slice(1, 6)} tasksForDay={tasksForDay} dueCardsForDay={dueCardsForDay} goalMap={goalMap} collabMap={collabMap} profileMap={profileMap} onMarkDone={markDone} onRescheduleToTomorrow={rescheduleToTomorrow} onMoveToInbox={moveToInbox} onDelete={requestDeleteTask} onEdit={setEditingTask} onDuplicate={duplicateTask} onAddTaskForDay={openAddForDay} onAddTaskForBucket={openAddForBucket} onConvertTaskToGoal={convertTaskToGoal} />}
                   {calView === 'month' && <MonthView tasks={visibleTasks} onDayClick={(day) => { setCalView('week'); localStorage.setItem('calView', 'week'); setWeekStart(startOfWeek(day, { weekStartsOn: 0 })) }} />}
-                  {calView === 'day' && <DayView tasks={visibleTasks} goalMap={goalMap} collabMap={collabMap} profileMap={profileMap} onMarkDone={markDone} onRescheduleToTomorrow={rescheduleToTomorrow} onMoveToInbox={moveToInbox} onDelete={requestDeleteTask} onEdit={setEditingTask} onDuplicate={duplicateTask} onAddTaskForBucket={openAddForBucket} />}
+                  {calView === 'day' && <DayView tasks={visibleTasks} goalMap={goalMap} collabMap={collabMap} profileMap={profileMap} onMarkDone={markDone} onRescheduleToTomorrow={rescheduleToTomorrow} onMoveToInbox={moveToInbox} onDelete={requestDeleteTask} onEdit={setEditingTask} onDuplicate={duplicateTask} onAddTaskForBucket={openAddForBucket} onConvertTaskToGoal={convertTaskToGoal} />}
                   {calView === 'year' && <YearView tasks={visibleTasks} onMonthClick={() => { setCalView('month'); localStorage.setItem('calView', 'month') }} onDayClick={(day) => { setCalView('week'); localStorage.setItem('calView', 'week'); setWeekStart(startOfWeek(day, { weekStartsOn: 0 })) }} />}
                 </>
               )}
@@ -1194,7 +1201,7 @@ export default function App() {
               </button>
               {showSidebar && (
                 <div className="rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-                  <Sidebar tasks={inboxTasks} goalMap={goalMap} collabMap={collabMap} collabMembersMap={collabMembersMap} profileMap={profileMap} onAssignTask={assignTask} onMarkDone={markDone} goals={visibleGoals} allTasks={visibleTasks} onAddTask={() => setShowAdd(true)} onCreateTask={addTask} onAddGoal={addGoal} onEdit={setEditingTask} onDelete={requestDeleteTask} onDuplicate={duplicateTask} onBulkDeleteTasks={bulkDeleteTasks} lockedGoalIds={lockedGoalIds} lockedTaskIds={lockedTaskIds} onUnlockTask={unlockTask} onUnlockGoal={unlockGoal} onLockTask={lockTask} user={user} />
+                  <Sidebar tasks={inboxTasks} goalMap={goalMap} collabMap={collabMap} collabMembersMap={collabMembersMap} profileMap={profileMap} onAssignTask={assignTask} onMarkDone={markDone} goals={visibleGoals} allTasks={visibleTasks} onAddTask={() => setShowAdd(true)} onCreateTask={addTask} onAddGoal={addGoal} onEdit={setEditingTask} onDelete={requestDeleteTask} onDuplicate={duplicateTask} onBulkDeleteTasks={bulkDeleteTasks} lockedGoalIds={lockedGoalIds} lockedTaskIds={lockedTaskIds} onUnlockTask={unlockTask} onUnlockGoal={unlockGoal} onLockTask={lockTask} user={user} onConvertTaskToGoal={convertTaskToGoal} />
                 </div>
               )}
             </div>

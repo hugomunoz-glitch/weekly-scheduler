@@ -9,7 +9,7 @@ const PRIORITY_COLORS = { high: '#ef4444', medium: '#f59e0b', low: '#9ca3af' }
 const PRIORITY_LABELS = { high: 'High', medium: 'Medium', low: 'Low' }
 const PRIORITY_BORDER = { high: '#ef4444', medium: '#f59e0b', low: '#22c55e' }
 
-function Inbox({ tasks, goalMap, collabMap, collabMembersMap, profileMap, onAssignTask, onMarkDone, onEdit, onDelete, onDuplicate, onBulkDelete, search, sortMode, sortDir, categoryFilter, externalSelectMode, onExitSelectMode, lockedGoalIds, lockedTaskIds, onUnlockTask, onLockTask }) {
+function Inbox({ tasks, goalMap, collabMap, collabMembersMap, profileMap, onAssignTask, onMarkDone, onEdit, onDelete, onDuplicate, onConvertTaskToGoal, onBulkDelete, search, sortMode, sortDir, categoryFilter, externalSelectMode, onExitSelectMode, lockedGoalIds, lockedTaskIds, onUnlockTask, onLockTask }) {
   const [hoverId, setHoverId] = useState(null)
   const selectMode = externalSelectMode || false
   const [selectedIds, setSelectedIds] = useState(new Set())
@@ -152,6 +152,7 @@ function Inbox({ tasks, goalMap, collabMap, collabMembersMap, profileMap, onAssi
                       <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                         <button onClick={() => onEdit(task)} className="text-[27px] text-indigo-400 hover:text-indigo-600 leading-none" title="Edit">&#9998;</button>
                         {onDuplicate && <button onClick={() => onDuplicate(task.id)} className="text-[20px] text-gray-400 hover:text-indigo-600 leading-none" title="Duplicate">&#10697;</button>}
+                        {onConvertTaskToGoal && <button onClick={() => onConvertTaskToGoal(task.id)} className="text-[20px] text-gray-400 hover:text-indigo-600 leading-none" title="Convert to goal">&#127919;</button>}
                         {task.goal_id && goalMap?.[task.goal_id]?.prerequisite_goal_id && (
                           lockedTaskIds?.has(task.id) ? (
                             onUnlockTask && <button onClick={() => onUnlockTask(task.id)} className="text-[11px] font-semibold text-amber-600 hover:text-amber-700 leading-none px-1.5 py-0.5 rounded border border-amber-300 hover:border-amber-400" title="Unlock this task">🔓 Unlock</button>
@@ -419,7 +420,7 @@ export default function Sidebar({ tasks, goalMap, collabMap, collabMembersMap, p
                 {taskCategories.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
-            <Inbox tasks={tasks} goalMap={goalMap} collabMap={collabMap} collabMembersMap={collabMembersMap} profileMap={profileMap} onAssignTask={onAssignTask} onMarkDone={onMarkDone} onEdit={onEdit} onDelete={onDelete} onDuplicate={onDuplicate} onBulkDelete={ids => { if (onBulkDeleteTasks) onBulkDeleteTasks(ids); setInboxSelectMode(false) }} search={taskSearch} sortMode={taskSort} sortDir={taskSortDir} categoryFilter={taskCategoryFilter} externalSelectMode={inboxSelectMode} onExitSelectMode={() => setInboxSelectMode(false)} lockedGoalIds={lockedGoalIds} lockedTaskIds={lockedTaskIds} onUnlockTask={onUnlockTask} onLockTask={onLockTask} />
+            <Inbox tasks={tasks} goalMap={goalMap} collabMap={collabMap} collabMembersMap={collabMembersMap} profileMap={profileMap} onAssignTask={onAssignTask} onMarkDone={onMarkDone} onEdit={onEdit} onDelete={onDelete} onDuplicate={onDuplicate} onConvertTaskToGoal={onConvertTaskToGoal} onBulkDelete={ids => { if (onBulkDeleteTasks) onBulkDeleteTasks(ids); setInboxSelectMode(false) }} search={taskSearch} sortMode={taskSort} sortDir={taskSortDir} categoryFilter={taskCategoryFilter} externalSelectMode={inboxSelectMode} onExitSelectMode={() => setInboxSelectMode(false)} lockedGoalIds={lockedGoalIds} lockedTaskIds={lockedTaskIds} onUnlockTask={onUnlockTask} onLockTask={onLockTask} />
           </>
         ) : (
           <ArtifactsPanel user={user} />
