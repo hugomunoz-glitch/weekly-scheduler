@@ -106,7 +106,7 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
   }
   const [collaborationId, setCollaborationId] = useState(editingTask ? (editingTask.collaboration_id || '') : (followUpPrefill?.collaborationId || defaultCollaborationId || ''))
   const [assignedTo, setAssignedTo] = useState(editingTask ? (editingTask.assigned_to || '') : '')
-  const [title, setTitle] = useState(editingTask ? editingTask.title : (followUpPrefill?.title || ''))
+  const [title, setTitle] = useState(editingTask ? editingTask.title : '')
   const [notes, setNotes] = useState(editingTask ? (editingTask.notes || '') : '')
   const [location, setLocation] = useState(editingTask ? (editingTask.location || '') : '')
   const [locationLat, setLocationLat] = useState(editingTask ? (editingTask.location_lat || null) : null)
@@ -322,7 +322,7 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
             <input
               ref={inputRef}
               type="text"
-              placeholder="What do you need to do?"
+              placeholder={followUpPrefill ? "Insert follow-up task/goal" : "What do you need to do?"}
               value={title}
               onChange={e => setTitle(e.target.value)}
               className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400"
@@ -710,7 +710,7 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
                   <>
                     <button
                       type="button"
-                      onClick={() => onCreateFollowUp && onCreateFollowUp({ title: editingTask.title, goalId: editingTask.goal_id, category: editingTask.category, priority: editingTask.priority, collaborationId: editingTask.collaboration_id })}
+                      onClick={() => onCreateFollowUp && onCreateFollowUp({ goalId: editingTask.goal_id, category: editingTask.category, priority: editingTask.priority, collaborationId: editingTask.collaboration_id })}
                       className="flex-1 py-2 text-sm font-medium text-indigo-600 border border-indigo-200 rounded-lg hover:bg-indigo-50 transition-colors"
                     >
                       Follow-up
