@@ -57,7 +57,7 @@ function formatTimeShort(t) {
   return display + ':' + String(m).padStart(2, '0') + ' ' + ampm
 }
 
-export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTask, onAddGoal, initialScheduledDate, initialStartTime, initialBucket, existingTaskCategories, collaborations, collabMembersMap, defaultCollaborationId, onCreateFollowUp, followUpPrefill }) {
+export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTask, onAddGoal, initialScheduledDate, initialStartTime, initialBucket, existingTaskCategories, collaborations, collabMembersMap, defaultCollaborationId, onCreateFollowUp, followUpPrefill, onConvertTaskToGoal }) {
   // Track visible viewport height so the modal shrinks correctly when the
   // keyboard appears on native WKWebView (where dvh doesn't shrink with keyboard)
   const [vpHeight, setVpHeight] = useState(() => window.visualViewport?.height ?? window.innerHeight)
@@ -715,6 +715,16 @@ export default function AddTaskModal({ onAdd, onEdit, onClose, goals, editingTas
                     >
                       Follow-up
                     </button>
+                    {onConvertTaskToGoal && (
+                      <button
+                        type="button"
+                        onClick={() => { onConvertTaskToGoal(editingTask.id); closeModal() }}
+                        className="flex-1 py-2 text-sm font-medium text-gray-500 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center gap-1"
+                        title="Convert this task into a goal"
+                      >
+                        <span style={{ filter: 'grayscale(1)', opacity: 0.6 }}>&#127919;</span> To goal
+                      </button>
+                    )}
                     <button form="task-form" type="submit" disabled={!title.trim() || submitting} className="flex-1 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">{submitting ? 'Saving...' : 'Save changes'}</button>
                   </>
                 ) : (
